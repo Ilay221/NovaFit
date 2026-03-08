@@ -187,12 +187,12 @@ export default function Dashboard({
             className="nova-card p-6 nova-breathe"
           >
             <div className="flex flex-col items-center">
-              <CalorieRing consumed={totals.calories} target={profile.dailyCalorieTarget} />
+              <CalorieRing consumed={totals.calories} target={effectiveCalorieTarget} />
               <div className="flex gap-10 mt-6">
                 {[
-                  { label: 'Target', value: profile.dailyCalorieTarget },
+                  { label: 'Target', value: effectiveCalorieTarget },
                   { label: 'Consumed', value: totals.calories },
-                  { label: 'Remaining', value: Math.max(profile.dailyCalorieTarget - totals.calories, 0) },
+                  { label: 'Remaining', value: effectiveCalorieTarget - totals.calories },
                 ].map((item, i) => (
                   <motion.div
                     key={item.label}
@@ -201,11 +201,34 @@ export default function Dashboard({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.8 + i * 0.1, duration: 0.4 }}
                   >
-                    <div className="text-[17px] font-bold font-display tabular-nums">{item.value}</div>
+                    <div className={`text-[17px] font-bold font-display tabular-nums ${item.label === 'Remaining' && item.value < 0 ? 'text-[hsl(0_72%_51%)]' : ''}`}>
+                      {item.value}
+                    </div>
                     <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.1em] mt-1">{item.label}</div>
                   </motion.div>
                 ))}
               </div>
+              {hasTimeline && daysRemaining !== null && (
+                <motion.div
+                  className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.2 }}
+                >
+                  <Calendar className="w-3 h-3 text-primary" />
+                  <span className="text-[11px] font-semibold text-primary tabular-nums">{daysRemaining} days left</span>
+                </motion.div>
+              )}
+              {hasTimeline && !adaptive.isSafe && (
+                <motion.div
+                  className="mt-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <AlertTriangle className="w-3 h-3 text-destructive" />
+                  <span className="text-[10px] font-medium text-destructive">Safety-capped intake</span>
+                </motion.div>
+              )}
             </div>
           </motion.div>
 
