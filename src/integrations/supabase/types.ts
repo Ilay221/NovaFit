@@ -110,6 +110,7 @@ export type Database = {
           is_premium: boolean
           name: string
           protein_target: number
+          target_date: string | null
           target_weight_kg: number
           tdee: number
           updated_at: string
@@ -130,6 +131,7 @@ export type Database = {
           is_premium?: boolean
           name?: string
           protein_target?: number
+          target_date?: string | null
           target_weight_kg?: number
           tdee?: number
           updated_at?: string
@@ -150,6 +152,7 @@ export type Database = {
           is_premium?: boolean
           name?: string
           protein_target?: number
+          target_date?: string | null
           target_weight_kg?: number
           tdee?: number
           updated_at?: string
