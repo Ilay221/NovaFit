@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { MealEntry, FoodItem } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import PortionEstimator from './PortionEstimator';
 
 interface NLPFoodInputProps {
   onAddMeal: (entry: MealEntry) => void;
@@ -33,6 +34,7 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
   const [parsing, setParsing] = useState(false);
   const [results, setResults] = useState<ParsedFood[]>([]);
   const [mealType, setMealType] = useState<MealEntry['mealType']>('lunch');
+  const [portionFood, setPortionFood] = useState<FoodItem | null>(null);
 
   const handleParse = async () => {
     const trimmed = text.trim();
@@ -71,22 +73,17 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
       servingSize: food.servingSize,
       category: 'AI Parsed',
     };
+    setPortionFood(foodItem);
+  };
 
-    onAddMeal({
-      id: crypto.randomUUID(),
-      foodItem,
-      quantity: 1,
-      mealType,
-      timestamp: new Date().toISOString(),
-    });
-
-    toast.success(`${food.name} logged`);
+  const handlePortionConfirm = (entry: MealEntry) => {
+    onAddMeal(entry);
+    setPortionFood(null);
+    toast.success('Meal logged with custom portion!');
   };
 
   const addAll = () => {
     results.forEach(addFood);
-    setResults([]);
-    setText('');
   };
 
   const totalCals = results.reduce((s, f) => s + Math.round(f.calories), 0);
@@ -99,6 +96,17 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
     "Greek yogurt with banana and almonds",
     "Grilled chicken salad with olive oil",
   ];
+
+  if (portionFood) {
+    return (
+      <PortionEstimator
+        food={portionFood}
+        mealType={mealType}
+        onConfirm={handlePortionConfirm}
+        onBack={() => setPortionFood(null)}
+      />
+    );
+  }
 
   return (
     <motion.div
@@ -193,13 +201,6 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
                 <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">
                   Parsed Items
                 </h3>
-                <Button
-                  size="sm"
-                  onClick={addAll}
-                  className="rounded-xl h-8 px-4 text-[11px] font-medium gap-1 active:scale-[0.97]"
-                >
-                  <Plus className="w-3 h-3" /> Log All
-                </Button>
               </div>
 
               {/* Summary bar */}
