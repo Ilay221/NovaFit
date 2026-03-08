@@ -4,6 +4,7 @@ import { Search, Plus, ArrowLeft, Utensils } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { searchFoods } from '@/lib/food-database';
 import { FoodItem, MealEntry } from '@/lib/types';
+import PortionEstimator from './PortionEstimator';
 
 interface FoodLoggerProps {
   onAddMeal: (entry: MealEntry) => void;
