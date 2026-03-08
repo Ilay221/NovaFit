@@ -81,15 +81,25 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
       servingSize: food.servingSize,
       category: 'AI Scanned',
     };
-    onAddMeal({
-      id: crypto.randomUUID(),
-      foodItem,
-      quantity: 1,
-      mealType,
-      timestamp: new Date().toISOString(),
-    });
-    toast.success(`${food.name} logged`);
+    setPortionFood(foodItem);
   };
+
+  const handlePortionConfirm = (entry: MealEntry) => {
+    onAddMeal(entry);
+    setPortionFood(null);
+    toast.success('Meal logged with custom portion!');
+  };
+
+  if (portionFood) {
+    return (
+      <PortionEstimator
+        food={portionFood}
+        mealType={mealType}
+        onConfirm={handlePortionConfirm}
+        onBack={() => setPortionFood(null)}
+      />
+    );
+  }
 
   return (
     <motion.div
