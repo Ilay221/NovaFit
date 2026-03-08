@@ -2,10 +2,9 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Camera, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MealEntry, FoodItem } from '@/lib/types';
+import { MealEntry } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import PortionEstimator from './PortionEstimator';
 
 interface AIFoodScannerProps {
   onAddMeal: (entry: MealEntry) => void;
@@ -33,7 +32,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalyzedFood[]>([]);
   const [mealType, setMealType] = useState<MealEntry['mealType']>('lunch');
-  const [portionFood, setPortionFood] = useState<FoodItem | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,8 +56,29 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
         body: { image: base64Image },
       });
       if (error) throw error;
-      if (data?.foods && Array.isArray(data.foods)) {
+      if (data?.foods && Array.isArray(data.foods) && data.foods.length > 0) {
         setResults(data.foods);
+        // Auto-add all detected foods immediately
+        for (const food of data.foods) {
+          const entry: MealEntry = {
+            id: crypto.randomUUID(),
+            foodItem: {
+              id: crypto.randomUUID(),
+              name: food.name,
+              calories: Math.round(food.calories),
+              protein: Math.round(food.protein),
+              carbs: Math.round(food.carbs),
+              fats: Math.round(food.fats),
+              servingSize: food.servingSize,
+              category: 'AI Scanned',
+            },
+            quantity: 1,
+            mealType,
+            timestamp: new Date().toISOString(),
+          };
+          onAddMeal(entry);
+        }
+        toast.success(`${data.foods.length} item${data.foods.length > 1 ? 's' : ''} logged automatically!`);
       } else {
         toast.error('Could not identify food items in this image');
       }
@@ -69,37 +89,6 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
       setAnalyzing(false);
     }
   };
-
-  const addFood = (food: AnalyzedFood) => {
-    const foodItem: FoodItem = {
-      id: crypto.randomUUID(),
-      name: food.name,
-      calories: Math.round(food.calories),
-      protein: Math.round(food.protein),
-      carbs: Math.round(food.carbs),
-      fats: Math.round(food.fats),
-      servingSize: food.servingSize,
-      category: 'AI Scanned',
-    };
-    setPortionFood(foodItem);
-  };
-
-  const handlePortionConfirm = (entry: MealEntry) => {
-    onAddMeal(entry);
-    setPortionFood(null);
-    toast.success('Meal logged with custom portion!');
-  };
-
-  if (portionFood) {
-    return (
-      <PortionEstimator
-        food={portionFood}
-        mealType={mealType}
-        onConfirm={handlePortionConfirm}
-        onBack={() => setPortionFood(null)}
-      />
-    );
-  }
 
   return (
     <motion.div
@@ -209,13 +198,9 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
                           <span className="text-nova-fats tabular-nums px-2 py-0.5 rounded-md bg-nova-fats/8">F {Math.round(food.fats)}g</span>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        className="rounded-xl h-9 px-4 font-medium active:scale-[0.97] text-[12px]"
-                        onClick={() => addFood(food)}
-                      >
-                        Add
-                      </Button>
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-primary">
+                        <span>✓ Added</span>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
