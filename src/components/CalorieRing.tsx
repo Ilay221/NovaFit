@@ -77,20 +77,20 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
       
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
-          className="text-[32px] font-bold font-display tracking-tight tabular-nums leading-none"
+          className={`text-[32px] font-bold font-display tracking-tight tabular-nums leading-none ${isOver ? 'text-[hsl(0_72%_51%)]' : ''}`}
           initial={{ opacity: 0, scale: 0.5, filter: 'blur(8px)' }}
           animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
           transition={{ delay: 0.4, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
         >
-          {displayRemaining}
+          {isOver ? '' : ''}{displayRemaining}
         </motion.span>
         <motion.span
-          className="text-[11px] text-muted-foreground font-medium mt-1"
+          className={`text-[11px] font-medium mt-1 ${isOver ? 'text-[hsl(0_72%_51%)]' : 'text-muted-foreground'}`}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          kcal left
+          {isOver ? 'kcal over' : 'kcal left'}
         </motion.span>
         <motion.div
           className="mt-2 px-2.5 py-[3px] rounded-full bg-muted text-[10px] font-semibold text-muted-foreground tabular-nums"
