@@ -63,7 +63,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
         for (const food of data.foods) {
           const entry: MealEntry = {
             id: crypto.randomUUID(),
-            food: {
+            foodItem: {
               id: crypto.randomUUID(),
               name: food.name,
               calories: Math.round(food.calories),
