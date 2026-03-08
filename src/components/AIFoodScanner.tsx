@@ -75,7 +75,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
             },
             quantity: 1,
             mealType,
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
           };
           onAddMeal(entry);
         }
