@@ -198,13 +198,9 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
                           <span className="text-nova-fats tabular-nums px-2 py-0.5 rounded-md bg-nova-fats/8">F {Math.round(food.fats)}g</span>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        className="rounded-xl h-9 px-4 font-medium active:scale-[0.97] text-[12px]"
-                        onClick={() => addFood(food)}
-                      >
-                        Add
-                      </Button>
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-500">
+                        <span>✓ Added</span>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
