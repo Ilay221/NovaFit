@@ -235,9 +235,9 @@ export default function Dashboard({
           {/* Macros Card */}
           <motion.div variants={itemVariants} className="nova-card p-5 mt-4 space-y-4">
             <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">Macronutrients</h3>
-            <MacroBar label="Protein" current={totals.protein} target={profile.proteinTarget} color="hsl(var(--nova-protein))" />
-            <MacroBar label="Carbs" current={totals.carbs} target={profile.carbsTarget} color="hsl(var(--nova-carbs))" />
-            <MacroBar label="Fats" current={totals.fats} target={profile.fatsTarget} color="hsl(var(--nova-fats))" />
+            <MacroBar label="Protein" current={totals.protein} target={effectiveProteinTarget} color="hsl(var(--nova-protein))" />
+            <MacroBar label="Carbs" current={totals.carbs} target={effectiveCarbsTarget} color="hsl(var(--nova-carbs))" />
+            <MacroBar label="Fats" current={totals.fats} target={effectiveFatsTarget} color="hsl(var(--nova-fats))" />
           </motion.div>
 
           {/* Quick Stats */}
