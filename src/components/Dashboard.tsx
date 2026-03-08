@@ -12,6 +12,7 @@ import WeightChart from './WeightChart';
 import SettingsPanel from './SettingsPanel';
 import AIFoodScanner from './AIFoodScanner';
 import NLPFoodInput from './NLPFoodInput';
+import WeeklyAnalytics from './WeeklyAnalytics';
 import { useTheme } from '@/lib/store';
 import { format } from 'date-fns';
 
