@@ -31,6 +31,7 @@ const MODES: { value: ThemeMode; icon: typeof Sun; label: string }[] = [
 ];
 
 export default function SettingsPanel({ theme, profile, onUpdateProfile, onClose }: SettingsPanelProps) {
+  const { signOut } = useAuth();
   return (
     <motion.div
       initial={{ x: '100%' }}
