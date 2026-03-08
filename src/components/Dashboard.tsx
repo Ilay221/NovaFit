@@ -67,7 +67,25 @@ export default function Dashboard({
     { calories: 0, protein: 0, carbs: 0, fats: 0 }
   );
 
-  const goalDate = predictGoalDate(profile.weightKg, profile.targetWeightKg);
+  // Adaptive recalibration: if user has a target date, dynamically adjust targets
+  const adaptive = useMemo(
+    () => calculateAdaptiveTargets(profile, weightHistory, totals.calories),
+    [profile, weightHistory, totals.calories]
+  );
+
+  const hasTimeline = !!profile.targetDate && profile.goal !== 'maintain';
+  const effectiveCalorieTarget = hasTimeline ? adaptive.dailyCalorieTarget : profile.dailyCalorieTarget;
+  const effectiveProteinTarget = hasTimeline ? adaptive.proteinTarget : profile.proteinTarget;
+  const effectiveCarbsTarget = hasTimeline ? adaptive.carbsTarget : profile.carbsTarget;
+  const effectiveFatsTarget = hasTimeline ? adaptive.fatsTarget : profile.fatsTarget;
+
+  const goalDate = hasTimeline && profile.targetDate
+    ? parseISO(profile.targetDate)
+    : predictGoalDate(profile.weightKg, profile.targetWeightKg);
+  const daysRemaining = hasTimeline && profile.targetDate
+    ? differenceInDays(parseISO(profile.targetDate), new Date())
+    : null;
+
   const latestWeight = weightHistory.length > 0 ? weightHistory[weightHistory.length - 1].weightKg : profile.weightKg;
   const progressKg = Math.abs(profile.weightKg - latestWeight);
 
