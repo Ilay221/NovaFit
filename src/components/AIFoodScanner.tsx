@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Camera, Upload, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, Camera, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MealEntry, FoodItem } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +20,13 @@ interface AnalyzedFood {
   servingSize: string;
 }
 
+const MEAL_TYPES: { value: MealEntry['mealType']; label: string }[] = [
+  { value: 'breakfast', label: 'Breakfast' },
+  { value: 'lunch', label: 'Lunch' },
+  { value: 'dinner', label: 'Dinner' },
+  { value: 'snack', label: 'Snack' },
+];
+
 export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps) {
   const [image, setImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -31,7 +38,6 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
     const reader = new FileReader();
     reader.onload = (ev) => {
       const base64 = ev.target?.result as string;
@@ -48,9 +54,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
       const { data, error } = await supabase.functions.invoke('analyze-food', {
         body: { image: base64Image },
       });
-
       if (error) throw error;
-      
       if (data?.foods && Array.isArray(data.foods)) {
         setResults(data.foods);
       } else {
@@ -75,7 +79,6 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
       servingSize: food.servingSize,
       category: 'AI Scanned',
     };
-
     onAddMeal({
       id: crypto.randomUUID(),
       foodItem,
@@ -83,16 +86,8 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
       mealType,
       timestamp: new Date().toISOString(),
     });
-    
-    toast.success(`${food.name} logged!`);
+    toast.success(`${food.name} logged`);
   };
-
-  const mealTypes: { value: MealEntry['mealType']; emoji: string; label: string }[] = [
-    { value: 'breakfast', emoji: '🌅', label: 'Breakfast' },
-    { value: 'lunch', emoji: '☀️', label: 'Lunch' },
-    { value: 'dinner', emoji: '🌙', label: 'Dinner' },
-    { value: 'snack', emoji: '🍎', label: 'Snack' },
-  ];
 
   return (
     <motion.div
@@ -104,53 +99,50 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
-        <button onClick={onClose} className="p-2 -ml-2 rounded-xl hover:bg-muted transition-colors active:scale-95">
-          <ArrowLeft className="w-5 h-5" />
+        <button onClick={onClose} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95">
+          <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h2 className="text-lg font-bold font-display flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" /> AI Food Scanner
-          </h2>
-          <p className="text-xs text-muted-foreground">Take a photo to analyze nutrition</p>
+          <h2 className="text-[17px] font-bold font-display tracking-tight">AI Food Scanner</h2>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Take a photo to analyze nutrition</p>
         </div>
       </div>
 
       <div className="px-5 space-y-5 flex-1 overflow-auto hide-scrollbar pb-8">
         {/* Meal type */}
-        <div className="flex gap-2">
-          {mealTypes.map(mt => (
+        <div className="flex gap-1.5">
+          {MEAL_TYPES.map(mt => (
             <button key={mt.value} onClick={() => setMealType(mt.value)}
-              className={`flex-1 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-200 active:scale-95 ${
+              className={`flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-200 active:scale-[0.97] ${
                 mealType === mt.value
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                  ? 'bg-foreground text-background'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
               }`}
             >
-              {mt.emoji} {mt.label}
+              {mt.label}
             </button>
           ))}
         </div>
 
-        {/* Image preview or upload area */}
         {!image ? (
-          <div className="nova-card p-8 flex flex-col items-center gap-5">
-            <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center">
-              <Camera className="w-10 h-10 text-primary" />
+          <div className="nova-card p-10 flex flex-col items-center gap-6">
+            <div className="w-16 h-16 rounded-2xl bg-muted/60 flex items-center justify-center">
+              <Camera className="w-7 h-7 text-muted-foreground" />
             </div>
             <div className="text-center">
-              <h3 className="font-bold font-display">Snap Your Meal</h3>
-              <p className="text-sm text-muted-foreground mt-1">AI will analyze the nutritional content</p>
+              <h3 className="font-bold font-display text-[15px]">Snap Your Meal</h3>
+              <p className="text-[13px] text-muted-foreground mt-1.5">AI will analyze the nutritional content</p>
             </div>
             <div className="flex gap-3 w-full">
               <Button
                 variant="outline"
-                className="flex-1 h-12 rounded-2xl gap-2 font-semibold active:scale-95"
+                className="flex-1 h-[48px] rounded-xl gap-2 font-medium active:scale-[0.97] text-[13px]"
                 onClick={() => cameraInputRef.current?.click()}
               >
                 <Camera className="w-4 h-4" /> Camera
               </Button>
               <Button
-                className="flex-1 h-12 rounded-2xl gap-2 font-semibold active:scale-95"
+                className="flex-1 h-[48px] rounded-xl gap-2 font-medium active:scale-[0.97] text-[13px]"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="w-4 h-4" /> Gallery
@@ -161,56 +153,53 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Image preview */}
             <div className="nova-card overflow-hidden">
               <div className="relative">
-                <img src={image} alt="Food" className="w-full h-56 object-cover" />
+                <img src={image} alt="Food" className="w-full h-52 object-cover" />
                 {analyzing && (
-                  <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                    <p className="text-sm font-semibold">Analyzing your meal...</p>
+                  <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="w-6 h-6 text-foreground animate-spin" />
+                    <p className="text-[13px] font-medium">Analyzing your meal...</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Retake */}
             <Button
               variant="outline"
               size="sm"
-              className="rounded-xl"
+              className="rounded-xl text-[12px]"
               onClick={() => { setImage(null); setResults([]); }}
             >
               Take Another Photo
             </Button>
 
-            {/* Results */}
             {results.length > 0 && (
               <div className="space-y-3">
-                <h3 className="font-bold font-display text-sm flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" /> Detected Food Items
+                <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">
+                  Detected Items
                 </h3>
                 {results.map((food, i) => (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
+                    transition={{ delay: i * 0.08 }}
                     className="nova-card p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <div className="font-semibold">{food.name}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{food.servingSize} · {Math.round(food.calories)} kcal</div>
-                        <div className="flex gap-3 mt-2 text-[11px] font-medium">
-                          <span className="text-nova-protein px-2 py-0.5 rounded-full bg-nova-protein/10">P {Math.round(food.protein)}g</span>
-                          <span className="text-nova-carbs px-2 py-0.5 rounded-full bg-nova-carbs/10">C {Math.round(food.carbs)}g</span>
-                          <span className="text-nova-fats px-2 py-0.5 rounded-full bg-nova-fats/10">F {Math.round(food.fats)}g</span>
+                        <div className="font-medium text-[14px]">{food.name}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">{food.servingSize} · {Math.round(food.calories)} kcal</div>
+                        <div className="flex gap-2 mt-2 text-[10px] font-medium">
+                          <span className="text-nova-protein tabular-nums px-2 py-0.5 rounded-md bg-nova-protein/8">P {Math.round(food.protein)}g</span>
+                          <span className="text-nova-carbs tabular-nums px-2 py-0.5 rounded-md bg-nova-carbs/8">C {Math.round(food.carbs)}g</span>
+                          <span className="text-nova-fats tabular-nums px-2 py-0.5 rounded-md bg-nova-fats/8">F {Math.round(food.fats)}g</span>
                         </div>
                       </div>
                       <Button
                         size="sm"
-                        className="rounded-xl h-9 px-4 font-semibold active:scale-95"
+                        className="rounded-xl h-9 px-4 font-medium active:scale-[0.97] text-[12px]"
                         onClick={() => addFood(food)}
                       >
                         Add

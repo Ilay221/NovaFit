@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Sparkles, Loader2, MessageSquare, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2, MessageSquare, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MealEntry, FoodItem } from '@/lib/types';
@@ -21,18 +21,18 @@ interface ParsedFood {
   servingSize: string;
 }
 
+const MEAL_TYPES: { value: MealEntry['mealType']; label: string }[] = [
+  { value: 'breakfast', label: 'Breakfast' },
+  { value: 'lunch', label: 'Lunch' },
+  { value: 'dinner', label: 'Dinner' },
+  { value: 'snack', label: 'Snack' },
+];
+
 export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) {
   const [text, setText] = useState('');
   const [parsing, setParsing] = useState(false);
   const [results, setResults] = useState<ParsedFood[]>([]);
   const [mealType, setMealType] = useState<MealEntry['mealType']>('lunch');
-
-  const mealTypes: { value: MealEntry['mealType']; emoji: string; label: string }[] = [
-    { value: 'breakfast', emoji: '🌅', label: 'Breakfast' },
-    { value: 'lunch', emoji: '☀️', label: 'Lunch' },
-    { value: 'dinner', emoji: '🌙', label: 'Dinner' },
-    { value: 'snack', emoji: '🍎', label: 'Snack' },
-  ];
 
   const handleParse = async () => {
     const trimmed = text.trim();
@@ -80,7 +80,7 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
       timestamp: new Date().toISOString(),
     });
 
-    toast.success(`${food.name} logged!`);
+    toast.success(`${food.name} logged`);
   };
 
   const addAll = () => {
@@ -95,9 +95,9 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
   const totalF = results.reduce((s, f) => s + Math.round(f.fats), 0);
 
   const examples = [
-    "I had two scrambled eggs and a slice of toast",
+    "Two scrambled eggs with a slice of toast",
     "Greek yogurt with banana and almonds",
-    "Grilled chicken salad with olive oil dressing",
+    "Grilled chicken salad with olive oil",
   ];
 
   return (
@@ -110,29 +110,29 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
-        <button onClick={onClose} className="p-2 -ml-2 rounded-xl hover:bg-muted transition-colors active:scale-95">
-          <ArrowLeft className="w-5 h-5" />
+        <button onClick={onClose} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95">
+          <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h2 className="text-lg font-bold font-display flex items-center gap-2">
+          <h2 className="text-[17px] font-bold font-display tracking-tight flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-primary" /> Describe Your Meal
           </h2>
-          <p className="text-xs text-muted-foreground">Type what you ate and AI will log the macros</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Type what you ate and AI will calculate the macros</p>
         </div>
       </div>
 
       <div className="px-5 space-y-5 flex-1 overflow-auto hide-scrollbar pb-8">
         {/* Meal type pills */}
-        <div className="flex gap-2">
-          {mealTypes.map(mt => (
+        <div className="flex gap-1.5">
+          {MEAL_TYPES.map(mt => (
             <button key={mt.value} onClick={() => setMealType(mt.value)}
-              className={`flex-1 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-200 active:scale-95 ${
+              className={`flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-200 active:scale-[0.97] ${
                 mealType === mt.value
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                  ? 'bg-foreground text-background'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
               }`}
             >
-              {mt.emoji} {mt.label}
+              {mt.label}
             </button>
           ))}
         </div>
@@ -140,23 +140,23 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
         {/* Text input */}
         <div className="space-y-3">
           <Textarea
-            placeholder="e.g. I ate two eggs and toast with butter..."
+            placeholder="e.g. Two eggs and toast with butter..."
             value={text}
             onChange={e => setText(e.target.value)}
             maxLength={500}
-            className="min-h-[100px] rounded-2xl bg-muted/40 border-0 focus-visible:ring-1 text-sm resize-none"
+            className="min-h-[100px] rounded-xl bg-muted/40 border-0 focus-visible:ring-1 text-[14px] resize-none"
           />
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-muted-foreground">{text.length}/500</span>
+            <span className="text-[10px] text-muted-foreground tabular-nums">{text.length}/500</span>
             <Button
               onClick={handleParse}
               disabled={!text.trim() || parsing}
-              className="rounded-2xl h-10 px-6 gap-2 font-semibold active:scale-95 transition-transform"
+              className="rounded-xl h-10 px-6 gap-2 font-medium active:scale-[0.97] transition-transform text-[13px]"
             >
               {parsing ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing</>
               ) : (
-                <><Sparkles className="w-4 h-4" /> Analyze</>
+                'Analyze'
               )}
             </Button>
           </div>
@@ -165,17 +165,17 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
         {/* Example suggestions */}
         {results.length === 0 && !parsing && (
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Try saying</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">Examples</p>
             {examples.map((ex, i) => (
               <motion.button
                 key={i}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.08 }}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
                 onClick={() => setText(ex)}
-                className="w-full text-left p-3 rounded-2xl bg-muted/30 hover:bg-muted/50 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 active:scale-[0.98]"
+                className="w-full text-left p-3.5 rounded-xl bg-muted/30 hover:bg-muted/50 text-[13px] text-muted-foreground hover:text-foreground transition-colors active:scale-[0.99]"
               >
-                "{ex}"
+                {ex}
               </motion.button>
             ))}
           </div>
@@ -185,64 +185,64 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
         <AnimatePresence>
           {results.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className="space-y-3"
             >
               <div className="flex items-center justify-between">
-                <h3 className="font-bold font-display text-sm flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" /> Parsed Items
+                <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">
+                  Parsed Items
                 </h3>
                 <Button
                   size="sm"
                   onClick={addAll}
-                  className="rounded-xl h-8 px-4 text-xs font-semibold gap-1 active:scale-95"
+                  className="rounded-xl h-8 px-4 text-[11px] font-medium gap-1 active:scale-[0.97]"
                 >
                   <Plus className="w-3 h-3" /> Log All
                 </Button>
               </div>
 
               {/* Summary bar */}
-              <div className="nova-card p-3 flex justify-around text-center">
+              <div className="nova-card p-3.5 flex justify-around text-center">
                 <div>
-                  <div className="font-bold text-sm font-display">{totalCals}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">kcal</div>
+                  <div className="font-bold text-[14px] font-display tabular-nums">{totalCals}</div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider">kcal</div>
                 </div>
                 <div>
-                  <div className="font-bold text-sm font-display text-nova-protein">{totalP}g</div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Protein</div>
+                  <div className="font-bold text-[14px] font-display text-nova-protein tabular-nums">{totalP}g</div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Protein</div>
                 </div>
                 <div>
-                  <div className="font-bold text-sm font-display text-nova-carbs">{totalC}g</div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Carbs</div>
+                  <div className="font-bold text-[14px] font-display text-nova-carbs tabular-nums">{totalC}g</div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Carbs</div>
                 </div>
                 <div>
-                  <div className="font-bold text-sm font-display text-nova-fats">{totalF}g</div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Fats</div>
+                  <div className="font-bold text-[14px] font-display text-nova-fats tabular-nums">{totalF}g</div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Fats</div>
                 </div>
               </div>
 
               {results.map((food, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
+                  transition={{ delay: i * 0.06 }}
                   className="nova-card p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <div className="font-semibold">{food.name}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{food.servingSize} · {Math.round(food.calories)} kcal</div>
-                      <div className="flex gap-3 mt-2 text-[11px] font-medium">
-                        <span className="text-nova-protein px-2 py-0.5 rounded-full bg-nova-protein/10">P {Math.round(food.protein)}g</span>
-                        <span className="text-nova-carbs px-2 py-0.5 rounded-full bg-nova-carbs/10">C {Math.round(food.carbs)}g</span>
-                        <span className="text-nova-fats px-2 py-0.5 rounded-full bg-nova-fats/10">F {Math.round(food.fats)}g</span>
+                      <div className="font-medium text-[14px]">{food.name}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">{food.servingSize} · {Math.round(food.calories)} kcal</div>
+                      <div className="flex gap-2 mt-2 text-[10px] font-medium">
+                        <span className="text-nova-protein tabular-nums px-2 py-0.5 rounded-md bg-nova-protein/8">P {Math.round(food.protein)}g</span>
+                        <span className="text-nova-carbs tabular-nums px-2 py-0.5 rounded-md bg-nova-carbs/8">C {Math.round(food.carbs)}g</span>
+                        <span className="text-nova-fats tabular-nums px-2 py-0.5 rounded-md bg-nova-fats/8">F {Math.round(food.fats)}g</span>
                       </div>
                     </div>
                     <Button
                       size="sm"
-                      className="rounded-xl h-9 px-4 font-semibold active:scale-95"
+                      className="rounded-xl h-9 px-4 font-medium active:scale-[0.97] text-[12px]"
                       onClick={() => addFood(food)}
                     >
                       Add
