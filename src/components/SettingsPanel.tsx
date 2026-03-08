@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, Moon, Sun, Monitor, Palette, RotateCcw, Check } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Monitor, Palette, RotateCcw, Check, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AccentColor, ThemeMode, UserProfile } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SettingsPanelProps {
   theme: {
