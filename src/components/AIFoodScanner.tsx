@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { MealEntry, FoodItem } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import PortionEstimator from './PortionEstimator';
 
 interface AIFoodScannerProps {
   onAddMeal: (entry: MealEntry) => void;
@@ -32,6 +33,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalyzedFood[]>([]);
   const [mealType, setMealType] = useState<MealEntry['mealType']>('lunch');
+  const [portionFood, setPortionFood] = useState<FoodItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,15 +81,25 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
       servingSize: food.servingSize,
       category: 'AI Scanned',
     };
-    onAddMeal({
-      id: crypto.randomUUID(),
-      foodItem,
-      quantity: 1,
-      mealType,
-      timestamp: new Date().toISOString(),
-    });
-    toast.success(`${food.name} logged`);
+    setPortionFood(foodItem);
   };
+
+  const handlePortionConfirm = (entry: MealEntry) => {
+    onAddMeal(entry);
+    setPortionFood(null);
+    toast.success('Meal logged with custom portion!');
+  };
+
+  if (portionFood) {
+    return (
+      <PortionEstimator
+        food={portionFood}
+        mealType={mealType}
+        onConfirm={handlePortionConfirm}
+        onBack={() => setPortionFood(null)}
+      />
+    );
+  }
 
   return (
     <motion.div

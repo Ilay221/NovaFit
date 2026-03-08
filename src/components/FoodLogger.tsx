@@ -4,6 +4,7 @@ import { Search, Plus, ArrowLeft, Utensils } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { searchFoods } from '@/lib/food-database';
 import { FoodItem, MealEntry } from '@/lib/types';
+import PortionEstimator from './PortionEstimator';
 
 interface FoodLoggerProps {
   onAddMeal: (entry: MealEntry) => void;
@@ -21,19 +22,28 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
   const [query, setQuery] = useState('');
   const [mealType, setMealType] = useState<MealEntry['mealType']>('breakfast');
   const [addedId, setAddedId] = useState<string | null>(null);
+  const [portionFood, setPortionFood] = useState<FoodItem | null>(null);
   const results = searchFoods(query);
 
-  const addFood = (food: FoodItem) => {
-    setAddedId(food.id);
-    setTimeout(() => setAddedId(null), 600);
-    onAddMeal({
-      id: crypto.randomUUID(),
-      foodItem: food,
-      quantity: 1,
-      mealType,
-      timestamp: new Date().toISOString(),
-    });
+  const handleFoodClick = (food: FoodItem) => {
+    setPortionFood(food);
   };
+
+  const handlePortionConfirm = (entry: MealEntry) => {
+    onAddMeal(entry);
+    setPortionFood(null);
+  };
+
+  if (portionFood) {
+    return (
+      <PortionEstimator
+        food={portionFood}
+        mealType={mealType}
+        onConfirm={handlePortionConfirm}
+        onBack={() => setPortionFood(null)}
+      />
+    );
+  }
 
   return (
     <motion.div
@@ -121,7 +131,7 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
                 className={`flex items-center gap-3 p-3.5 rounded-xl transition-colors cursor-pointer group ${
                   addedId === food.id ? 'bg-primary/10' : ''
                 }`}
-                onClick={() => addFood(food)}
+                onClick={() => handleFoodClick(food)}
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-[14px]">{food.name}</div>
