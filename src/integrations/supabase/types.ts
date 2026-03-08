@@ -14,7 +14,170 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_logs: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          user_id: string
+          water_ml: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          user_id: string
+          water_ml?: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          user_id?: string
+          water_ml?: number
+        }
+        Relationships: []
+      }
+      meal_entries: {
+        Row: {
+          calories: number
+          carbs: number
+          category: string
+          daily_log_id: string
+          fats: number
+          food_name: string
+          id: string
+          logged_at: string
+          meal_type: string
+          protein: number
+          quantity: number
+          serving_size: string
+          user_id: string
+        }
+        Insert: {
+          calories?: number
+          carbs?: number
+          category?: string
+          daily_log_id: string
+          fats?: number
+          food_name: string
+          id?: string
+          logged_at?: string
+          meal_type?: string
+          protein?: number
+          quantity?: number
+          serving_size?: string
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          carbs?: number
+          category?: string
+          daily_log_id?: string
+          fats?: number
+          food_name?: string
+          id?: string
+          logged_at?: string
+          meal_type?: string
+          protein?: number
+          quantity?: number
+          serving_size?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_entries_daily_log_id_fkey"
+            columns: ["daily_log_id"]
+            isOneToOne: false
+            referencedRelation: "daily_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          activity_level: string
+          age: number
+          bmr: number
+          carbs_target: number
+          created_at: string
+          daily_calorie_target: number
+          fats_target: number
+          gender: string
+          goal: string
+          height_cm: number
+          id: string
+          name: string
+          protein_target: number
+          target_weight_kg: number
+          tdee: number
+          updated_at: string
+          weight_kg: number
+        }
+        Insert: {
+          activity_level?: string
+          age?: number
+          bmr?: number
+          carbs_target?: number
+          created_at?: string
+          daily_calorie_target?: number
+          fats_target?: number
+          gender?: string
+          goal?: string
+          height_cm?: number
+          id: string
+          name?: string
+          protein_target?: number
+          target_weight_kg?: number
+          tdee?: number
+          updated_at?: string
+          weight_kg?: number
+        }
+        Update: {
+          activity_level?: string
+          age?: number
+          bmr?: number
+          carbs_target?: number
+          created_at?: string
+          daily_calorie_target?: number
+          fats_target?: number
+          gender?: string
+          goal?: string
+          height_cm?: number
+          id?: string
+          name?: string
+          protein_target?: number
+          target_weight_kg?: number
+          tdee?: number
+          updated_at?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
+      weight_entries: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

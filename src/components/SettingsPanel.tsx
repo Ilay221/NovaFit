@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, Moon, Sun, Monitor, Palette, RotateCcw, Check } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Monitor, Palette, RotateCcw, Check, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AccentColor, ThemeMode, UserProfile } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SettingsPanelProps {
   theme: {
@@ -30,6 +31,7 @@ const MODES: { value: ThemeMode; icon: typeof Sun; label: string }[] = [
 ];
 
 export default function SettingsPanel({ theme, profile, onUpdateProfile, onClose }: SettingsPanelProps) {
+  const { signOut } = useAuth();
   return (
     <motion.div
       initial={{ x: '100%' }}
@@ -109,6 +111,10 @@ export default function SettingsPanel({ theme, profile, onUpdateProfile, onClose
 
         <Button variant="outline" onClick={() => onUpdateProfile(null)} className="w-full gap-2 h-[48px] rounded-xl font-medium active:scale-[0.98] transition-transform text-[13px]">
           <RotateCcw className="w-4 h-4" /> Reset Profile
+        </Button>
+
+        <Button variant="outline" onClick={signOut} className="w-full gap-2 h-[48px] rounded-xl font-medium active:scale-[0.98] transition-transform text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20">
+          <LogOut className="w-4 h-4" /> Sign Out
         </Button>
       </div>
     </motion.div>
