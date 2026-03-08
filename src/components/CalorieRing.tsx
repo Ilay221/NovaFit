@@ -49,8 +49,8 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
         {/* Gradient definition */}
         <defs>
           <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(var(--primary))" />
-            <stop offset="100%" stopColor="hsl(var(--nova-glow) / 0.65)" />
+            <stop offset="0%" stopColor={isOver ? "hsl(0 72% 51%)" : "hsl(var(--primary))"} />
+            <stop offset="100%" stopColor={isOver ? "hsl(0 72% 65%)" : "hsl(var(--nova-glow) / 0.65)"} />
           </linearGradient>
           <filter id="ringGlow">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -69,7 +69,7 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
           strokeLinecap="round"
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
+          animate={{ strokeDashoffset: isOver ? 0 : offset }}
           transition={{ duration: 1.4, ease: [0.32, 0.72, 0, 1] }}
           filter="url(#ringGlow)"
         />
