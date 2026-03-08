@@ -34,6 +34,17 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
     setPortionFood(null);
   };
 
+  if (portionFood) {
+    return (
+      <PortionEstimator
+        food={portionFood}
+        mealType={mealType}
+        onConfirm={handlePortionConfirm}
+        onBack={() => setPortionFood(null)}
+      />
+    );
+  }
+
   return (
     <motion.div
       initial={{ y: '100%', opacity: 0 }}
