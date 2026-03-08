@@ -22,18 +22,16 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
   const [query, setQuery] = useState('');
   const [mealType, setMealType] = useState<MealEntry['mealType']>('breakfast');
   const [addedId, setAddedId] = useState<string | null>(null);
+  const [portionFood, setPortionFood] = useState<FoodItem | null>(null);
   const results = searchFoods(query);
 
-  const addFood = (food: FoodItem) => {
-    setAddedId(food.id);
-    setTimeout(() => setAddedId(null), 600);
-    onAddMeal({
-      id: crypto.randomUUID(),
-      foodItem: food,
-      quantity: 1,
-      mealType,
-      timestamp: new Date().toISOString(),
-    });
+  const handleFoodClick = (food: FoodItem) => {
+    setPortionFood(food);
+  };
+
+  const handlePortionConfirm = (entry: MealEntry) => {
+    onAddMeal(entry);
+    setPortionFood(null);
   };
 
   return (
