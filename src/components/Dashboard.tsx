@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, Sparkles } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, Sparkles, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
@@ -11,6 +11,7 @@ import FoodLogger from './FoodLogger';
 import WeightChart from './WeightChart';
 import SettingsPanel from './SettingsPanel';
 import AIFoodScanner from './AIFoodScanner';
+import NLPFoodInput from './NLPFoodInput';
 import { useTheme } from '@/lib/store';
 import { format } from 'date-fns';
 
@@ -25,7 +26,7 @@ interface DashboardProps {
   onUpdateProfile: (profile: UserProfile | null) => void;
 }
 
-type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner';
+type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -83,6 +84,9 @@ export default function Dashboard({
         )}
         {view === 'ai-scanner' && (
           <AIFoodScanner onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
+        )}
+        {view === 'nlp-input' && (
+          <NLPFoodInput onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
         )}
       </AnimatePresence>
 
@@ -265,6 +269,20 @@ export default function Dashboard({
       {/* FAB Group */}
       {view === 'dashboard' && (
         <div className="fixed bottom-6 right-5 z-40 flex flex-col gap-3 items-end">
+          {/* NLP Text Input Button */}
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.7, type: 'spring' }}
+          >
+            <Button
+              onClick={() => setView('nlp-input')}
+              variant="outline"
+              className="h-12 w-12 rounded-2xl shadow-lg p-0 bg-card border-border/60 hover:border-primary/50 hover:bg-primary/5 active:scale-90 transition-all duration-200"
+            >
+              <MessageSquare className="w-5 h-5" />
+            </Button>
+          </motion.div>
           {/* AI Scanner Button */}
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
