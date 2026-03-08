@@ -33,6 +33,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalyzedFood[]>([]);
   const [mealType, setMealType] = useState<MealEntry['mealType']>('lunch');
+  const [portionFood, setPortionFood] = useState<FoodItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
