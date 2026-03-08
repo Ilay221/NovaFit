@@ -384,6 +384,133 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               </div>
             )}
 
+            {step === 'timeline' && (
+              <div className="space-y-8">
+                <div>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <motion.div
+                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                    >
+                      <Calendar className="w-4 h-4 text-primary" />
+                    </motion.div>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Timeline</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Set a deadline to reach your target weight</p>
+                </div>
+
+                {goal !== 'maintain' && (
+                  <div className="space-y-5">
+                    <motion.button
+                      onClick={() => setUseTimeline(!useTimeline)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                      className={`w-full text-left p-5 rounded-xl transition-all duration-300 flex items-center justify-between ${
+                        useTimeline
+                          ? 'bg-foreground text-background shadow-lg'
+                          : 'bg-muted/40 text-foreground hover:bg-muted/60'
+                      }`}
+                    >
+                      <div>
+                        <div className={`font-bold text-[15px] ${useTimeline ? 'text-background' : ''}`}>Set a deadline</div>
+                        <div className={`text-xs mt-0.5 ${useTimeline ? 'text-background/60' : 'text-muted-foreground'}`}>
+                          Auto-calculate daily calories to hit your target on time
+                        </div>
+                      </div>
+                      {useTimeline && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
+                          <Check className="w-4 h-4" />
+                        </motion.div>
+                      )}
+                    </motion.button>
+
+                    {useTimeline && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-4"
+                      >
+                        <div>
+                          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Days from now</Label>
+                          <Input
+                            type="number"
+                            value={targetDays}
+                            onChange={e => setTargetDays(Math.max(7, +e.target.value))}
+                            min={7}
+                            className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]"
+                          />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Target date: <span className="text-foreground font-medium">{format(addDays(new Date(), targetDays), 'MMM d, yyyy')}</span>
+                          </p>
+                        </div>
+
+                        <motion.div
+                          className="nova-card p-4 space-y-2"
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Adaptive daily target</span>
+                            <span className="font-bold tabular-nums">{adaptive.dailyCalorieTarget} kcal</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Daily deficit</span>
+                            <span className="font-medium tabular-nums">{adaptive.dailyDeficit} kcal</span>
+                          </div>
+                        </motion.div>
+
+                        {!adaptive.isSafe && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20"
+                          >
+                            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-destructive">Unsafe timeline</p>
+                              <p className="text-xs text-muted-foreground mt-1">{adaptive.unsafeReason}</p>
+                              {adaptive.safestDate && (
+                                <p className="text-xs mt-2">
+                                  Suggested safe date: <span className="text-foreground font-semibold">{format(parseISO(adaptive.safestDate), 'MMM d, yyyy')}</span>
+                                  <button
+                                    onClick={() => {
+                                      const safeDays = differenceInDays(parseISO(adaptive.safestDate!), new Date());
+                                      setTargetDays(safeDays);
+                                    }}
+                                    className="ml-2 text-primary underline font-medium"
+                                  >
+                                    Use this
+                                  </button>
+                                </p>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+
+                {goal === 'maintain' && (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-muted-foreground">Timeline targets are available for weight loss and gain goals.</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
+                  </motion.div>
+                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">See My Plan <ArrowRight className="w-4 h-4" /></Button>
+                  </motion.div>
+                </div>
+              </div>
+            )}
+
             {step === 'results' && (
               <div className="space-y-8">
                 <div className="text-center">
