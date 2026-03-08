@@ -85,6 +85,9 @@ export default function Dashboard({
         {view === 'ai-scanner' && (
           <AIFoodScanner onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
         )}
+        {view === 'nlp-input' && (
+          <NLPFoodInput onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
+        )}
       </AnimatePresence>
 
       {view === 'dashboard' && (
