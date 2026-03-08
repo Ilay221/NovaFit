@@ -269,6 +269,20 @@ export default function Dashboard({
       {/* FAB Group */}
       {view === 'dashboard' && (
         <div className="fixed bottom-6 right-5 z-40 flex flex-col gap-3 items-end">
+          {/* NLP Text Input Button */}
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.7, type: 'spring' }}
+          >
+            <Button
+              onClick={() => setView('nlp-input')}
+              variant="outline"
+              className="h-12 w-12 rounded-2xl shadow-lg p-0 bg-card border-border/60 hover:border-primary/50 hover:bg-primary/5 active:scale-90 transition-all duration-200"
+            >
+              <MessageSquare className="w-5 h-5" />
+            </Button>
+          </motion.div>
           {/* AI Scanner Button */}
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
