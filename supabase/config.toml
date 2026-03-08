@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.parse-food-text]
 verify_jwt = false
+
+[functions.create-payment]
+verify_jwt = false
+
+[functions.verify-payment]
+verify_jwt = false

@@ -62,6 +62,7 @@ export function useProfile() {
           proteinTarget: data.protein_target,
           carbsTarget: data.carbs_target,
           fatsTarget: data.fats_target,
+          isPremium: (data as any).is_premium ?? false,
         });
       }
       setLoading(false);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, MessageSquare, X, BarChart3 } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, MessageSquare, X, BarChart3, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
@@ -111,7 +111,15 @@ export default function Dashboard({
           <motion.div variants={itemVariants} className="flex items-center justify-between pt-8 pb-6">
             <div>
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.12em]">{format(new Date(), 'EEEE, MMM d')}</p>
-              <h1 className="text-[22px] font-bold font-display mt-0.5 tracking-tight">{profile.name}</h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <h1 className="text-[22px] font-bold font-display tracking-tight">{profile.name}</h1>
+                {profile.isPremium && (
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                    <Crown className="w-3 h-3 text-primary" />
+                    <span className="text-[10px] font-semibold text-primary uppercase tracking-[0.08em]">Premium</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button

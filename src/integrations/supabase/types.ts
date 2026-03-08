@@ -107,6 +107,7 @@ export type Database = {
           goal: string
           height_cm: number
           id: string
+          is_premium: boolean
           name: string
           protein_target: number
           target_weight_kg: number
@@ -126,6 +127,7 @@ export type Database = {
           goal?: string
           height_cm?: number
           id: string
+          is_premium?: boolean
           name?: string
           protein_target?: number
           target_weight_kg?: number
@@ -145,6 +147,7 @@ export type Database = {
           goal?: string
           height_cm?: number
           id?: string
+          is_premium?: boolean
           name?: string
           protein_target?: number
           target_weight_kg?: number

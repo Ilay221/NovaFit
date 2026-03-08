@@ -23,6 +23,7 @@ export interface UserProfile {
   proteinTarget: number;
   carbsTarget: number;
   fatsTarget: number;
+  isPremium?: boolean;
 }
 
 export interface FoodItem {
