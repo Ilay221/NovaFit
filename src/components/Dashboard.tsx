@@ -95,6 +95,9 @@ export default function Dashboard({
         {view === 'nlp-input' && (
           <NLPFoodInput onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
         )}
+        {view === 'analytics' && (
+          <WeeklyAnalytics profile={profile} onClose={() => setView('dashboard')} />
+        )}
       </AnimatePresence>
 
       {view === 'dashboard' && (
