@@ -38,12 +38,30 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const dailyCalorieTarget = calculateCalorieTarget(tdee, goal);
   const macros = calculateMacros(dailyCalorieTarget, goal);
 
+  const targetDateStr = useTimeline ? addDays(new Date(), targetDays).toISOString().slice(0, 10) : null;
+
+  // Build a temporary profile for adaptive calculation
+  const tempProfile: UserProfile = {
+    name, age, gender, heightCm, weightKg, targetWeightKg,
+    activityLevel, goal, bmr, tdee,
+    dailyCalorieTarget, proteinTarget: macros.protein, carbsTarget: macros.carbs, fatsTarget: macros.fats,
+    targetDate: targetDateStr,
+  };
+
+  const adaptive = calculateAdaptiveTargets(tempProfile, []);
+
+  const finalCalories = useTimeline ? adaptive.dailyCalorieTarget : dailyCalorieTarget;
+  const finalMacros = useTimeline
+    ? { protein: adaptive.proteinTarget, carbs: adaptive.carbsTarget, fats: adaptive.fatsTarget }
+    : macros;
+
   const finish = () => {
     onComplete({
       name, age, gender, heightCm, weightKg, targetWeightKg,
-      activityLevel, goal, bmr, tdee, dailyCalorieTarget,
-      ...macros,
-      proteinTarget: macros.protein, carbsTarget: macros.carbs, fatsTarget: macros.fats,
+      activityLevel, goal, bmr, tdee,
+      dailyCalorieTarget: finalCalories,
+      proteinTarget: finalMacros.protein, carbsTarget: finalMacros.carbs, fatsTarget: finalMacros.fats,
+      targetDate: targetDateStr,
     });
   };
 
