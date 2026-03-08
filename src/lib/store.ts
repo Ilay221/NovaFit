@@ -95,6 +95,7 @@ export function useProfile() {
       protein_target: p.proteinTarget,
       carbs_target: p.carbsTarget,
       fats_target: p.fatsTarget,
+      target_date: p.targetDate || null,
       updated_at: new Date().toISOString(),
     };
     
