@@ -435,13 +435,18 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                       >
                         <div>
                           <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Days from now</Label>
-                          <Input
-                            type="number"
-                            value={targetDays}
-                            onChange={e => setTargetDays(Math.max(7, +e.target.value))}
-                            min={7}
-                            className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]"
-                          />
+                            <Input
+                              type="number"
+                              value={targetDays || ''}
+                              onChange={e => {
+                                const val = parseInt(e.target.value);
+                                if (!isNaN(val) && val > 0) {
+                                  setTargetDays(val);
+                                }
+                              }}
+                              min={1}
+                              className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]"
+                            />
                           <p className="text-xs text-muted-foreground mt-2">
                             Target date: <span className="text-foreground font-medium">{format(addDays(new Date(), targetDays), 'MMM d, yyyy')}</span>
                           </p>
