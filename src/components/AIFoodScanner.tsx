@@ -90,37 +90,6 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
     }
   };
 
-  const addFood = (food: AnalyzedFood) => {
-    const foodItem: FoodItem = {
-      id: crypto.randomUUID(),
-      name: food.name,
-      calories: Math.round(food.calories),
-      protein: Math.round(food.protein),
-      carbs: Math.round(food.carbs),
-      fats: Math.round(food.fats),
-      servingSize: food.servingSize,
-      category: 'AI Scanned',
-    };
-    setPortionFood(foodItem);
-  };
-
-  const handlePortionConfirm = (entry: MealEntry) => {
-    onAddMeal(entry);
-    setPortionFood(null);
-    toast.success('Meal logged with custom portion!');
-  };
-
-  if (portionFood) {
-    return (
-      <PortionEstimator
-        food={portionFood}
-        mealType={mealType}
-        onConfirm={handlePortionConfirm}
-        onBack={() => setPortionFood(null)}
-      />
-    );
-  }
-
   return (
     <motion.div
       initial={{ y: '100%' }}
