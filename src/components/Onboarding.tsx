@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Activity, Target, Dumbbell, Ruler, Check, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Activity, Target, Dumbbell, Ruler, Check, Sparkles, Calendar, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserProfile, Gender, ActivityLevel, Goal } from '@/lib/types';
 import { calculateBMR, calculateTDEE, calculateCalorieTarget, calculateMacros } from '@/lib/calculations';
+import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
+import { format, addDays, differenceInDays, parseISO } from 'date-fns';
 
-const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'results'] as const;
+const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'timeline', 'results'] as const;
 type Step = typeof STEPS[number];
 
 interface OnboardingProps {
