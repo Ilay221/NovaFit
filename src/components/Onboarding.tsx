@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Flame, Target, Dumbbell, Scale, Ruler, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Activity, Target, Dumbbell, Ruler, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,39 +43,36 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     });
   };
 
-  const activities: { value: ActivityLevel; label: string; desc: string; emoji: string }[] = [
-    { value: 'sedentary', label: 'Sedentary', desc: 'Little or no exercise', emoji: '🪑' },
-    { value: 'light', label: 'Lightly Active', desc: 'Exercise 1-3 days/week', emoji: '🚶' },
-    { value: 'moderate', label: 'Moderate', desc: 'Exercise 3-5 days/week', emoji: '🏃' },
-    { value: 'active', label: 'Active', desc: 'Exercise 6-7 days/week', emoji: '💪' },
-    { value: 'very_active', label: 'Very Active', desc: 'Hard exercise daily', emoji: '🏋️' },
+  const activities: { value: ActivityLevel; label: string; desc: string }[] = [
+    { value: 'sedentary', label: 'Sedentary', desc: 'Little or no exercise' },
+    { value: 'light', label: 'Lightly Active', desc: 'Exercise 1–3 days/week' },
+    { value: 'moderate', label: 'Moderate', desc: 'Exercise 3–5 days/week' },
+    { value: 'active', label: 'Active', desc: 'Exercise 6–7 days/week' },
+    { value: 'very_active', label: 'Very Active', desc: 'Hard exercise daily' },
   ];
 
   const pageVariants = {
-    enter: { x: 60, opacity: 0 },
+    enter: { x: 40, opacity: 0 },
     center: { x: 0, opacity: 1 },
-    exit: { x: -60, opacity: 0 },
+    exit: { x: -40, opacity: 0 },
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-5">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         {/* Progress */}
         {step !== 'welcome' && (
-          <div className="flex gap-1.5 mb-10">
+          <div className="flex gap-1.5 mb-12">
             {STEPS.slice(1).map((s, i) => (
-              <motion.div
-                key={s}
-                className="h-1 flex-1 rounded-full overflow-hidden bg-muted"
-              >
+              <div key={s} className="h-[3px] flex-1 rounded-full overflow-hidden bg-border">
                 <motion.div
-                  className="h-full bg-primary rounded-full"
+                  className="h-full bg-foreground rounded-full"
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: i <= STEPS.slice(1).indexOf(step) ? 1 : 0 }}
-                  transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                  transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
                   style={{ transformOrigin: 'left' }}
                 />
-              </motion.div>
+              </div>
             ))}
           </div>
         )}
@@ -87,100 +84,105 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
           >
             {step === 'welcome' && (
-              <div className="text-center space-y-8">
+              <div className="text-center space-y-10">
                 <motion.div
-                  initial={{ scale: 0.3, opacity: 0, rotate: -20 }}
-                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                  transition={{ delay: 0.15, type: 'spring', stiffness: 200 }}
-                  className="w-24 h-24 rounded-3xl nova-gradient mx-auto flex items-center justify-center nova-glow"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+                  className="w-20 h-20 rounded-[22px] nova-gradient mx-auto flex items-center justify-center"
                 >
-                  <Flame className="w-12 h-12 text-primary-foreground" />
+                  <Activity className="w-10 h-10 text-primary-foreground" />
                 </motion.div>
                 <div>
                   <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-5xl font-extrabold font-display tracking-tight"
+                    transition={{ delay: 0.25, duration: 0.5 }}
+                    className="text-[40px] font-extrabold font-display tracking-tight leading-none"
                   >
                     NovaFit
                   </motion.h1>
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.45 }}
-                    className="text-muted-foreground mt-2 font-medium"
+                    transition={{ delay: 0.4 }}
+                    className="text-muted-foreground mt-3 text-[15px]"
                   >
-                    Your AI-powered health companion
+                    AI-powered nutrition tracking
                   </motion.p>
                 </div>
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.55 }}
-                  className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto"
+                  transition={{ delay: 0.5 }}
+                  className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto"
                 >
-                  Let's build your personalized nutrition plan based on your body and goals.
+                  Build a personalized plan based on your body composition and goals.
                 </motion.p>
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.65 }}
+                  transition={{ delay: 0.6 }}
                 >
-                  <Button onClick={next} className="w-full gap-2 h-14 text-base rounded-2xl font-semibold active:scale-[0.98] transition-transform">
-                    Get Started <ArrowRight className="w-5 h-5" />
+                  <Button onClick={next} className="w-full gap-2.5 h-[52px] text-[15px] rounded-2xl font-semibold active:scale-[0.98] transition-transform">
+                    Get Started <ArrowRight className="w-4 h-4" />
                   </Button>
                 </motion.div>
               </div>
             )}
 
             {step === 'basics' && (
-              <div className="space-y-7">
+              <div className="space-y-8">
                 <div>
-                  <h2 className="text-3xl font-extrabold font-display">About You</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Basic info to personalize your plan</p>
+                  <h2 className="text-[28px] font-extrabold font-display leading-tight">About You</h2>
+                  <p className="text-sm text-muted-foreground mt-1.5">Basic information to personalize your plan</p>
                 </div>
                 <div className="space-y-5">
                   <div>
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</Label>
-                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className="mt-2 h-12 rounded-2xl bg-muted/40 border-0 focus-visible:ring-1 text-sm" />
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Name</Label>
+                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]" />
                   </div>
                   <div>
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Age</Label>
-                    <Input type="number" value={age} onChange={e => setAge(+e.target.value)} className="mt-2 h-12 rounded-2xl bg-muted/40 border-0 focus-visible:ring-1 text-sm" />
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Age</Label>
+                    <Input type="number" value={age} onChange={e => setAge(+e.target.value)} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]" />
                   </div>
                   <div>
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Gender</Label>
-                    <div className="grid grid-cols-2 gap-3 mt-2">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Gender</Label>
+                    <div className="grid grid-cols-2 gap-3">
                       {(['male', 'female'] as Gender[]).map(g => (
                         <button key={g} onClick={() => setGender(g)}
-                          className={`h-12 rounded-2xl text-sm font-semibold transition-all duration-200 active:scale-95 ${
+                          className={`h-[48px] rounded-xl text-[14px] font-semibold transition-all duration-200 active:scale-[0.97] ${
                             gender === g
-                              ? 'bg-primary text-primary-foreground shadow-md'
-                              : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                              ? 'bg-foreground text-background'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                           }`}
                         >
-                          {g === 'male' ? '♂ Male' : '♀ Female'}
+                          {g === 'male' ? 'Male' : 'Female'}
                         </button>
                       ))}
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={prev} className="h-12 w-12 rounded-2xl p-0 active:scale-95"><ArrowLeft className="w-5 h-5" /></Button>
-                  <Button onClick={next} className="flex-1 h-12 gap-2 rounded-2xl font-semibold active:scale-[0.98] transition-transform" disabled={!name}>Next <ArrowRight className="w-4 h-4" /></Button>
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0 active:scale-95"><ArrowLeft className="w-4 h-4" /></Button>
+                  <Button onClick={next} className="flex-1 h-[48px] gap-2 rounded-xl font-semibold active:scale-[0.98] transition-transform text-[14px]" disabled={!name}>Continue <ArrowRight className="w-4 h-4" /></Button>
                 </div>
               </div>
             )}
 
             {step === 'body' && (
-              <div className="space-y-7">
+              <div className="space-y-8">
                 <div>
-                  <h2 className="text-3xl font-extrabold font-display flex items-center gap-3"><Ruler className="w-7 h-7 text-primary" /> Body Stats</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Your current measurements</p>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Ruler className="w-4 h-4 text-primary" />
+                    </div>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Body Stats</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Your current measurements</p>
                 </div>
                 <div className="space-y-5">
                   {[
@@ -189,109 +191,123 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     { label: 'Target Weight (kg)', value: targetWeightKg, set: setTargetWeightKg },
                   ].map(field => (
                     <div key={field.label}>
-                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{field.label}</Label>
-                      <Input type="number" value={field.value} onChange={e => field.set(+e.target.value)} className="mt-2 h-12 rounded-2xl bg-muted/40 border-0 focus-visible:ring-1 text-sm" />
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">{field.label}</Label>
+                      <Input type="number" value={field.value} onChange={e => field.set(+e.target.value)} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]" />
                     </div>
                   ))}
                 </div>
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={prev} className="h-12 w-12 rounded-2xl p-0 active:scale-95"><ArrowLeft className="w-5 h-5" /></Button>
-                  <Button onClick={next} className="flex-1 h-12 gap-2 rounded-2xl font-semibold active:scale-[0.98] transition-transform">Next <ArrowRight className="w-4 h-4" /></Button>
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0 active:scale-95"><ArrowLeft className="w-4 h-4" /></Button>
+                  <Button onClick={next} className="flex-1 h-[48px] gap-2 rounded-xl font-semibold active:scale-[0.98] transition-transform text-[14px]">Continue <ArrowRight className="w-4 h-4" /></Button>
                 </div>
               </div>
             )}
 
             {step === 'activity' && (
-              <div className="space-y-7">
+              <div className="space-y-8">
                 <div>
-                  <h2 className="text-3xl font-extrabold font-display flex items-center gap-3"><Dumbbell className="w-7 h-7 text-primary" /> Activity</h2>
-                  <p className="text-sm text-muted-foreground mt-1">How active are you?</p>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Dumbbell className="w-4 h-4 text-primary" />
+                    </div>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Activity Level</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">How active are you on a typical week?</p>
                 </div>
                 <div className="space-y-2">
                   {activities.map(a => (
                     <button key={a.value} onClick={() => setActivityLevel(a.value)}
-                      className={`w-full text-left p-4 rounded-2xl transition-all duration-200 active:scale-[0.98] ${
+                      className={`w-full text-left p-4 rounded-xl transition-all duration-200 active:scale-[0.98] flex items-center justify-between ${
                         activityLevel === a.value
-                          ? 'bg-primary/10 ring-2 ring-primary/30'
-                          : 'bg-muted/40 hover:bg-muted/60'
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted/40 text-foreground hover:bg-muted/60'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{a.emoji}</span>
-                        <div>
-                          <div className="font-semibold text-sm">{a.label}</div>
-                          <div className="text-xs text-muted-foreground">{a.desc}</div>
-                        </div>
+                      <div>
+                        <div className={`font-semibold text-[14px] ${activityLevel === a.value ? 'text-background' : ''}`}>{a.label}</div>
+                        <div className={`text-xs mt-0.5 ${activityLevel === a.value ? 'text-background/60' : 'text-muted-foreground'}`}>{a.desc}</div>
                       </div>
+                      {activityLevel === a.value && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
+                          <Check className="w-4 h-4" />
+                        </motion.div>
+                      )}
                     </button>
                   ))}
                 </div>
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={prev} className="h-12 w-12 rounded-2xl p-0 active:scale-95"><ArrowLeft className="w-5 h-5" /></Button>
-                  <Button onClick={next} className="flex-1 h-12 gap-2 rounded-2xl font-semibold active:scale-[0.98] transition-transform">Next <ArrowRight className="w-4 h-4" /></Button>
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0 active:scale-95"><ArrowLeft className="w-4 h-4" /></Button>
+                  <Button onClick={next} className="flex-1 h-[48px] gap-2 rounded-xl font-semibold active:scale-[0.98] transition-transform text-[14px]">Continue <ArrowRight className="w-4 h-4" /></Button>
                 </div>
               </div>
             )}
 
             {step === 'goal' && (
-              <div className="space-y-7">
+              <div className="space-y-8">
                 <div>
-                  <h2 className="text-3xl font-extrabold font-display flex items-center gap-3"><Target className="w-7 h-7 text-primary" /> Your Goal</h2>
-                  <p className="text-sm text-muted-foreground mt-1">What would you like to achieve?</p>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Target className="w-4 h-4 text-primary" />
+                    </div>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Your Goal</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">What would you like to achieve?</p>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {([
-                    { value: 'lose' as Goal, label: 'Lose Weight', desc: 'Calorie deficit for fat loss', emoji: '🔥' },
-                    { value: 'maintain' as Goal, label: 'Maintain Weight', desc: 'Eat at maintenance calories', emoji: '⚖️' },
-                    { value: 'gain' as Goal, label: 'Build Muscle', desc: 'Calorie surplus for muscle gain', emoji: '💪' },
+                    { value: 'lose' as Goal, label: 'Lose Weight', desc: 'Calorie deficit for fat loss' },
+                    { value: 'maintain' as Goal, label: 'Maintain Weight', desc: 'Eat at maintenance calories' },
+                    { value: 'gain' as Goal, label: 'Build Muscle', desc: 'Calorie surplus for muscle gain' },
                   ]).map(g => (
                     <button key={g.value} onClick={() => setGoal(g.value)}
-                      className={`w-full text-left p-5 rounded-2xl transition-all duration-200 active:scale-[0.98] ${
+                      className={`w-full text-left p-5 rounded-xl transition-all duration-200 active:scale-[0.98] flex items-center justify-between ${
                         goal === g.value
-                          ? 'bg-primary/10 ring-2 ring-primary/30'
-                          : 'bg-muted/40 hover:bg-muted/60'
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted/40 text-foreground hover:bg-muted/60'
                       }`}
                     >
-                      <div className="flex items-center gap-4">
-                        <span className="text-2xl">{g.emoji}</span>
-                        <div>
-                          <div className="font-bold text-base">{g.label}</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">{g.desc}</div>
-                        </div>
+                      <div>
+                        <div className={`font-bold text-[15px] ${goal === g.value ? 'text-background' : ''}`}>{g.label}</div>
+                        <div className={`text-xs mt-0.5 ${goal === g.value ? 'text-background/60' : 'text-muted-foreground'}`}>{g.desc}</div>
                       </div>
+                      {goal === g.value && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
+                          <Check className="w-4 h-4" />
+                        </motion.div>
+                      )}
                     </button>
                   ))}
                 </div>
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={prev} className="h-12 w-12 rounded-2xl p-0 active:scale-95"><ArrowLeft className="w-5 h-5" /></Button>
-                  <Button onClick={next} className="flex-1 h-12 gap-2 rounded-2xl font-semibold active:scale-[0.98] transition-transform">See My Plan <ArrowRight className="w-4 h-4" /></Button>
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0 active:scale-95"><ArrowLeft className="w-4 h-4" /></Button>
+                  <Button onClick={next} className="flex-1 h-[48px] gap-2 rounded-xl font-semibold active:scale-[0.98] transition-transform text-[14px]">See My Plan <ArrowRight className="w-4 h-4" /></Button>
                 </div>
               </div>
             )}
 
             {step === 'results' && (
-              <div className="space-y-7">
+              <div className="space-y-8">
                 <div className="text-center">
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 200 }}
-                    className="w-16 h-16 rounded-2xl bg-primary/10 mx-auto flex items-center justify-center mb-4"
+                    className="w-14 h-14 rounded-2xl bg-primary/10 mx-auto flex items-center justify-center mb-5"
                   >
-                    <Sparkles className="w-8 h-8 text-primary" />
+                    <Check className="w-7 h-7 text-primary" />
                   </motion.div>
-                  <h2 className="text-3xl font-extrabold font-display">Your Plan</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Personalized daily targets</p>
+                  <h2 className="text-[28px] font-extrabold font-display">Your Plan</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Personalized daily nutrition targets</p>
                 </div>
 
                 <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
+                  initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="nova-card p-6 text-center"
+                  transition={{ delay: 0.15 }}
+                  className="nova-card p-8 text-center"
                 >
-                  <div className="text-5xl font-extrabold font-display nova-text-gradient">{dailyCalorieTarget}</div>
-                  <div className="text-sm text-muted-foreground mt-1 font-medium">Daily Calories</div>
+                  <div className="text-[48px] font-extrabold font-display tracking-tight nova-text-gradient leading-none">{dailyCalorieTarget}</div>
+                  <div className="text-sm text-muted-foreground mt-2 font-medium">calories per day</div>
                 </motion.div>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -299,30 +315,36 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     { value: macros.protein, label: 'Protein', color: 'text-nova-protein', unit: 'g' },
                     { value: macros.carbs, label: 'Carbs', color: 'text-nova-carbs', unit: 'g' },
                     { value: macros.fats, label: 'Fats', color: 'text-nova-fats', unit: 'g' },
-                  ].map(m => (
-                    <div key={m.label} className="nova-card p-4 text-center">
+                  ].map((m, i) => (
+                    <motion.div
+                      key={m.label}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.25 + i * 0.08 }}
+                      className="nova-card p-4 text-center"
+                    >
                       <div className={`text-xl font-bold font-display ${m.color}`}>{m.value}{m.unit}</div>
-                      <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-1">{m.label}</div>
-                    </div>
+                      <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-1.5">{m.label}</div>
+                    </motion.div>
                   ))}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {[
-                    { label: 'BMR', value: `${bmr} kcal` },
-                    { label: 'TDEE', value: `${tdee} kcal` },
+                    { label: 'Basal Metabolic Rate', value: `${bmr} kcal` },
+                    { label: 'Total Daily Expenditure', value: `${tdee} kcal` },
                   ].map(item => (
-                    <div key={item.label} className="flex justify-between p-3 rounded-2xl bg-muted/40 text-sm">
-                      <span className="text-muted-foreground font-medium">{item.label}</span>
-                      <span className="font-bold">{item.value}</span>
+                    <div key={item.label} className="flex justify-between p-3.5 rounded-xl bg-muted/40 text-sm">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="font-semibold tabular-nums">{item.value}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={prev} className="h-12 w-12 rounded-2xl p-0 active:scale-95"><ArrowLeft className="w-5 h-5" /></Button>
-                  <Button onClick={finish} className="flex-1 h-12 gap-2 rounded-2xl font-semibold active:scale-[0.98] transition-transform">
-                    Start Tracking <Flame className="w-5 h-5" />
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0 active:scale-95"><ArrowLeft className="w-4 h-4" /></Button>
+                  <Button onClick={finish} className="flex-1 h-[48px] gap-2 rounded-xl font-semibold active:scale-[0.98] transition-transform text-[14px]">
+                    Start Tracking <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
