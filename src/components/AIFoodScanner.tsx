@@ -198,7 +198,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
                           <span className="text-nova-fats tabular-nums px-2 py-0.5 rounded-md bg-nova-fats/8">F {Math.round(food.fats)}g</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-500">
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-primary">
                         <span>✓ Added</span>
                       </div>
                     </div>
