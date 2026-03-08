@@ -131,7 +131,7 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
                 className={`flex items-center gap-3 p-3.5 rounded-xl transition-colors cursor-pointer group ${
                   addedId === food.id ? 'bg-primary/10' : ''
                 }`}
-                onClick={() => addFood(food)}
+                onClick={() => handleFoodClick(food)}
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-[14px]">{food.name}</div>
