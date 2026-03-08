@@ -97,36 +97,84 @@
     --ring: 157 72% 40%;
     --nova-glow: 157 72% 40%;
     --nova-calories: 157 72% 40%;
+    --nova-success: 157 72% 40%;
   }
   .dark .accent-green {
     --primary: 157 72% 45%;
     --ring: 157 72% 45%;
     --nova-glow: 157 72% 45%;
     --nova-calories: 157 72% 45%;
+    --nova-success: 157 72% 45%;
   }
   .accent-purple {
     --primary: 271 68% 55%;
     --ring: 271 68% 55%;
     --nova-glow: 271 68% 55%;
     --nova-calories: 271 68% 55%;
+    --nova-success: 271 68% 55%;
   }
   .accent-blue {
     --primary: 217 91% 60%;
     --ring: 217 91% 60%;
     --nova-glow: 217 91% 60%;
     --nova-calories: 217 91% 60%;
+    --nova-success: 217 91% 60%;
   }
   .accent-orange {
     --primary: 25 95% 53%;
     --ring: 25 95% 53%;
     --nova-glow: 25 95% 53%;
     --nova-calories: 25 95% 53%;
+    --nova-success: 25 95% 53%;
   }
   .accent-pink {
     --primary: 340 82% 52%;
     --ring: 340 82% 52%;
     --nova-glow: 340 82% 52%;
     --nova-calories: 340 82% 52%;
+    --nova-success: 340 82% 52%;
+  }
+  .accent-teal {
+    --primary: 174 72% 40%;
+    --ring: 174 72% 40%;
+    --nova-glow: 174 72% 40%;
+    --nova-calories: 174 72% 40%;
+    --nova-success: 174 72% 40%;
+  }
+  .dark .accent-teal {
+    --primary: 174 72% 48%;
+    --ring: 174 72% 48%;
+    --nova-glow: 174 72% 48%;
+    --nova-calories: 174 72% 48%;
+    --nova-success: 174 72% 48%;
+  }
+  .accent-red {
+    --primary: 0 72% 51%;
+    --ring: 0 72% 51%;
+    --nova-glow: 0 72% 51%;
+    --nova-calories: 0 72% 51%;
+    --nova-success: 0 72% 51%;
+  }
+  .dark .accent-red {
+    --primary: 0 72% 56%;
+    --ring: 0 72% 56%;
+    --nova-glow: 0 72% 56%;
+    --nova-calories: 0 72% 56%;
+    --nova-success: 0 72% 56%;
+  }
+  .accent-amber {
+    --primary: 38 92% 50%;
+    --ring: 38 92% 50%;
+    --nova-glow: 38 92% 50%;
+    --nova-calories: 38 92% 50%;
+    --nova-success: 38 92% 50%;
+  }
+  .accent-indigo {
+    --primary: 239 84% 67%;
+    --ring: 239 84% 67%;
+    --nova-glow: 239 84% 67%;
+    --nova-calories: 239 84% 67%;
+    --nova-success: 239 84% 67%;
   }
 }
 
@@ -172,16 +220,17 @@
   .nova-card {
     @apply rounded-2xl border bg-card;
     box-shadow: 0 1px 2px hsl(0 0% 0% / 0.03), 0 4px 16px hsl(0 0% 0% / 0.02);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   }
   .dark .nova-card {
     box-shadow: 0 1px 2px hsl(0 0% 0% / 0.2), 0 4px 16px hsl(0 0% 0% / 0.1);
   }
   .nova-card-hover {
-    @apply nova-card transition-all duration-300 ease-out;
+    @apply nova-card;
   }
   .nova-card-hover:hover {
     box-shadow: 0 2px 4px hsl(0 0% 0% / 0.04), 0 8px 28px hsl(0 0% 0% / 0.04);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
   }
   .dark .nova-card-hover:hover {
     box-shadow: 0 2px 4px hsl(0 0% 0% / 0.2), 0 8px 28px hsl(0 0% 0% / 0.15);
@@ -192,5 +241,40 @@
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  /* Shimmer loading effect */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .nova-shimmer {
+    background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.08) 50%, hsl(var(--muted)) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+  /* Floating animation */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .nova-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  /* Pulse ring */
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
+    70% { box-shadow: 0 0 0 10px hsl(var(--primary) / 0); }
+    100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
+  }
+  .nova-pulse-ring {
+    animation: pulse-ring 2s ease-out infinite;
+  }
+  /* Breathe glow */
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 12px hsl(var(--nova-glow) / 0.15); }
+    50% { box-shadow: 0 0 24px hsl(var(--nova-glow) / 0.3); }
+  }
+  .nova-breathe {
+    animation: breathe 3s ease-in-out infinite;
   }
 }

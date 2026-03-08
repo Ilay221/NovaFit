@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, MessageSquare, X, BarChart3, Crown } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, MessageSquare, X, BarChart3, Crown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
@@ -33,13 +33,13 @@ const containerVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.08 }
+    transition: { staggerChildren: 0.06, delayChildren: 0.08 }
   }
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.32, 0.72, 0, 1] as const } }
+  hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
+  show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.55, ease: [0.32, 0.72, 0, 1] as const } }
 };
 
 const MEAL_LABELS: Record<string, string> = {
@@ -82,7 +82,7 @@ export default function Dashboard({
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {view === 'food' && (
           <FoodLogger onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
         )}
@@ -110,35 +110,63 @@ export default function Dashboard({
           {/* Header */}
           <motion.div variants={itemVariants} className="flex items-center justify-between pt-8 pb-6">
             <div>
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.12em]">{format(new Date(), 'EEEE, MMM d')}</p>
+              <motion.p
+                className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.12em]"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+              >
+                {format(new Date(), 'EEEE, MMM d')}
+              </motion.p>
               <div className="flex items-center gap-2 mt-0.5">
-                <h1 className="text-[22px] font-bold font-display tracking-tight">{profile.name}</h1>
+                <motion.h1
+                  className="text-[22px] font-bold font-display tracking-tight"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, duration: 0.4 }}
+                >
+                  {profile.name}
+                </motion.h1>
                 {profile.isPremium && (
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                  <motion.div
+                    initial={{ scale: 0, rotate: -20 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.5, type: 'spring', stiffness: 400, damping: 15 }}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20"
+                  >
                     <Crown className="w-3 h-3 text-primary" />
                     <span className="text-[10px] font-semibold text-primary uppercase tracking-[0.08em]">Premium</span>
-                  </div>
+                  </motion.div>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <motion.button
                 onClick={() => setView('analytics')}
-                className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.9 }}
+                className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
               >
                 <BarChart3 className="w-[18px] h-[18px] text-muted-foreground" />
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 onClick={() => setView('settings')}
-                className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
+                whileHover={{ scale: 1.1, rotate: -5 }}
+                whileTap={{ scale: 0.9 }}
+                className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
               >
                 <Settings className="w-[18px] h-[18px] text-muted-foreground" />
-              </button>
+              </motion.button>
             </div>
           </motion.div>
 
           {/* Calorie Ring Card */}
-          <motion.div variants={itemVariants} className="nova-card p-6">
+          <motion.div
+            variants={itemVariants}
+            whileHover={{ scale: 1.01, y: -2 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="nova-card p-6 nova-breathe"
+          >
             <div className="flex flex-col items-center">
               <CalorieRing consumed={totals.calories} target={profile.dailyCalorieTarget} />
               <div className="flex gap-10 mt-6">
@@ -146,11 +174,17 @@ export default function Dashboard({
                   { label: 'Target', value: profile.dailyCalorieTarget },
                   { label: 'Consumed', value: totals.calories },
                   { label: 'Remaining', value: Math.max(profile.dailyCalorieTarget - totals.calories, 0) },
-                ].map(item => (
-                  <div key={item.label} className="text-center">
+                ].map((item, i) => (
+                  <motion.div
+                    key={item.label}
+                    className="text-center"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 + i * 0.1, duration: 0.4 }}
+                  >
                     <div className="text-[17px] font-bold font-display tabular-nums">{item.value}</div>
                     <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.1em] mt-1">{item.label}</div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -170,14 +204,28 @@ export default function Dashboard({
               { icon: <Droplets className="w-[18px] h-[18px] text-nova-info" />, value: `${dailyLog.waterMl}`, unit: 'ml', label: 'Water' },
               { icon: <Scale className="w-[18px] h-[18px] text-primary" />, value: `${latestWeight}`, unit: 'kg', label: 'Weight' },
               { icon: <TrendingDown className="w-[18px] h-[18px] text-nova-success" />, value: `${progressKg.toFixed(1)}`, unit: 'kg', label: 'Progress' },
-            ].map(stat => (
-              <div key={stat.label} className="nova-card p-4 text-center">
-                <div className="flex justify-center mb-2.5">{stat.icon}</div>
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                className="nova-card p-4 text-center"
+                whileHover={{ scale: 1.04, y: -3 }}
+                whileTap={{ scale: 0.97 }}
+                initial={{ opacity: 0, y: 20, rotateX: 15 }}
+                animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                transition={{ delay: 0.3 + i * 0.08, duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+              >
+                <motion.div
+                  className="flex justify-center mb-2.5"
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: i * 0.5 }}
+                >
+                  {stat.icon}
+                </motion.div>
                 <div className="font-bold text-[15px] font-display tabular-nums">
                   {stat.value}<span className="text-[11px] text-muted-foreground font-normal ml-0.5">{stat.unit}</span>
                 </div>
                 <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.1em] mt-1">{stat.label}</div>
-              </div>
+              </motion.div>
             ))}
           </motion.div>
 
@@ -187,16 +235,20 @@ export default function Dashboard({
               <Droplets className="w-3.5 h-3.5 text-nova-info" /> Water Intake
             </h3>
             <div className="flex gap-2">
-              {[250, 500, 750].map(ml => (
-                <Button
-                  key={ml}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onAddWater(ml)}
-                  className="flex-1 text-xs rounded-xl h-10 font-medium hover:bg-muted transition-colors active:scale-[0.97]"
+              {[250, 500, 750].map((ml, i) => (
+                <motion.div key={ml} className="flex-1"
+                  whileHover={{ scale: 1.04, y: -1 }}
+                  whileTap={{ scale: 0.94 }}
                 >
-                  +{ml}ml
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onAddWater(ml)}
+                    className="w-full text-xs rounded-xl h-10 font-medium transition-colors"
+                  >
+                    +{ml}ml
+                  </Button>
+                </motion.div>
               ))}
             </div>
           </motion.div>
@@ -208,19 +260,30 @@ export default function Dashboard({
                 <Scale className="w-3.5 h-3.5 text-primary" /> Log Weight
               </h3>
               {weightHistory.length > 0 && (
-                <button onClick={() => setView('weight')} className="text-xs text-primary font-medium flex items-center gap-0.5 hover:opacity-70 transition-opacity">
+                <motion.button
+                  onClick={() => setView('weight')}
+                  whileHover={{ x: 3 }}
+                  className="text-xs text-primary font-medium flex items-center gap-0.5 hover:opacity-70 transition-opacity"
+                >
                   History <ChevronRight className="w-3 h-3" />
-                </button>
+                </motion.button>
               )}
             </div>
             <div className="flex gap-2">
               <Input type="number" placeholder="Weight (kg)" value={weightInput} onChange={e => setWeightInput(e.target.value)} className="h-10 rounded-xl text-[14px]" />
-              <Button size="sm" onClick={handleLogWeight} className="h-10 px-5 rounded-xl font-medium active:scale-[0.97] transition-transform text-[13px]">Log</Button>
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }}>
+                <Button size="sm" onClick={handleLogWeight} className="h-10 px-5 rounded-xl font-medium transition-transform text-[13px]">Log</Button>
+              </motion.div>
             </div>
             {profile.goal !== 'maintain' && (
-              <p className="text-xs text-muted-foreground mt-3">
+              <motion.p
+                className="text-xs text-muted-foreground mt-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+              >
                 Estimated goal: <span className="text-foreground font-medium">{format(goalDate, 'MMM d, yyyy')}</span>
-              </p>
+              </motion.p>
             )}
           </motion.div>
 
@@ -231,9 +294,13 @@ export default function Dashboard({
             </h3>
             {dailyLog.meals.length === 0 ? (
               <div className="text-center py-10">
-                <div className="w-12 h-12 rounded-2xl bg-muted/60 mx-auto flex items-center justify-center mb-3">
+                <motion.div
+                  className="w-12 h-12 rounded-2xl bg-muted/60 mx-auto flex items-center justify-center mb-3"
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
+                >
                   <Utensils className="w-5 h-5 text-muted-foreground" />
-                </div>
+                </motion.div>
                 <p className="text-sm text-muted-foreground font-medium">No meals logged yet</p>
                 <p className="text-xs text-muted-foreground mt-1">Tap + to add your first meal</p>
               </div>
@@ -244,17 +311,24 @@ export default function Dashboard({
                   if (meals.length === 0) return null;
                   return (
                     <div key={type}>
-                      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-2">
+                      <motion.div
+                        className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-2"
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                      >
                         {MEAL_LABELS[type]}
-                      </div>
+                      </motion.div>
                       <div className="space-y-1.5">
-                        {meals.map(meal => (
+                        {meals.map((meal, i) => (
                           <motion.div
                             key={meal.id}
                             layout
-                            initial={{ opacity: 0, scale: 0.97 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-center justify-between text-sm p-3.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors group"
+                            initial={{ opacity: 0, x: -12, scale: 0.95 }}
+                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                            exit={{ opacity: 0, x: 12, scale: 0.95 }}
+                            transition={{ delay: i * 0.04, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+                            whileHover={{ x: 4, backgroundColor: 'hsl(var(--muted) / 0.5)' }}
+                            className="flex items-center justify-between text-sm p-3.5 rounded-xl bg-muted/30 transition-colors group cursor-default"
                           >
                             <div>
                               <span className="font-medium text-[14px]">{meal.foodItem.name}</span>
@@ -266,12 +340,14 @@ export default function Dashboard({
                                 <span className="text-nova-fats tabular-nums">F {meal.foodItem.fats}g</span>
                               </div>
                             </div>
-                            <button
+                            <motion.button
                               onClick={() => onRemoveMeal(meal.id)}
+                              whileHover={{ scale: 1.15 }}
+                              whileTap={{ scale: 0.85 }}
                               className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
                             >
                               <X className="w-3.5 h-3.5" />
-                            </button>
+                            </motion.button>
                           </motion.div>
                         ))}
                       </div>
@@ -287,10 +363,17 @@ export default function Dashboard({
       )}
 
       {view === 'weight' && (
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }} className="max-w-lg mx-auto px-5 pt-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+          className="max-w-lg mx-auto px-5 pt-8"
+        >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold font-display tracking-tight">Weight History</h2>
-            <Button variant="outline" size="sm" onClick={() => setView('dashboard')} className="rounded-xl text-[13px]">Back</Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button variant="outline" size="sm" onClick={() => setView('dashboard')} className="rounded-xl text-[13px]">Back</Button>
+            </motion.div>
           </div>
           <WeightChart entries={weightHistory} targetWeight={profile.targetWeightKg} />
         </motion.div>
@@ -300,42 +383,52 @@ export default function Dashboard({
       {view === 'dashboard' && (
         <div className="fixed bottom-6 right-5 z-40 flex flex-col gap-2.5 items-end">
           <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.5, type: 'spring', stiffness: 400, damping: 25 }}
+            initial={{ scale: 0, opacity: 0, rotate: -90 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ delay: 0.6, type: 'spring', stiffness: 400, damping: 20 }}
           >
-            <Button
-              onClick={() => setView('nlp-input')}
-              variant="outline"
-              className="h-11 w-11 rounded-full shadow-md p-0 bg-card border-border/80 hover:bg-muted active:scale-90 transition-all duration-200"
-            >
-              <MessageSquare className="w-[18px] h-[18px]" />
-            </Button>
+            <motion.div whileHover={{ scale: 1.12, rotate: 10 }} whileTap={{ scale: 0.88 }}>
+              <Button
+                onClick={() => setView('nlp-input')}
+                variant="outline"
+                className="h-11 w-11 rounded-full shadow-md p-0 bg-card border-border/80 hover:bg-muted transition-all duration-200"
+              >
+                <MessageSquare className="w-[18px] h-[18px]" />
+              </Button>
+            </motion.div>
           </motion.div>
           <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.4, type: 'spring', stiffness: 400, damping: 25 }}
+            initial={{ scale: 0, opacity: 0, rotate: 90 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ delay: 0.5, type: 'spring', stiffness: 400, damping: 20 }}
           >
-            <Button
-              onClick={() => setView('ai-scanner')}
-              variant="outline"
-              className="h-11 w-11 rounded-full shadow-md p-0 bg-card border-border/80 hover:bg-muted active:scale-90 transition-all duration-200"
-            >
-              <Camera className="w-[18px] h-[18px]" />
-            </Button>
+            <motion.div whileHover={{ scale: 1.12, rotate: -10 }} whileTap={{ scale: 0.88 }}>
+              <Button
+                onClick={() => setView('ai-scanner')}
+                variant="outline"
+                className="h-11 w-11 rounded-full shadow-md p-0 bg-card border-border/80 hover:bg-muted transition-all duration-200"
+              >
+                <Camera className="w-[18px] h-[18px]" />
+              </Button>
+            </motion.div>
           </motion.div>
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3, type: 'spring', stiffness: 400, damping: 25 }}
+            initial={{ scale: 0, rotate: 180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.4, type: 'spring', stiffness: 400, damping: 20 }}
           >
-            <Button
-              onClick={() => setView('food')}
-              className="h-14 w-14 rounded-full shadow-lg p-0 active:scale-90 transition-transform duration-200"
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.88, rotate: 90 }}
+              className="relative"
             >
-              <Plus className="w-6 h-6" />
-            </Button>
+              <Button
+                onClick={() => setView('food')}
+                className="h-14 w-14 rounded-full shadow-lg p-0 transition-transform duration-200 nova-pulse-ring"
+              >
+                <Plus className="w-6 h-6" />
+              </Button>
+            </motion.div>
           </motion.div>
         </div>
       )}

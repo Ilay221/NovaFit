@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Activity, Target, Dumbbell, Ruler, Check } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Activity, Target, Dumbbell, Ruler, Check, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,29 +52,41 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   ];
 
   const pageVariants = {
-    enter: { x: 40, opacity: 0 },
-    center: { x: 0, opacity: 1 },
-    exit: { x: -40, opacity: 0 },
+    enter: { x: 50, opacity: 0, filter: 'blur(8px)' },
+    center: { x: 0, opacity: 1, filter: 'blur(0px)' },
+    exit: { x: -50, opacity: 0, filter: 'blur(8px)' },
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6 overflow-hidden relative">
+      {/* Ambient background */}
+      <motion.div
+        className="absolute w-[500px] h-[500px] rounded-full opacity-[0.03] top-[-200px] left-[-100px]"
+        style={{ background: 'radial-gradient(circle, hsl(var(--primary)), transparent)' }}
+        animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+      />
+
+      <div className="w-full max-w-md relative z-10">
         {/* Progress */}
         {step !== 'welcome' && (
-          <div className="flex gap-1.5 mb-12">
+          <motion.div
+            className="flex gap-1.5 mb-12"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             {STEPS.slice(1).map((s, i) => (
               <div key={s} className="h-[3px] flex-1 rounded-full overflow-hidden bg-border">
                 <motion.div
                   className="h-full bg-foreground rounded-full"
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: i <= STEPS.slice(1).indexOf(step) ? 1 : 0 }}
-                  transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+                  transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
                   style={{ transformOrigin: 'left' }}
                 />
               </div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         <AnimatePresence mode="wait">
@@ -84,23 +96,34 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
           >
             {step === 'welcome' && (
               <div className="text-center space-y-10">
                 <motion.div
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
-                  className="w-20 h-20 rounded-[22px] nova-gradient mx-auto flex items-center justify-center"
+                  initial={{ scale: 0, rotate: -30 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.1, duration: 0.7, type: 'spring', stiffness: 200 }}
+                  className="w-20 h-20 rounded-[22px] nova-gradient mx-auto flex items-center justify-center relative"
                 >
                   <Activity className="w-10 h-10 text-primary-foreground" />
+                  <motion.div
+                    className="absolute inset-0 rounded-[22px]"
+                    animate={{
+                      boxShadow: [
+                        '0 0 0px hsl(var(--primary) / 0)',
+                        '0 0 40px hsl(var(--primary) / 0.3)',
+                        '0 0 0px hsl(var(--primary) / 0)',
+                      ],
+                    }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  />
                 </motion.div>
                 <div>
                   <motion.h1
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25, duration: 0.5 }}
+                    initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    transition={{ delay: 0.3, duration: 0.6 }}
                     className="text-[40px] font-extrabold font-display tracking-tight leading-none"
                   >
                     NovaFit
@@ -108,26 +131,28 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
+                    transition={{ delay: 0.5 }}
                     className="text-muted-foreground mt-3 text-[15px]"
                   >
                     AI-powered nutrition tracking
                   </motion.p>
                 </div>
                 <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
                   className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto"
                 >
                   Build a personalized plan based on your body composition and goals.
                 </motion.p>
                 <motion.div
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
+                  transition={{ delay: 0.7 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
                 >
-                  <Button onClick={next} className="w-full gap-2.5 h-[52px] text-[15px] rounded-2xl font-semibold active:scale-[0.98] transition-transform">
+                  <Button onClick={next} className="w-full gap-2.5 h-[52px] text-[15px] rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl">
                     Get Started <ArrowRight className="w-4 h-4" />
                   </Button>
                 </motion.div>
@@ -141,34 +166,40 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   <p className="text-sm text-muted-foreground mt-1.5">Basic information to personalize your plan</p>
                 </div>
                 <div className="space-y-5">
-                  <div>
+                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Name</Label>
-                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]" />
-                  </div>
-                  <div>
+                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Age</Label>
-                    <Input type="number" value={age} onChange={e => setAge(+e.target.value)} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]" />
-                  </div>
-                  <div>
+                    <Input type="number" value={age} onChange={e => setAge(+e.target.value)} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Gender</Label>
                     <div className="grid grid-cols-2 gap-3">
                       {(['male', 'female'] as Gender[]).map(g => (
-                        <button key={g} onClick={() => setGender(g)}
-                          className={`h-[48px] rounded-xl text-[14px] font-semibold transition-all duration-200 active:scale-[0.97] ${
+                        <motion.button key={g} onClick={() => setGender(g)}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.95 }}
+                          className={`h-[48px] rounded-xl text-[14px] font-semibold transition-all duration-300 ${
                             gender === g
-                              ? 'bg-foreground text-background'
+                              ? 'bg-foreground text-background shadow-md'
                               : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                           }`}
                         >
                           {g === 'male' ? 'Male' : 'Female'}
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0 active:scale-95"><ArrowLeft className="w-4 h-4" /></Button>
-                  <Button onClick={next} className="flex-1 h-[48px] gap-2 rounded-xl font-semibold active:scale-[0.98] transition-transform text-[14px]" disabled={!name}>Continue <ArrowRight className="w-4 h-4" /></Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
+                  </motion.div>
+                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg" disabled={!name}>Continue <ArrowRight className="w-4 h-4" /></Button>
+                  </motion.div>
                 </div>
               </div>
             )}
@@ -177,9 +208,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center gap-3 mb-1.5">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <motion.div
+                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
+                      initial={{ scale: 0, rotate: -45 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                    >
                       <Ruler className="w-4 h-4 text-primary" />
-                    </div>
+                    </motion.div>
                     <h2 className="text-[28px] font-extrabold font-display leading-tight">Body Stats</h2>
                   </div>
                   <p className="text-sm text-muted-foreground">Your current measurements</p>
@@ -189,16 +225,25 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     { label: 'Height (cm)', value: heightCm, set: setHeightCm },
                     { label: 'Current Weight (kg)', value: weightKg, set: setWeightKg },
                     { label: 'Target Weight (kg)', value: targetWeightKg, set: setTargetWeightKg },
-                  ].map(field => (
-                    <div key={field.label}>
+                  ].map((field, i) => (
+                    <motion.div
+                      key={field.label}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 + i * 0.06 }}
+                    >
                       <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">{field.label}</Label>
-                      <Input type="number" value={field.value} onChange={e => field.set(+e.target.value)} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]" />
-                    </div>
+                      <Input type="number" value={field.value} onChange={e => field.set(+e.target.value)} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                    </motion.div>
                   ))}
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0 active:scale-95"><ArrowLeft className="w-4 h-4" /></Button>
-                  <Button onClick={next} className="flex-1 h-[48px] gap-2 rounded-xl font-semibold active:scale-[0.98] transition-transform text-[14px]">Continue <ArrowRight className="w-4 h-4" /></Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
+                  </motion.div>
+                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">Continue <ArrowRight className="w-4 h-4" /></Button>
+                  </motion.div>
                 </div>
               </div>
             )}
@@ -207,19 +252,31 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center gap-3 mb-1.5">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <motion.div
+                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
+                      initial={{ scale: 0, rotate: 45 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                    >
                       <Dumbbell className="w-4 h-4 text-primary" />
-                    </div>
+                    </motion.div>
                     <h2 className="text-[28px] font-extrabold font-display leading-tight">Activity Level</h2>
                   </div>
                   <p className="text-sm text-muted-foreground">How active are you on a typical week?</p>
                 </div>
                 <div className="space-y-2">
-                  {activities.map(a => (
-                    <button key={a.value} onClick={() => setActivityLevel(a.value)}
-                      className={`w-full text-left p-4 rounded-xl transition-all duration-200 active:scale-[0.98] flex items-center justify-between ${
+                  {activities.map((a, i) => (
+                    <motion.button
+                      key={a.value}
+                      onClick={() => setActivityLevel(a.value)}
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.08 + i * 0.05, duration: 0.4 }}
+                      whileHover={{ x: 4, scale: 1.01 }}
+                      whileTap={{ scale: 0.97 }}
+                      className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex items-center justify-between ${
                         activityLevel === a.value
-                          ? 'bg-foreground text-background'
+                          ? 'bg-foreground text-background shadow-md'
                           : 'bg-muted/40 text-foreground hover:bg-muted/60'
                       }`}
                     >
@@ -228,16 +285,20 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                         <div className={`text-xs mt-0.5 ${activityLevel === a.value ? 'text-background/60' : 'text-muted-foreground'}`}>{a.desc}</div>
                       </div>
                       {activityLevel === a.value && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
+                        <motion.div initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500 }}>
                           <Check className="w-4 h-4" />
                         </motion.div>
                       )}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0 active:scale-95"><ArrowLeft className="w-4 h-4" /></Button>
-                  <Button onClick={next} className="flex-1 h-[48px] gap-2 rounded-xl font-semibold active:scale-[0.98] transition-transform text-[14px]">Continue <ArrowRight className="w-4 h-4" /></Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
+                  </motion.div>
+                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">Continue <ArrowRight className="w-4 h-4" /></Button>
+                  </motion.div>
                 </div>
               </div>
             )}
@@ -246,9 +307,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center gap-3 mb-1.5">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <motion.div
+                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                    >
                       <Target className="w-4 h-4 text-primary" />
-                    </div>
+                    </motion.div>
                     <h2 className="text-[28px] font-extrabold font-display leading-tight">Your Goal</h2>
                   </div>
                   <p className="text-sm text-muted-foreground">What would you like to achieve?</p>
@@ -258,11 +324,18 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     { value: 'lose' as Goal, label: 'Lose Weight', desc: 'Calorie deficit for fat loss' },
                     { value: 'maintain' as Goal, label: 'Maintain Weight', desc: 'Eat at maintenance calories' },
                     { value: 'gain' as Goal, label: 'Build Muscle', desc: 'Calorie surplus for muscle gain' },
-                  ]).map(g => (
-                    <button key={g.value} onClick={() => setGoal(g.value)}
-                      className={`w-full text-left p-5 rounded-xl transition-all duration-200 active:scale-[0.98] flex items-center justify-between ${
+                  ]).map((g, i) => (
+                    <motion.button
+                      key={g.value}
+                      onClick={() => setGoal(g.value)}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 + i * 0.08 }}
+                      whileHover={{ scale: 1.02, x: 4 }}
+                      whileTap={{ scale: 0.97 }}
+                      className={`w-full text-left p-5 rounded-xl transition-all duration-300 flex items-center justify-between ${
                         goal === g.value
-                          ? 'bg-foreground text-background'
+                          ? 'bg-foreground text-background shadow-lg'
                           : 'bg-muted/40 text-foreground hover:bg-muted/60'
                       }`}
                     >
@@ -271,16 +344,20 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                         <div className={`text-xs mt-0.5 ${goal === g.value ? 'text-background/60' : 'text-muted-foreground'}`}>{g.desc}</div>
                       </div>
                       {goal === g.value && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
+                        <motion.div initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500 }}>
                           <Check className="w-4 h-4" />
                         </motion.div>
                       )}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0 active:scale-95"><ArrowLeft className="w-4 h-4" /></Button>
-                  <Button onClick={next} className="flex-1 h-[48px] gap-2 rounded-xl font-semibold active:scale-[0.98] transition-transform text-[14px]">See My Plan <ArrowRight className="w-4 h-4" /></Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
+                  </motion.div>
+                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">See My Plan <ArrowRight className="w-4 h-4" /></Button>
+                  </motion.div>
                 </div>
               </div>
             )}
@@ -289,24 +366,38 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-8">
                 <div className="text-center">
                   <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200 }}
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                     className="w-14 h-14 rounded-2xl bg-primary/10 mx-auto flex items-center justify-center mb-5"
                   >
                     <Check className="w-7 h-7 text-primary" />
                   </motion.div>
-                  <h2 className="text-[28px] font-extrabold font-display">Your Plan</h2>
+                  <motion.h2
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-[28px] font-extrabold font-display"
+                  >
+                    Your Plan
+                  </motion.h2>
                   <p className="text-sm text-muted-foreground mt-1">Personalized daily nutrition targets</p>
                 </div>
 
                 <motion.div
-                  initial={{ scale: 0.95, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.15 }}
-                  className="nova-card p-8 text-center"
+                  initial={{ scale: 0.85, opacity: 0, rotateY: 15 }}
+                  animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+                  transition={{ delay: 0.2, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+                  className="nova-card p-8 text-center nova-breathe"
                 >
-                  <div className="text-[48px] font-extrabold font-display tracking-tight nova-text-gradient leading-none">{dailyCalorieTarget}</div>
+                  <motion.div
+                    className="text-[48px] font-extrabold font-display tracking-tight nova-text-gradient leading-none"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
+                  >
+                    {dailyCalorieTarget}
+                  </motion.div>
                   <div className="text-sm text-muted-foreground mt-2 font-medium">calories per day</div>
                 </motion.div>
 
@@ -318,9 +409,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   ].map((m, i) => (
                     <motion.div
                       key={m.label}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.25 + i * 0.08 }}
+                      initial={{ opacity: 0, y: 16, rotateX: 20 }}
+                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                      transition={{ delay: 0.4 + i * 0.1, duration: 0.5 }}
+                      whileHover={{ scale: 1.05, y: -3 }}
                       className="nova-card p-4 text-center"
                     >
                       <div className={`text-xl font-bold font-display ${m.color}`}>{m.value}{m.unit}</div>
@@ -333,19 +425,29 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   {[
                     { label: 'Basal Metabolic Rate', value: `${bmr} kcal` },
                     { label: 'Total Daily Expenditure', value: `${tdee} kcal` },
-                  ].map(item => (
-                    <div key={item.label} className="flex justify-between p-3.5 rounded-xl bg-muted/40 text-sm">
+                  ].map((item, i) => (
+                    <motion.div
+                      key={item.label}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.6 + i * 0.08 }}
+                      className="flex justify-between p-3.5 rounded-xl bg-muted/40 text-sm"
+                    >
                       <span className="text-muted-foreground">{item.label}</span>
                       <span className="font-semibold tabular-nums">{item.value}</span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                  <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0 active:scale-95"><ArrowLeft className="w-4 h-4" /></Button>
-                  <Button onClick={finish} className="flex-1 h-[48px] gap-2 rounded-xl font-semibold active:scale-[0.98] transition-transform text-[14px]">
-                    Start Tracking <ArrowRight className="w-4 h-4" />
-                  </Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
+                  </motion.div>
+                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                    <Button onClick={finish} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">
+                      Start Tracking <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
             )}

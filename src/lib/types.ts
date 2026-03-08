@@ -1,4 +1,4 @@
-export type AccentColor = 'green' | 'purple' | 'blue' | 'orange' | 'pink';
+export type AccentColor = 'green' | 'purple' | 'blue' | 'orange' | 'pink' | 'teal' | 'red' | 'amber' | 'indigo';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
