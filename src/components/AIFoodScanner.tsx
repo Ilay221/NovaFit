@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Camera, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MealEntry } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import AIFoodConfirmation from './AIFoodConfirmation';
 
 interface AIFoodScannerProps {
   onAddMeal: (entry: MealEntry) => void;
@@ -31,6 +32,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
   const [image, setImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalyzedFood[]>([]);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [mealType, setMealType] = useState<MealEntry['mealType']>('lunch');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,6 +46,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
       const base64 = ev.target?.result as string;
       setImage(base64);
       setResults([]);
+      setShowConfirmation(false);
       analyzeImage(base64);
     };
     reader.readAsDataURL(file);
@@ -58,27 +61,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
       if (error) throw error;
       if (data?.foods && Array.isArray(data.foods) && data.foods.length > 0) {
         setResults(data.foods);
-        // Auto-add all detected foods immediately
-        for (const food of data.foods) {
-          const entry: MealEntry = {
-            id: crypto.randomUUID(),
-            foodItem: {
-              id: crypto.randomUUID(),
-              name: food.name,
-              calories: Math.round(food.calories),
-              protein: Math.round(food.protein),
-              carbs: Math.round(food.carbs),
-              fats: Math.round(food.fats),
-              servingSize: food.servingSize,
-              category: 'AI Scanned',
-            },
-            quantity: 1,
-            mealType,
-            timestamp: new Date().toISOString(),
-          };
-          onAddMeal(entry);
-        }
-        toast.success(`${data.foods.length} item${data.foods.length > 1 ? 's' : ''} logged automatically!`);
+        setShowConfirmation(true);
       } else {
         toast.error('Could not identify food items in this image');
       }
@@ -88,6 +71,30 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
     } finally {
       setAnalyzing(false);
     }
+  };
+
+  const handleConfirm = (selectedFoods: AnalyzedFood[]) => {
+    for (const food of selectedFoods) {
+      const entry: MealEntry = {
+        id: crypto.randomUUID(),
+        foodItem: {
+          id: crypto.randomUUID(),
+          name: food.name,
+          calories: Math.round(food.calories),
+          protein: Math.round(food.protein),
+          carbs: Math.round(food.carbs),
+          fats: Math.round(food.fats),
+          servingSize: food.servingSize,
+          category: 'AI Scanned',
+        },
+        quantity: 1,
+        mealType,
+        timestamp: new Date().toISOString(),
+      };
+      onAddMeal(entry);
+    }
+    toast.success(`${selectedFoods.length} item${selectedFoods.length > 1 ? 's' : ''} logged!`);
+    setShowConfirmation(false);
   };
 
   return (
@@ -170,12 +177,12 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
               variant="outline"
               size="sm"
               className="rounded-xl text-[12px]"
-              onClick={() => { setImage(null); setResults([]); }}
+              onClick={() => { setImage(null); setResults([]); setShowConfirmation(false); }}
             >
               Take Another Photo
             </Button>
 
-            {results.length > 0 && (
+            {results.length > 0 && !showConfirmation && (
               <div className="space-y-3">
                 <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">
                   Detected Items
@@ -209,6 +216,17 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
           </div>
         )}
       </div>
+
+      {/* Confirmation modal */}
+      <AnimatePresence>
+        {showConfirmation && results.length > 0 && (
+          <AIFoodConfirmation
+            foods={results}
+            onConfirm={handleConfirm}
+            onCancel={() => setShowConfirmation(false)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
