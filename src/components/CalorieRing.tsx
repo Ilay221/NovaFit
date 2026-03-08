@@ -24,7 +24,7 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
     const duration = 1200;
     const start = Date.now();
     const startVal = displayRemaining;
-    const endVal = remaining;
+    const endVal = isOver ? Math.abs(remaining) : remaining;
     const tick = () => {
       const elapsed = Date.now() - start;
       const t = Math.min(elapsed / duration, 1);
