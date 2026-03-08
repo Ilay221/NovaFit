@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, MessageSquare, X, BarChart3, Crown, Sparkles } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
 import { predictGoalDate } from '@/lib/calculations';
+import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import CalorieRing from './CalorieRing';
 import MacroBar from './MacroBar';
 import FoodLogger from './FoodLogger';
@@ -14,7 +15,7 @@ import AIFoodScanner from './AIFoodScanner';
 import NLPFoodInput from './NLPFoodInput';
 import WeeklyAnalytics from './WeeklyAnalytics';
 import { useTheme } from '@/lib/store';
-import { format } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 
 interface DashboardProps {
   profile: UserProfile;

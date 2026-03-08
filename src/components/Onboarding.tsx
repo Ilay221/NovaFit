@@ -545,16 +545,18 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
                   >
-                    {dailyCalorieTarget}
+                    {finalCalories}
                   </motion.div>
-                  <div className="text-sm text-muted-foreground mt-2 font-medium">calories per day</div>
+                  <div className="text-sm text-muted-foreground mt-2 font-medium">
+                    {useTimeline ? 'adaptive calories per day' : 'calories per day'}
+                  </div>
                 </motion.div>
 
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { value: macros.protein, label: 'Protein', color: 'text-nova-protein', unit: 'g' },
-                    { value: macros.carbs, label: 'Carbs', color: 'text-nova-carbs', unit: 'g' },
-                    { value: macros.fats, label: 'Fats', color: 'text-nova-fats', unit: 'g' },
+                    { value: finalMacros.protein, label: 'Protein', color: 'text-nova-protein', unit: 'g' },
+                    { value: finalMacros.carbs, label: 'Carbs', color: 'text-nova-carbs', unit: 'g' },
+                    { value: finalMacros.fats, label: 'Fats', color: 'text-nova-fats', unit: 'g' },
                   ].map((m, i) => (
                     <motion.div
                       key={m.label}
