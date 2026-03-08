@@ -26,6 +26,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [targetWeightKg, setTargetWeightKg] = useState(72);
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate');
   const [goal, setGoal] = useState<Goal>('lose');
+  const [targetDays, setTargetDays] = useState(90);
+  const [useTimeline, setUseTimeline] = useState(false);
 
   const stepIndex = STEPS.indexOf(step);
   const next = () => setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)]);
