@@ -57,8 +57,29 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
         body: { image: base64Image },
       });
       if (error) throw error;
-      if (data?.foods && Array.isArray(data.foods)) {
+      if (data?.foods && Array.isArray(data.foods) && data.foods.length > 0) {
         setResults(data.foods);
+        // Auto-add all detected foods immediately
+        for (const food of data.foods) {
+          const entry: MealEntry = {
+            id: crypto.randomUUID(),
+            food: {
+              id: crypto.randomUUID(),
+              name: food.name,
+              calories: Math.round(food.calories),
+              protein: Math.round(food.protein),
+              carbs: Math.round(food.carbs),
+              fats: Math.round(food.fats),
+              servingSize: food.servingSize,
+              category: 'AI Scanned',
+            },
+            quantity: 1,
+            mealType,
+            timestamp: new Date(),
+          };
+          onAddMeal(entry);
+        }
+        toast.success(`${data.foods.length} item${data.foods.length > 1 ? 's' : ''} logged automatically!`);
       } else {
         toast.error('Could not identify food items in this image');
       }
