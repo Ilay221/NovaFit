@@ -113,12 +113,20 @@ export default function Dashboard({
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.12em]">{format(new Date(), 'EEEE, MMM d')}</p>
               <h1 className="text-[22px] font-bold font-display mt-0.5 tracking-tight">{profile.name}</h1>
             </div>
-            <button
-              onClick={() => setView('settings')}
-              className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
-            >
-              <Settings className="w-[18px] h-[18px] text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setView('analytics')}
+                className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
+              >
+                <BarChart3 className="w-[18px] h-[18px] text-muted-foreground" />
+              </button>
+              <button
+                onClick={() => setView('settings')}
+                className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
+              >
+                <Settings className="w-[18px] h-[18px] text-muted-foreground" />
+              </button>
+            </div>
           </motion.div>
 
           {/* Calorie Ring Card */}
