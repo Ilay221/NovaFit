@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, MessageSquare, X } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, MessageSquare, X, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
@@ -12,6 +12,7 @@ import WeightChart from './WeightChart';
 import SettingsPanel from './SettingsPanel';
 import AIFoodScanner from './AIFoodScanner';
 import NLPFoodInput from './NLPFoodInput';
+import WeeklyAnalytics from './WeeklyAnalytics';
 import { useTheme } from '@/lib/store';
 import { format } from 'date-fns';
 
@@ -26,7 +27,7 @@ interface DashboardProps {
   onUpdateProfile: (profile: UserProfile | null) => void;
 }
 
-type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input';
+type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -94,6 +95,9 @@ export default function Dashboard({
         {view === 'nlp-input' && (
           <NLPFoodInput onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
         )}
+        {view === 'analytics' && (
+          <WeeklyAnalytics profile={profile} onClose={() => setView('dashboard')} />
+        )}
       </AnimatePresence>
 
       {view === 'dashboard' && (
@@ -109,12 +113,20 @@ export default function Dashboard({
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.12em]">{format(new Date(), 'EEEE, MMM d')}</p>
               <h1 className="text-[22px] font-bold font-display mt-0.5 tracking-tight">{profile.name}</h1>
             </div>
-            <button
-              onClick={() => setView('settings')}
-              className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
-            >
-              <Settings className="w-[18px] h-[18px] text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setView('analytics')}
+                className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
+              >
+                <BarChart3 className="w-[18px] h-[18px] text-muted-foreground" />
+              </button>
+              <button
+                onClick={() => setView('settings')}
+                className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
+              >
+                <Settings className="w-[18px] h-[18px] text-muted-foreground" />
+              </button>
+            </div>
           </motion.div>
 
           {/* Calorie Ring Card */}
