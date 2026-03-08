@@ -27,7 +27,7 @@ interface DashboardProps {
   onUpdateProfile: (profile: UserProfile | null) => void;
 }
 
-type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input';
+type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics';
 
 const containerVariants = {
   hidden: { opacity: 0 },

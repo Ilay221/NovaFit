@@ -1,0 +1,414 @@
+import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Flame, Target, Zap, TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { UserProfile } from '@/lib/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid, ReferenceLine,
+} from 'recharts';
+import { format, subDays, parseISO } from 'date-fns';
+
+interface WeeklyAnalyticsProps {
+  profile: UserProfile;
+  onClose: () => void;
+}
+
+interface DayData {
+  date: string;
+  label: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  target: number;
+  adherence: number;
+}
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.32, 0.72, 0, 1] as const } },
+};
+
+export default function WeeklyAnalytics({ profile, onClose }: WeeklyAnalyticsProps) {
+  const { user } = useAuth();
+  const [weekData, setWeekData] = useState<DayData[]>([]);
+  const [streak, setStreak] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const fetchWeekData = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+
+    const today = new Date();
+    const days: DayData[] = [];
+
+    // Fetch last 7 days of daily logs
+    const startDate = subDays(today, 6).toISOString().slice(0, 10);
+    const endDate = today.toISOString().slice(0, 10);
+
+    const { data: logs } = await supabase
+      .from('daily_logs')
+      .select('id, date')
+      .eq('user_id', user.id)
+      .gte('date', startDate)
+      .lte('date', endDate);
+
+    const logIds = (logs || []).map(l => l.id);
+    let meals: any[] = [];
+    if (logIds.length > 0) {
+      const { data } = await supabase
+        .from('meal_entries')
+        .select('daily_log_id, calories, protein, carbs, fats')
+        .in('daily_log_id', logIds);
+      meals = data || [];
+    }
+
+    // Build a map: logId -> date
+    const logDateMap: Record<string, string> = {};
+    (logs || []).forEach(l => { logDateMap[l.id] = l.date; });
+
+    // Aggregate by date
+    const dateAgg: Record<string, { calories: number; protein: number; carbs: number; fats: number }> = {};
+    meals.forEach(m => {
+      const date = logDateMap[m.daily_log_id];
+      if (!date) return;
+      if (!dateAgg[date]) dateAgg[date] = { calories: 0, protein: 0, carbs: 0, fats: 0 };
+      dateAgg[date].calories += m.calories;
+      dateAgg[date].protein += m.protein;
+      dateAgg[date].carbs += m.carbs;
+      dateAgg[date].fats += m.fats;
+    });
+
+    for (let i = 6; i >= 0; i--) {
+      const d = subDays(today, i);
+      const dateStr = d.toISOString().slice(0, 10);
+      const agg = dateAgg[dateStr] || { calories: 0, protein: 0, carbs: 0, fats: 0 };
+      const adherence = profile.dailyCalorieTarget > 0
+        ? Math.round((agg.calories / profile.dailyCalorieTarget) * 100)
+        : 0;
+      days.push({
+        date: dateStr,
+        label: format(d, 'EEE'),
+        calories: Math.round(agg.calories),
+        protein: Math.round(agg.protein),
+        carbs: Math.round(agg.carbs),
+        fats: Math.round(agg.fats),
+        target: profile.dailyCalorieTarget,
+        adherence: Math.min(adherence, 200),
+      });
+    }
+
+    setWeekData(days);
+
+    // Calculate streak: consecutive days (ending yesterday or today) where calories > 0 and within 80-120% of target
+    const { data: allLogs } = await supabase
+      .from('daily_logs')
+      .select('id, date')
+      .eq('user_id', user.id)
+      .lte('date', endDate)
+      .order('date', { ascending: false })
+      .limit(60);
+
+    const allLogIds = (allLogs || []).map(l => l.id);
+    let allMeals: any[] = [];
+    if (allLogIds.length > 0) {
+      const { data } = await supabase
+        .from('meal_entries')
+        .select('daily_log_id, calories')
+        .in('daily_log_id', allLogIds);
+      allMeals = data || [];
+    }
+
+    const allLogDateMap: Record<string, string> = {};
+    (allLogs || []).forEach(l => { allLogDateMap[l.id] = l.date; });
+
+    const allDateCals: Record<string, number> = {};
+    allMeals.forEach(m => {
+      const date = allLogDateMap[m.daily_log_id];
+      if (!date) return;
+      allDateCals[date] = (allDateCals[date] || 0) + m.calories;
+    });
+
+    let currentStreak = 0;
+    for (let i = 0; i < 60; i++) {
+      const d = subDays(today, i).toISOString().slice(0, 10);
+      const cals = allDateCals[d] || 0;
+      if (cals <= 0) break;
+      const ratio = cals / profile.dailyCalorieTarget;
+      if (ratio >= 0.5 && ratio <= 1.5) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+    setStreak(currentStreak);
+    setLoading(false);
+  }, [user, profile]);
+
+  useEffect(() => { fetchWeekData(); }, [fetchWeekData]);
+
+  const avgCalories = weekData.length > 0
+    ? Math.round(weekData.reduce((s, d) => s + d.calories, 0) / weekData.filter(d => d.calories > 0).length || 0)
+    : 0;
+
+  const avgAdherence = weekData.length > 0
+    ? Math.round(weekData.filter(d => d.calories > 0).reduce((s, d) => s + d.adherence, 0) / (weekData.filter(d => d.calories > 0).length || 1))
+    : 0;
+
+  const avgProtein = weekData.length > 0
+    ? Math.round(weekData.reduce((s, d) => s + d.protein, 0) / (weekData.filter(d => d.calories > 0).length || 1))
+    : 0;
+
+  const calorieDiff = avgCalories - profile.dailyCalorieTarget;
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="nova-glass rounded-xl px-3 py-2 text-xs border border-border/50 shadow-lg">
+        <p className="font-medium text-foreground mb-1">{label}</p>
+        {payload.map((p: any, i: number) => (
+          <p key={i} className="text-muted-foreground tabular-nums">
+            <span style={{ color: p.color }} className="font-medium">{p.name}</span>: {Math.round(p.value)}
+          </p>
+        ))}
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-background flex items-center justify-center"
+      >
+        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+      className="min-h-screen bg-background pb-28"
+    >
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="max-w-lg mx-auto px-5 pt-safe"
+      >
+        {/* Header */}
+        <motion.div variants={itemVariants} className="flex items-center gap-3 pt-8 pb-6">
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
+          >
+            <ArrowLeft className="w-[18px] h-[18px] text-muted-foreground" />
+          </button>
+          <div>
+            <h1 className="text-[22px] font-bold font-display tracking-tight">Analytics</h1>
+            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-[0.12em] mt-0.5">Last 7 days</p>
+          </div>
+        </motion.div>
+
+        {/* Summary Cards */}
+        <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3">
+          <div className="nova-card p-4 text-center">
+            <div className="flex justify-center mb-2.5">
+              <Flame className="w-[18px] h-[18px] text-primary" />
+            </div>
+            <div className="font-bold text-[15px] font-display tabular-nums">{avgCalories}</div>
+            <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.1em] mt-1">Avg kcal</div>
+          </div>
+          <div className="nova-card p-4 text-center">
+            <div className="flex justify-center mb-2.5">
+              <Target className="w-[18px] h-[18px] text-nova-success" />
+            </div>
+            <div className="font-bold text-[15px] font-display tabular-nums">{avgAdherence}%</div>
+            <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.1em] mt-1">Adherence</div>
+          </div>
+          <div className="nova-card p-4 text-center">
+            <div className="flex justify-center mb-2.5">
+              <Zap className="w-[18px] h-[18px] text-nova-warning" />
+            </div>
+            <div className="font-bold text-[15px] font-display tabular-nums">{streak}</div>
+            <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.1em] mt-1">Day streak</div>
+          </div>
+        </motion.div>
+
+        {/* Calorie Trend */}
+        <motion.div variants={itemVariants} className="nova-card p-5 mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] flex items-center gap-2">
+              <BarChart3 className="w-3.5 h-3.5 text-primary" /> Calorie Trend
+            </h3>
+            <div className="flex items-center gap-1 text-xs">
+              {calorieDiff > 50 ? (
+                <TrendingUp className="w-3.5 h-3.5 text-destructive" />
+              ) : calorieDiff < -50 ? (
+                <TrendingDown className="w-3.5 h-3.5 text-nova-success" />
+              ) : (
+                <Minus className="w-3.5 h-3.5 text-muted-foreground" />
+              )}
+              <span className="tabular-nums font-medium text-muted-foreground">
+                {calorieDiff > 0 ? '+' : ''}{calorieDiff} avg
+              </span>
+            </div>
+          </div>
+          <div className="h-[180px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weekData} barCategoryGap="20%">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  width={35}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <ReferenceLine
+                  y={profile.dailyCalorieTarget}
+                  stroke="hsl(var(--primary))"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.6}
+                />
+                <Bar
+                  dataKey="calories"
+                  name="Calories"
+                  fill="hsl(var(--primary))"
+                  radius={[6, 6, 0, 0]}
+                  fillOpacity={0.85}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm bg-primary opacity-85" />
+              <span>Daily intake</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-0 border-t-[1.5px] border-dashed border-primary opacity-60" />
+              <span>Target ({profile.dailyCalorieTarget})</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Macro Adherence */}
+        <motion.div variants={itemVariants} className="nova-card p-5 mt-4">
+          <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4">
+            Macro Breakdown
+          </h3>
+          <div className="h-[180px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={weekData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  width={30}
+                  unit="g"
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="protein" name="Protein" stroke="hsl(var(--nova-protein))" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="carbs" name="Carbs" stroke="hsl(var(--nova-carbs))" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="fats" name="Fats" stroke="hsl(var(--nova-fats))" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'hsl(var(--nova-protein))' }} />
+              <span>Protein ({avgProtein}g avg)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'hsl(var(--nova-carbs))' }} />
+              <span>Carbs</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'hsl(var(--nova-fats))' }} />
+              <span>Fats</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Daily Adherence Bar */}
+        <motion.div variants={itemVariants} className="nova-card p-5 mt-4">
+          <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4">
+            Daily Adherence
+          </h3>
+          <div className="space-y-2.5">
+            {weekData.map(day => {
+              const isGood = day.adherence >= 80 && day.adherence <= 120;
+              const barWidth = Math.min(day.adherence, 100);
+              return (
+                <div key={day.date} className="flex items-center gap-3">
+                  <span className="text-[11px] text-muted-foreground font-medium w-8 tabular-nums">{day.label}</span>
+                  <div className="flex-1 h-2 rounded-full bg-muted/60 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${barWidth}%` }}
+                      transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1], delay: 0.1 }}
+                      className={`h-full rounded-full ${
+                        day.calories === 0
+                          ? 'bg-muted-foreground/30'
+                          : isGood
+                            ? 'bg-nova-success'
+                            : day.adherence > 120
+                              ? 'bg-destructive'
+                              : 'bg-nova-warning'
+                      }`}
+                    />
+                  </div>
+                  <span className="text-[11px] tabular-nums font-medium w-8 text-right text-muted-foreground">
+                    {day.calories > 0 ? `${day.adherence}%` : '--'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-center gap-4 mt-4 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-nova-success" />
+              <span>On target</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-nova-warning" />
+              <span>Under</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-destructive" />
+              <span>Over</span>
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="h-6" />
+      </motion.div>
+    </motion.div>
+  );
+}
