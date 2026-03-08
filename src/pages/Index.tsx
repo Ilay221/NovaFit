@@ -1,13 +1,30 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useProfile, useDailyLog, useWeightHistory, useTheme } from '@/lib/store';
+import Onboarding from '@/components/Onboarding';
+import Dashboard from '@/components/Dashboard';
 
 const Index = () => {
+  const { profile, setProfile } = useProfile();
+  const { getLog, addMeal, removeMeal, addWater } = useDailyLog();
+  const { entries: weightHistory, addEntry: addWeight } = useWeightHistory();
+  useTheme(); // initialize theme
+
+  if (!profile) {
+    return <Onboarding onComplete={setProfile} />;
+  }
+
+  const todayLog = getLog();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <Dashboard
+      profile={profile}
+      dailyLog={todayLog}
+      weightHistory={weightHistory}
+      onAddMeal={addMeal}
+      onRemoveMeal={removeMeal}
+      onAddWater={addWater}
+      onAddWeight={addWeight}
+      onUpdateProfile={setProfile}
+    />
   );
 };
 
