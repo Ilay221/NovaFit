@@ -24,6 +24,7 @@ export interface UserProfile {
   carbsTarget: number;
   fatsTarget: number;
   isPremium?: boolean;
+  targetDate?: string | null; // ISO date string e.g. '2026-06-15'
 }
 
 export interface FoodItem {

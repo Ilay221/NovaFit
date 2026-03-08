@@ -63,6 +63,7 @@ export function useProfile() {
           carbsTarget: data.carbs_target,
           fatsTarget: data.fats_target,
           isPremium: (data as any).is_premium ?? false,
+          targetDate: (data as any).target_date ?? null,
         });
       }
       setLoading(false);
@@ -94,6 +95,7 @@ export function useProfile() {
       protein_target: p.proteinTarget,
       carbs_target: p.carbsTarget,
       fats_target: p.fatsTarget,
+      target_date: p.targetDate || null,
       updated_at: new Date().toISOString(),
     };
     
