@@ -11,9 +11,13 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
   const strokeWidth = 10;
   const radius = (size - strokeWidth * 2) / 2;
   const circumference = 2 * Math.PI * radius;
-  const isOver = consumed > target;
-  const progress = Math.min(consumed / target, 1);
-  const remaining = target - consumed; // can be negative
+
+  const safeTarget = Number.isFinite(target) && target > 0 ? target : 0;
+  const safeConsumed = Number.isFinite(consumed) && consumed > 0 ? consumed : 0;
+
+  const isOver = safeTarget > 0 ? safeConsumed > safeTarget : safeConsumed > 0;
+  const progress = safeTarget > 0 ? Math.min(safeConsumed / safeTarget, 1) : 0;
+  const remaining = safeTarget - safeConsumed; // can be negative
   const offset = circumference * (1 - progress);
   const center = size / 2;
   const percentage = Math.round(progress * 100);
@@ -33,7 +37,8 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
       if (t < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-  }, [remaining]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining, isOver]);
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
