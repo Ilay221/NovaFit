@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
+import ProfileEditor from '@/components/ProfileEditor';
 
 interface SettingsPanelProps {
   theme: {
