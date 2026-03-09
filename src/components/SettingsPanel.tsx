@@ -10,6 +10,7 @@ import { format, parseISO, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import ProfileEditor from '@/components/ProfileEditor';
+import NFPEditor from '@/components/NFPEditor';
 
 interface SettingsPanelProps {
   theme: {
