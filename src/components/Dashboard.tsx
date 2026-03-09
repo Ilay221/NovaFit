@@ -418,7 +418,7 @@ export default function Dashboard({
                               onClick={() => onRemoveMeal(meal.id)}
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.85 }}
-                              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
+                              className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
                             >
                               <X className="w-3.5 h-3.5" />
                             </motion.button>
