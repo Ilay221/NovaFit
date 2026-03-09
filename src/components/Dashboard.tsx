@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
 import { predictGoalDate } from '@/lib/calculations';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
+import { isSuspiciousInflation, sanitizeKcalTarget } from '@/lib/calorie-guardrails';
 import CalorieRing from './CalorieRing';
 import MacroBar from './MacroBar';
 import FoodLogger from './FoodLogger';
@@ -67,17 +68,53 @@ export default function Dashboard({
     { calories: 0, protein: 0, carbs: 0, fats: 0 }
   );
 
-  // Adaptive recalibration: if user has a target date, dynamically adjust targets
+  const hasTimeline = !!profile.targetDate && profile.goal !== 'maintain';
+
+  // Compute adaptive targets for timeline users, but NEVER let the UI ring exceed the persisted Daily Target.
   const adaptive = useMemo(
-    () => calculateAdaptiveTargets(profile, weightHistory, totals.calories),
-    [profile, weightHistory, totals.calories]
+    () => (hasTimeline ? calculateAdaptiveTargets(profile, weightHistory) : null),
+    [hasTimeline, profile, weightHistory]
   );
 
-  const hasTimeline = !!profile.targetDate && profile.goal !== 'maintain';
-  const effectiveCalorieTarget = hasTimeline ? adaptive.dailyCalorieTarget : profile.dailyCalorieTarget;
-  const effectiveProteinTarget = hasTimeline ? adaptive.proteinTarget : profile.proteinTarget;
-  const effectiveCarbsTarget = hasTimeline ? adaptive.carbsTarget : profile.carbsTarget;
-  const effectiveFatsTarget = hasTimeline ? adaptive.fatsTarget : profile.fatsTarget;
+  // Single source of truth for the ring: the persisted backend Daily Target.
+  const ringCalorieTarget = sanitizeKcalTarget(profile.dailyCalorieTarget, 0);
+  const effectiveProteinTarget = profile.proteinTarget;
+  const effectiveCarbsTarget = profile.carbsTarget;
+  const effectiveFatsTarget = profile.fatsTarget;
+
+  // One-way sync: allow adaptive to tighten targets (lower), but never increase them (prevents "3000 kcal" inflation).
+  const lastSyncKeyRef = useRef<string>('');
+  useEffect(() => {
+    if (!hasTimeline || !adaptive) return;
+
+    const computed = sanitizeKcalTarget(adaptive.dailyCalorieTarget, ringCalorieTarget);
+
+    if (isSuspiciousInflation({
+      goal: profile.goal,
+      persistedTargetKcal: ringCalorieTarget,
+      computedTargetKcal: computed,
+    })) {
+      // Keep UI + persisted target stable; log for debugging.
+      // eslint-disable-next-line no-console
+      console.warn('[CalorieTargetGuard] Ignored suspicious computed target', { persisted: ringCalorieTarget, computed });
+      return;
+    }
+
+    // Only tighten (lower). If it matches or is higher, do nothing.
+    if (computed >= ringCalorieTarget) return;
+
+    const key = `${profile.targetDate ?? 'no-date'}:${computed}`;
+    if (lastSyncKeyRef.current === key) return;
+    lastSyncKeyRef.current = key;
+
+    onUpdateProfile({
+      ...profile,
+      dailyCalorieTarget: computed,
+      proteinTarget: adaptive.proteinTarget,
+      carbsTarget: adaptive.carbsTarget,
+      fatsTarget: adaptive.fatsTarget,
+    });
+  }, [adaptive, hasTimeline, onUpdateProfile, profile, ringCalorieTarget]);
 
   const goalDate = hasTimeline && profile.targetDate
     ? parseISO(profile.targetDate)
