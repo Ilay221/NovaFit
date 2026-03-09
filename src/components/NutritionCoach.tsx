@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Sparkles, Bot, User, Loader2, RefreshCw, WifiOff } from 'lucide-react';
+import { ArrowLeft, Send, Sparkles, Bot, User, Loader2, RefreshCw, WifiOff, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
+import ChatSessionSidebar, { type ChatSession } from './ChatSessionSidebar';
 
 type Msg = { role: 'user' | 'assistant'; content: string; error?: boolean };
 
@@ -25,9 +26,8 @@ const FRIENDLY_ERRORS: Record<string, string> = {
   INTERNAL_ERROR: "🤔 Something unexpected happened. Let's give it another try!",
 };
 
-function getFriendlyError(code?: string, fallback?: string): string {
+function getFriendlyError(code?: string): string {
   if (code && FRIENDLY_ERRORS[code]) return FRIENDLY_ERRORS[code];
-  if (fallback) return `😅 ${fallback}`;
   return "🤔 Your AI coach is taking a quick breather. Please try again in a moment!";
 }
 
@@ -36,6 +36,10 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastFailedInput, setLastFailedInput] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [titleGenerated, setTitleGenerated] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -43,25 +47,147 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  // Cleanup abort controller on unmount
+  useEffect(() => { return () => { abortRef.current?.abort(); }; }, []);
+
+  // Load sessions on mount
   useEffect(() => {
-    return () => { abortRef.current?.abort(); };
+    loadSessions();
   }, []);
+
+  const loadSessions = async () => {
+    const { data } = await supabase
+      .from('chat_sessions')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    if (data) setSessions(data as ChatSession[]);
+  };
+
+  const loadSessionMessages = async (sessionId: string) => {
+    const { data } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: true });
+    if (data) {
+      setMessages(data.map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content })));
+    }
+    setTitleGenerated(true); // existing session already has title
+  };
+
+  const createSession = async (): Promise<string | null> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data, error } = await supabase
+      .from('chat_sessions')
+      .insert({ user_id: user.id, title: 'New Chat' })
+      .select()
+      .single();
+    if (error || !data) return null;
+    setSessions(prev => [data as ChatSession, ...prev]);
+    return data.id;
+  };
+
+  const saveMessage = async (sessionId: string, role: string, content: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('chat_messages').insert({
+      session_id: sessionId,
+      user_id: user.id,
+      role,
+      content,
+    });
+    // Update session timestamp
+    await supabase.from('chat_sessions').update({ updated_at: new Date().toISOString() }).eq('id', sessionId);
+  };
+
+  const autoGenerateTitle = async (sessionId: string, msgs: Msg[]) => {
+    if (titleGenerated) return;
+    // Generate after 2 messages (1 user + 1 assistant)
+    const realMsgs = msgs.filter(m => !m.error);
+    if (realMsgs.length < 2) return;
+
+    setTitleGenerated(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          action: 'generate-title',
+          messages: realMsgs.slice(0, 4).map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      if (resp.ok) {
+        const { title } = await resp.json();
+        if (title && title !== 'New Chat') {
+          await supabase.from('chat_sessions').update({ title }).eq('id', sessionId);
+          setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title } : s));
+        }
+      }
+    } catch {
+      // Non-critical, ignore
+    }
+  };
+
+  const handleNewChat = () => {
+    setActiveSessionId(null);
+    setMessages([]);
+    setTitleGenerated(false);
+    setLastFailedInput(null);
+    setSidebarOpen(false);
+  };
+
+  const handleSelectSession = (id: string) => {
+    setActiveSessionId(id);
+    loadSessionMessages(id);
+    setLastFailedInput(null);
+    setSidebarOpen(false);
+  };
+
+  const handleRename = async (id: string, title: string) => {
+    await supabase.from('chat_sessions').update({ title }).eq('id', id);
+    setSessions(prev => prev.map(s => s.id === id ? { ...s, title } : s));
+  };
+
+  const handlePin = async (id: string, pinned: boolean) => {
+    await supabase.from('chat_sessions').update({ is_pinned: pinned }).eq('id', id);
+    setSessions(prev => prev.map(s => s.id === id ? { ...s, is_pinned: pinned } : s));
+  };
+
+  const handleDelete = async (id: string) => {
+    await supabase.from('chat_sessions').delete().eq('id', id);
+    setSessions(prev => prev.filter(s => s.id !== id));
+    if (activeSessionId === id) {
+      handleNewChat();
+    }
+  };
 
   const send = useCallback(async (overrideInput?: string) => {
     const text = (overrideInput ?? input).trim();
     if (!text || isLoading) return;
 
+    // Create session if needed
+    let sessionId = activeSessionId;
+    if (!sessionId) {
+      sessionId = await createSession();
+      if (!sessionId) return;
+      setActiveSessionId(sessionId);
+    }
+
     const userMsg: Msg = { role: 'user', content: text };
     const prevMessages = overrideInput ? messages : [...messages, userMsg];
-    if (!overrideInput) {
-      setMessages(prev => [...prev, userMsg]);
-    }
+    if (!overrideInput) setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
     setLastFailedInput(null);
 
-    // Abort any previous request
+    // Save user message to DB
+    await saveMessage(sessionId, 'user', text);
+
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -71,19 +197,12 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
 
     for (let attempt = 0; attempt <= MAX_CLIENT_RETRIES && !succeeded; attempt++) {
       if (controller.signal.aborted) break;
-
       try {
         const session = await supabase.auth.getSession();
         const token = session.data.session?.access_token;
+        const cleanMessages = prevMessages.filter(m => !m.error).map(m => ({ role: m.role, content: m.content }));
 
-        // Build clean message history (strip error messages)
-        const cleanMessages = prevMessages
-          .filter(m => !m.error)
-          .map(m => ({ role: m.role, content: m.content }));
-
-        const timeoutId = setTimeout(() => {
-          if (!succeeded) controller.abort();
-        }, CLIENT_TIMEOUT_MS);
+        const timeoutId = setTimeout(() => { if (!succeeded) controller.abort(); }, CLIENT_TIMEOUT_MS);
 
         const resp = await fetch(CHAT_URL, {
           method: 'POST',
@@ -100,22 +219,17 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
         if (!resp.ok) {
           let errData: any = {};
           try { errData = await resp.json(); } catch { await resp.text(); }
-
-          // Don't retry on 402 (credits) or 400 (bad request)
           if (resp.status === 402 || resp.status === 400) {
-            throw { code: errData.code, message: errData.error, noRetry: true };
+            throw { code: errData.code, noRetry: true };
           }
-          // On 429 or 5xx, retry
           if (attempt < MAX_CLIENT_RETRIES) {
-            const delay = 1000 * Math.pow(2, attempt) + Math.random() * 500;
-            await new Promise(r => setTimeout(r, delay));
+            await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt) + Math.random() * 500));
             continue;
           }
-          throw { code: errData.code, message: errData.error };
+          throw { code: errData.code };
         }
 
-        if (!resp.body) throw { code: 'SERVICE_ERROR', message: 'No response stream' };
-
+        if (!resp.body) throw { code: 'SERVICE_ERROR' };
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
         let textBuffer = '';
@@ -130,14 +244,11 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
           while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
             let line = textBuffer.slice(0, newlineIndex);
             textBuffer = textBuffer.slice(newlineIndex + 1);
-
             if (line.endsWith('\r')) line = line.slice(0, -1);
             if (line.startsWith(':') || line.trim() === '') continue;
             if (!line.startsWith('data: ')) continue;
-
             const jsonStr = line.slice(6).trim();
             if (jsonStr === '[DONE]') { streamDone = true; break; }
-
             try {
               const parsed = JSON.parse(jsonStr);
               const content = parsed.choices?.[0]?.delta?.content as string | undefined;
@@ -160,26 +271,29 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
         }
 
         succeeded = true;
+        // Save assistant message
+        if (assistantSoFar) {
+          await saveMessage(sessionId!, 'assistant', assistantSoFar);
+          // Auto-generate title after first exchange
+          const allMsgs = [...prevMessages, { role: 'assistant' as const, content: assistantSoFar }];
+          autoGenerateTitle(sessionId!, allMsgs);
+        }
       } catch (e: any) {
         if (e?.noRetry || attempt >= MAX_CLIENT_RETRIES || controller.signal.aborted) {
           const code = e?.code || (e?.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK_ERROR');
-          const friendlyMsg = getFriendlyError(code, e?.message);
-          setMessages(prev => [...prev, { role: 'assistant', content: friendlyMsg, error: true }]);
+          setMessages(prev => [...prev, { role: 'assistant', content: getFriendlyError(code), error: true }]);
           setLastFailedInput(text);
           break;
         }
-        // Retry silently
-        const delay = 1000 * Math.pow(2, attempt) + Math.random() * 500;
-        await new Promise(r => setTimeout(r, delay));
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt) + Math.random() * 500));
       }
     }
 
     setIsLoading(false);
-  }, [input, isLoading, messages]);
+  }, [input, isLoading, messages, activeSessionId, titleGenerated]);
 
   const retry = useCallback(() => {
     if (lastFailedInput) {
-      // Remove last error message
       setMessages(prev => {
         const idx = prev.length - 1;
         if (prev[idx]?.error) return prev.slice(0, idx);
@@ -202,24 +316,49 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
       exit={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
       transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-      className="fixed inset-0 z-50 bg-background flex flex-col"
+      className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden"
     >
+      {/* Sidebar */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[5] bg-foreground"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <ChatSessionSidebar
+              sessions={sessions}
+              activeSessionId={activeSessionId}
+              onSelect={handleSelectSession}
+              onNew={handleNewChat}
+              onRename={handleRename}
+              onPin={handlePin}
+              onDelete={handleDelete}
+              onClose={() => setSidebarOpen(false)}
+            />
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 pt-safe pb-3 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <motion.button
-          onClick={onClose}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center"
-        >
+      <div className="flex items-center gap-3 px-5 pt-safe pb-3 border-b border-border/50 bg-background/80 backdrop-blur-xl relative z-[1]">
+        <motion.button onClick={onClose} whileTap={{ scale: 0.9 }} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center">
           <ArrowLeft className="w-4 h-4" />
+        </motion.button>
+        <motion.button onClick={() => setSidebarOpen(true)} whileTap={{ scale: 0.9 }} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center">
+          <Menu className="w-4 h-4" />
         </motion.button>
         <div className="flex items-center gap-2.5 flex-1">
           <div className="w-9 h-9 rounded-full nova-gradient flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-primary-foreground" />
           </div>
-          <div>
-            <h2 className="font-bold font-display text-[15px] leading-tight">NovaFit AI</h2>
+          <div className="min-w-0">
+            <h2 className="font-bold font-display text-[15px] leading-tight truncate">
+              {activeSessionId ? sessions.find(s => s.id === activeSessionId)?.title || 'NovaFit AI' : 'NovaFit AI'}
+            </h2>
             <p className="text-[11px] text-muted-foreground">Your personal nutrition coach</p>
           </div>
         </div>
@@ -244,7 +383,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
             </motion.div>
             <h3 className="font-bold font-display text-lg">Hey {userName}! 👋</h3>
             <p className="text-sm text-muted-foreground mt-2 max-w-[260px]">
-              I'm your AI nutrition coach. I know your goals, your daily intake, and your preferences. Ask me anything!
+              I'm your AI nutrition coach. Ask me anything!
             </p>
             <div className="grid grid-cols-2 gap-2 mt-6 w-full max-w-sm">
               {suggestions.map((s, i) => (
@@ -253,7 +392,6 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 + i * 0.08 }}
-                  whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setInput(s)}
                   className="text-left p-3 rounded-xl bg-muted/50 border border-border/50 text-xs font-medium hover:bg-muted/80 transition-colors"
@@ -317,11 +455,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
         </AnimatePresence>
 
         {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex gap-2.5"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2.5">
             <div className="w-7 h-7 rounded-full nova-gradient flex items-center justify-center shrink-0">
               <Bot className="w-3.5 h-3.5 text-primary-foreground" />
             </div>
@@ -353,7 +487,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
             className="flex-1 resize-none rounded-xl bg-muted/50 border border-border/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all min-h-[42px] max-h-[120px]"
             style={{ height: 'auto', overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}
           />
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }}>
+          <motion.div whileTap={{ scale: 0.9 }}>
             <Button
               onClick={() => send()}
               disabled={!input.trim() || isLoading}
