@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Sparkles, Bot, User, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Sparkles, Bot, User, Loader2, RefreshCw, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
 
-type Msg = { role: 'user' | 'assistant'; content: string };
+type Msg = { role: 'user' | 'assistant'; content: string; error?: boolean };
 
 interface NutritionCoachProps {
   onClose: () => void;
@@ -13,97 +13,181 @@ interface NutritionCoachProps {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nutrition-chat`;
+const CLIENT_TIMEOUT_MS = 45000;
+const MAX_CLIENT_RETRIES = 2;
+
+const FRIENDLY_ERRORS: Record<string, string> = {
+  RATE_LIMITED: "🧘 I'm getting a lot of questions right now! Give me a moment and try again.",
+  CREDITS_EXHAUSTED: "⚡ AI credits are used up for now. Please try again later.",
+  TIMEOUT: "⏳ I'm taking a bit longer than usual to think. Let's try that again!",
+  SERVICE_ERROR: "🔧 I'm having a quick maintenance moment. Please try again shortly!",
+  NETWORK_ERROR: "📡 Looks like we lost connection. Check your internet and try again.",
+  INTERNAL_ERROR: "🤔 Something unexpected happened. Let's give it another try!",
+};
+
+function getFriendlyError(code?: string, fallback?: string): string {
+  if (code && FRIENDLY_ERRORS[code]) return FRIENDLY_ERRORS[code];
+  if (fallback) return `😅 ${fallback}`;
+  return "🤔 Your AI coach is taking a quick breather. Please try again in a moment!";
+}
 
 export default function NutritionCoach({ onClose, userName }: NutritionCoachProps) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [lastFailedInput, setLastFailedInput] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  const send = async () => {
-    const text = input.trim();
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
+
+  const send = useCallback(async (overrideInput?: string) => {
+    const text = (overrideInput ?? input).trim();
     if (!text || isLoading) return;
 
     const userMsg: Msg = { role: 'user', content: text };
-    setMessages(prev => [...prev, userMsg]);
+    const prevMessages = overrideInput ? messages : [...messages, userMsg];
+    if (!overrideInput) {
+      setMessages(prev => [...prev, userMsg]);
+    }
     setInput('');
     setIsLoading(true);
+    setLastFailedInput(null);
+
+    // Abort any previous request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     let assistantSoFar = '';
+    let succeeded = false;
 
-    try {
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
+    for (let attempt = 0; attempt <= MAX_CLIENT_RETRIES && !succeeded; attempt++) {
+      if (controller.signal.aborted) break;
 
-      const resp = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ messages: [...messages, userMsg] }),
-      });
+      try {
+        const session = await supabase.auth.getSession();
+        const token = session.data.session?.access_token;
 
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(err.error || `Error ${resp.status}`);
-      }
+        // Build clean message history (strip error messages)
+        const cleanMessages = prevMessages
+          .filter(m => !m.error)
+          .map(m => ({ role: m.role, content: m.content }));
 
-      if (!resp.body) throw new Error('No stream body');
+        const timeoutId = setTimeout(() => {
+          if (!succeeded) controller.abort();
+        }, CLIENT_TIMEOUT_MS);
 
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = '';
-      let streamDone = false;
+        const resp = await fetch(CHAT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ messages: cleanMessages }),
+          signal: controller.signal,
+        });
 
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
+        clearTimeout(timeoutId);
 
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
+        if (!resp.ok) {
+          let errData: any = {};
+          try { errData = await resp.json(); } catch { await resp.text(); }
 
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (line.startsWith(':') || line.trim() === '') continue;
-          if (!line.startsWith('data: ')) continue;
+          // Don't retry on 402 (credits) or 400 (bad request)
+          if (resp.status === 402 || resp.status === 400) {
+            throw { code: errData.code, message: errData.error, noRetry: true };
+          }
+          // On 429 or 5xx, retry
+          if (attempt < MAX_CLIENT_RETRIES) {
+            const delay = 1000 * Math.pow(2, attempt) + Math.random() * 500;
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+          throw { code: errData.code, message: errData.error };
+        }
 
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') { streamDone = true; break; }
+        if (!resp.body) throw { code: 'SERVICE_ERROR', message: 'No response stream' };
 
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) {
-              assistantSoFar += content;
-              const current = assistantSoFar;
-              setMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last?.role === 'assistant') {
-                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: current } : m);
-                }
-                return [...prev, { role: 'assistant', content: current }];
-              });
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let textBuffer = '';
+        let streamDone = false;
+
+        while (!streamDone) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          textBuffer += decoder.decode(value, { stream: true });
+
+          let newlineIndex: number;
+          while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+            let line = textBuffer.slice(0, newlineIndex);
+            textBuffer = textBuffer.slice(newlineIndex + 1);
+
+            if (line.endsWith('\r')) line = line.slice(0, -1);
+            if (line.startsWith(':') || line.trim() === '') continue;
+            if (!line.startsWith('data: ')) continue;
+
+            const jsonStr = line.slice(6).trim();
+            if (jsonStr === '[DONE]') { streamDone = true; break; }
+
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+              if (content) {
+                assistantSoFar += content;
+                const current = assistantSoFar;
+                setMessages(prev => {
+                  const last = prev[prev.length - 1];
+                  if (last?.role === 'assistant' && !last.error) {
+                    return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: current } : m);
+                  }
+                  return [...prev, { role: 'assistant', content: current }];
+                });
+              }
+            } catch {
+              textBuffer = line + '\n' + textBuffer;
+              break;
             }
-          } catch {
-            textBuffer = line + '\n' + textBuffer;
-            break;
           }
         }
+
+        succeeded = true;
+      } catch (e: any) {
+        if (e?.noRetry || attempt >= MAX_CLIENT_RETRIES || controller.signal.aborted) {
+          const code = e?.code || (e?.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK_ERROR');
+          const friendlyMsg = getFriendlyError(code, e?.message);
+          setMessages(prev => [...prev, { role: 'assistant', content: friendlyMsg, error: true }]);
+          setLastFailedInput(text);
+          break;
+        }
+        // Retry silently
+        const delay = 1000 * Math.pow(2, attempt) + Math.random() * 500;
+        await new Promise(r => setTimeout(r, delay));
       }
-    } catch (e: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${e.message || 'Something went wrong. Please try again.'}` }]);
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    setIsLoading(false);
+  }, [input, isLoading, messages]);
+
+  const retry = useCallback(() => {
+    if (lastFailedInput) {
+      // Remove last error message
+      setMessages(prev => {
+        const idx = prev.length - 1;
+        if (prev[idx]?.error) return prev.slice(0, idx);
+        return prev;
+      });
+      send(lastFailedInput);
+    }
+  }, [lastFailedInput, send]);
 
   const suggestions = [
     '🍽️ What should I eat for dinner?',
@@ -171,7 +255,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
                   transition={{ delay: 0.4 + i * 0.08 }}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => { setInput(s); }}
+                  onClick={() => setInput(s)}
                   className="text-left p-3 rounded-xl bg-muted/50 border border-border/50 text-xs font-medium hover:bg-muted/80 transition-colors"
                 >
                   {s}
@@ -191,19 +275,34 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
               className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'assistant' && (
-                <div className="w-7 h-7 rounded-full nova-gradient flex items-center justify-center shrink-0 mt-1">
-                  <Bot className="w-3.5 h-3.5 text-primary-foreground" />
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 ${msg.error ? 'bg-destructive/10' : 'nova-gradient'}`}>
+                  {msg.error ? <WifiOff className="w-3.5 h-3.5 text-destructive" /> : <Bot className="w-3.5 h-3.5 text-primary-foreground" />}
                 </div>
               )}
               <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                 msg.role === 'user'
                   ? 'bg-primary text-primary-foreground rounded-br-md'
-                  : 'bg-muted/60 border border-border/40 rounded-bl-md'
+                  : msg.error
+                    ? 'bg-destructive/5 border border-destructive/20 rounded-bl-md'
+                    : 'bg-muted/60 border border-border/40 rounded-bl-md'
               }`}>
                 {msg.role === 'assistant' ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:mb-2 [&>ol]:mb-2">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  </div>
+                  <>
+                    <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:mb-2 [&>ol]:mb-2">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                    {msg.error && lastFailedInput && (
+                      <motion.button
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        onClick={retry}
+                        className="mt-2 flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Try again
+                      </motion.button>
+                    )}
+                  </>
                 ) : (
                   <span>{msg.content}</span>
                 )}
@@ -246,7 +345,6 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
       <div className="border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 pb-safe">
         <div className="flex gap-2 items-end max-w-lg mx-auto">
           <textarea
-            ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
@@ -257,7 +355,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
           />
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }}>
             <Button
-              onClick={send}
+              onClick={() => send()}
               disabled={!input.trim() || isLoading}
               className="h-[42px] w-[42px] rounded-xl p-0 shadow-md"
             >
