@@ -28,6 +28,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [goal, setGoal] = useState<Goal>('lose');
   const [targetDays, setTargetDays] = useState(90);
   const [useTimeline, setUseTimeline] = useState(false);
+  const [favoriteFood, setFavoriteFood] = useState('');
+  const [dietaryWeakness, setDietaryWeakness] = useState('');
+  const [dailyHabits, setDailyHabits] = useState('');
 
   const stepIndex = STEPS.indexOf(step);
   const next = () => setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)]);
