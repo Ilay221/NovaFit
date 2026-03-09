@@ -129,6 +129,10 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
           <ProfileEditor profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} />
         </motion.div>
 
+        <motion.div variants={itemVariants}>
+          <NFPEditor profile={profile} onUpdateProfile={onUpdateProfile} />
+        </motion.div>
+
         {/* Target Date */}
         {profile.goal !== 'maintain' && (
           <motion.div variants={itemVariants} className="nova-card p-5">
