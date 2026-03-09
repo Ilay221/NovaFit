@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
 import { predictGoalDate } from '@/lib/calculations';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
-import { isSuspiciousInflation, sanitizeKcalTarget } from '@/lib/calorie-guardrails';
+import { sanitizeKcalTarget } from '@/lib/calorie-guardrails';
 import CalorieRing from './CalorieRing';
 import MacroBar from './MacroBar';
 import FoodLogger from './FoodLogger';
@@ -82,26 +82,21 @@ export default function Dashboard({
   const effectiveCarbsTarget = profile.carbsTarget;
   const effectiveFatsTarget = profile.fatsTarget;
 
-  // One-way sync: allow adaptive to tighten targets (lower), but never increase them (prevents "3000 kcal" inflation).
+  // Sync adaptive targets when they differ from persisted (e.g. target date changed, weight updated).
   const lastSyncKeyRef = useRef<string>('');
   useEffect(() => {
     if (!hasTimeline || !adaptive) return;
 
     const computed = sanitizeKcalTarget(adaptive.dailyCalorieTarget, ringCalorieTarget);
 
-    if (isSuspiciousInflation({
-      goal: profile.goal,
-      persistedTargetKcal: ringCalorieTarget,
-      computedTargetKcal: computed,
-    })) {
-      // Keep UI + persisted target stable; log for debugging.
-      // eslint-disable-next-line no-console
-      console.warn('[CalorieTargetGuard] Ignored suspicious computed target', { persisted: ringCalorieTarget, computed });
+    // Generic guard: block obviously suspicious values (e.g. > 5000 kcal).
+    if (computed > 5000) {
+      console.warn('[CalorieTargetGuard] Blocked excessive target', { computed });
       return;
     }
 
-    // Only tighten (lower). If it matches or is higher, do nothing.
-    if (computed >= ringCalorieTarget) return;
+    // Skip if already in sync.
+    if (computed === ringCalorieTarget) return;
 
     const key = `${profile.targetDate ?? 'no-date'}:${computed}`;
     if (lastSyncKeyRef.current === key) return;
@@ -423,7 +418,7 @@ export default function Dashboard({
                               onClick={() => onRemoveMeal(meal.id)}
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.85 }}
-                              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
+                              className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
                             >
                               <X className="w-3.5 h-3.5" />
                             </motion.button>
