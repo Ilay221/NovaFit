@@ -15,6 +15,7 @@ import SettingsPanel from './SettingsPanel';
 import AIFoodScanner from './AIFoodScanner';
 import NLPFoodInput from './NLPFoodInput';
 import WeeklyAnalytics from './WeeklyAnalytics';
+import NutritionCoach from './NutritionCoach';
 import { useTheme } from '@/lib/store';
 import { format, parseISO, differenceInDays } from 'date-fns';
 
