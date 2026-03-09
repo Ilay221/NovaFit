@@ -10,6 +10,7 @@ import { format, parseISO, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import ProfileEditor from '@/components/ProfileEditor';
+import NFPEditor from '@/components/NFPEditor';
 
 interface SettingsPanelProps {
   theme: {
@@ -126,6 +127,10 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
 
         <motion.div variants={itemVariants}>
           <ProfileEditor profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <NFPEditor profile={profile} onUpdateProfile={onUpdateProfile} />
         </motion.div>
 
         {/* Target Date */}

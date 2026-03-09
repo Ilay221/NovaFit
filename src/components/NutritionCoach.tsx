@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Sparkles, Bot, User, Loader2, RefreshCw, WifiOff, Menu } from 'lucide-react';
+import { ArrowLeft, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
@@ -20,15 +20,24 @@ const MAX_CLIENT_RETRIES = 2;
 const FRIENDLY_ERRORS: Record<string, string> = {
   RATE_LIMITED: "🧘 I'm getting a lot of questions right now! Give me a moment and try again.",
   CREDITS_EXHAUSTED: "⚡ AI credits are used up for now. Please try again later.",
-  TIMEOUT: "⏳ I'm taking a bit longer than usual to think. Let's try that again!",
-  SERVICE_ERROR: "🔧 I'm having a quick maintenance moment. Please try again shortly!",
-  NETWORK_ERROR: "📡 Looks like we lost connection. Check your internet and try again.",
+  TIMEOUT: "⏳ That took longer than expected. Let's try again!",
+  SERVICE_ERROR: "🔧 Quick maintenance moment. Please try again shortly!",
   INTERNAL_ERROR: "🤔 Something unexpected happened. Let's give it another try!",
+  FETCH_FAILED: "😅 Couldn't reach the server. Please try again in a moment.",
 };
 
 function getFriendlyError(code?: string): string {
   if (code && FRIENDLY_ERRORS[code]) return FRIENDLY_ERRORS[code];
   return "🤔 Your AI coach is taking a quick breather. Please try again in a moment!";
+}
+
+/** Classify fetch errors without falsely blaming the user's network */
+function classifyError(e: any): string {
+  if (e?.code) return e.code;
+  if (e?.name === 'AbortError') return 'TIMEOUT';
+  // Don't say "check your internet" — the server may be down.
+  // Just say fetch failed and let the user retry.
+  return 'FETCH_FAILED';
 }
 
 export default function NutritionCoach({ onClose, userName }: NutritionCoachProps) {
@@ -49,10 +58,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
 
   useEffect(() => { return () => { abortRef.current?.abort(); }; }, []);
 
-  // Load sessions on mount
-  useEffect(() => {
-    loadSessions();
-  }, []);
+  useEffect(() => { loadSessions(); }, []);
 
   const loadSessions = async () => {
     const { data } = await supabase
@@ -71,7 +77,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
     if (data) {
       setMessages(data.map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content })));
     }
-    setTitleGenerated(true); // existing session already has title
+    setTitleGenerated(true);
   };
 
   const createSession = async (): Promise<string | null> => {
@@ -96,16 +102,13 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
       role,
       content,
     });
-    // Update session timestamp
     await supabase.from('chat_sessions').update({ updated_at: new Date().toISOString() }).eq('id', sessionId);
   };
 
   const autoGenerateTitle = async (sessionId: string, msgs: Msg[]) => {
     if (titleGenerated) return;
-    // Generate after 2 messages (1 user + 1 assistant)
     const realMsgs = msgs.filter(m => !m.error);
     if (realMsgs.length < 2) return;
-
     setTitleGenerated(true);
     try {
       const session = await supabase.auth.getSession();
@@ -128,9 +131,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
           setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title } : s));
         }
       }
-    } catch {
-      // Non-critical, ignore
-    }
+    } catch { /* non-critical */ }
   };
 
   const handleNewChat = () => {
@@ -161,16 +162,13 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
   const handleDelete = async (id: string) => {
     await supabase.from('chat_sessions').delete().eq('id', id);
     setSessions(prev => prev.filter(s => s.id !== id));
-    if (activeSessionId === id) {
-      handleNewChat();
-    }
+    if (activeSessionId === id) handleNewChat();
   };
 
   const send = useCallback(async (overrideInput?: string) => {
     const text = (overrideInput ?? input).trim();
     if (!text || isLoading) return;
 
-    // Create session if needed
     let sessionId = activeSessionId;
     if (!sessionId) {
       sessionId = await createSession();
@@ -185,7 +183,6 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
     setIsLoading(true);
     setLastFailedInput(null);
 
-    // Save user message to DB
     await saveMessage(sessionId, 'user', text);
 
     abortRef.current?.abort();
@@ -218,15 +215,15 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
 
         if (!resp.ok) {
           let errData: any = {};
-          try { errData = await resp.json(); } catch { await resp.text(); }
+          try { errData = await resp.json(); } catch { try { await resp.text(); } catch {} }
           if (resp.status === 402 || resp.status === 400) {
-            throw { code: errData.code, noRetry: true };
+            throw { code: errData.code || 'CREDITS_EXHAUSTED', noRetry: true };
           }
           if (attempt < MAX_CLIENT_RETRIES) {
-            await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt) + Math.random() * 500));
+            await new Promise(r => setTimeout(r, 1500 * Math.pow(2, attempt) + Math.random() * 500));
             continue;
           }
-          throw { code: errData.code };
+          throw { code: errData.code || 'SERVICE_ERROR' };
         }
 
         if (!resp.body) throw { code: 'SERVICE_ERROR' };
@@ -271,21 +268,18 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
         }
 
         succeeded = true;
-        // Save assistant message
         if (assistantSoFar) {
           await saveMessage(sessionId!, 'assistant', assistantSoFar);
-          // Auto-generate title after first exchange
-          const allMsgs = [...prevMessages, { role: 'assistant' as const, content: assistantSoFar }];
-          autoGenerateTitle(sessionId!, allMsgs);
+          autoGenerateTitle(sessionId!, [...prevMessages, { role: 'assistant' as const, content: assistantSoFar }]);
         }
       } catch (e: any) {
         if (e?.noRetry || attempt >= MAX_CLIENT_RETRIES || controller.signal.aborted) {
-          const code = e?.code || (e?.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK_ERROR');
+          const code = classifyError(e);
           setMessages(prev => [...prev, { role: 'assistant', content: getFriendlyError(code), error: true }]);
           setLastFailedInput(text);
           break;
         }
-        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt) + Math.random() * 500));
+        await new Promise(r => setTimeout(r, 1500 * Math.pow(2, attempt) + Math.random() * 500));
       }
     }
 
@@ -351,8 +345,8 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
         <motion.button onClick={() => setSidebarOpen(true)} whileTap={{ scale: 0.9 }} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center">
           <Menu className="w-4 h-4" />
         </motion.button>
-        <div className="flex items-center gap-2.5 flex-1">
-          <div className="w-9 h-9 rounded-full nova-gradient flex items-center justify-center">
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <div className="w-9 h-9 rounded-full nova-gradient flex items-center justify-center shrink-0">
             <Sparkles className="w-4 h-4 text-primary-foreground" />
           </div>
           <div className="min-w-0">
@@ -362,7 +356,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
             <p className="text-[11px] text-muted-foreground">Your personal nutrition coach</p>
           </div>
         </div>
-        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+        <div className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
       </div>
 
       {/* Messages */}
@@ -414,7 +408,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
             >
               {msg.role === 'assistant' && (
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 ${msg.error ? 'bg-destructive/10' : 'nova-gradient'}`}>
-                  {msg.error ? <WifiOff className="w-3.5 h-3.5 text-destructive" /> : <Bot className="w-3.5 h-3.5 text-primary-foreground" />}
+                  {msg.error ? <AlertCircle className="w-3.5 h-3.5 text-destructive" /> : <Bot className="w-3.5 h-3.5 text-primary-foreground" />}
                 </div>
               )}
               <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
