@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
+import ProfileEditor from '@/components/ProfileEditor';
 
 interface SettingsPanelProps {
   theme: {
@@ -123,28 +124,8 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
           <h2 className="text-[20px] font-bold font-display tracking-tight">Settings</h2>
         </motion.div>
 
-        {/* Profile */}
-        <motion.div variants={itemVariants} className="nova-card p-5">
-          <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4">Profile</h3>
-          <div className="space-y-3">
-            {[
-              { label: 'Name', value: profile.name },
-              { label: 'Goal', value: `${profile.goal.charAt(0).toUpperCase() + profile.goal.slice(1)} weight` },
-              { label: 'Daily Target', value: `${profile.dailyCalorieTarget} kcal` },
-              { label: 'BMR / TDEE', value: `${profile.bmr} / ${profile.tdee}` },
-            ].map((item, i) => (
-              <motion.div
-                key={item.label}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + i * 0.05, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="flex justify-between items-center py-1"
-              >
-                <span className="text-sm text-muted-foreground">{item.label}</span>
-                <span className="text-sm font-medium tabular-nums">{item.value}</span>
-              </motion.div>
-            ))}
-          </div>
+        <motion.div variants={itemVariants}>
+          <ProfileEditor profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} />
         </motion.div>
 
         {/* Target Date */}
