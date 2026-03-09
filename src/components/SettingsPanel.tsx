@@ -4,10 +4,11 @@ import { ArrowLeft, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Cale
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AccentColor, ThemeMode, UserProfile } from '@/lib/types';
+import { AccentColor, ThemeMode, UserProfile, WeightEntry } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 
 interface SettingsPanelProps {
   theme: {
@@ -17,6 +18,7 @@ interface SettingsPanelProps {
     setAccent: (a: AccentColor) => void;
   };
   profile: UserProfile;
+  weightHistory: WeightEntry[];
   onUpdateProfile: (p: UserProfile | null) => void;
   onClose: () => void;
 }
@@ -49,7 +51,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.32, 0.72, 0, 1] as const } },
 };
 
-export default function SettingsPanel({ theme, profile, onUpdateProfile, onClose }: SettingsPanelProps) {
+export default function SettingsPanel({ theme, profile, weightHistory, onUpdateProfile, onClose }: SettingsPanelProps) {
   const { signOut } = useAuth();
   const [datePickerOpen, setDatePickerOpen] = useState(false);
 
@@ -57,18 +59,41 @@ export default function SettingsPanel({ theme, profile, onUpdateProfile, onClose
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      onUpdateProfile({
+      const newTargetDate = date.toISOString().slice(0, 10);
+      const updatedProfile = {
         ...profile,
-        targetDate: date.toISOString().slice(0, 10),
+        targetDate: newTargetDate,
+      };
+      
+      // Recalculate adaptive targets with the new date
+      const adaptive = calculateAdaptiveTargets(updatedProfile, weightHistory);
+      
+      onUpdateProfile({
+        ...updatedProfile,
+        dailyCalorieTarget: adaptive.dailyCalorieTarget,
+        proteinTarget: adaptive.proteinTarget,
+        carbsTarget: adaptive.carbsTarget,
+        fatsTarget: adaptive.fatsTarget,
       });
     }
     setDatePickerOpen(false);
   };
 
   const handleClearTargetDate = () => {
-    onUpdateProfile({
+    // When clearing target date, recalculate with standard targets (no timeline)
+    const updatedProfile = {
       ...profile,
       targetDate: null,
+    };
+    
+    const adaptive = calculateAdaptiveTargets(updatedProfile, weightHistory);
+    
+    onUpdateProfile({
+      ...updatedProfile,
+      dailyCalorieTarget: adaptive.dailyCalorieTarget,
+      proteinTarget: adaptive.proteinTarget,
+      carbsTarget: adaptive.carbsTarget,
+      fatsTarget: adaptive.fatsTarget,
     });
   };
 

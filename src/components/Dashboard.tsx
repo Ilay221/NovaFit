@@ -143,7 +143,7 @@ export default function Dashboard({
           <FoodLogger onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
         )}
         {view === 'settings' && (
-          <SettingsPanel theme={theme} profile={profile} onUpdateProfile={onUpdateProfile} onClose={() => setView('dashboard')} />
+          <SettingsPanel theme={theme} profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} onClose={() => setView('dashboard')} />
         )}
         {view === 'ai-scanner' && (
           <AIFoodScanner onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
