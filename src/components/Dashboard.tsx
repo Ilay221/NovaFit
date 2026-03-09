@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
 import { predictGoalDate } from '@/lib/calculations';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
-import { isSuspiciousInflation, sanitizeKcalTarget } from '@/lib/calorie-guardrails';
+import { sanitizeKcalTarget } from '@/lib/calorie-guardrails';
 import CalorieRing from './CalorieRing';
 import MacroBar from './MacroBar';
 import FoodLogger from './FoodLogger';
