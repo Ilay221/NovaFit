@@ -82,26 +82,21 @@ export default function Dashboard({
   const effectiveCarbsTarget = profile.carbsTarget;
   const effectiveFatsTarget = profile.fatsTarget;
 
-  // One-way sync: allow adaptive to tighten targets (lower), but never increase them (prevents "3000 kcal" inflation).
+  // Sync adaptive targets when they differ from persisted (e.g. target date changed, weight updated).
   const lastSyncKeyRef = useRef<string>('');
   useEffect(() => {
     if (!hasTimeline || !adaptive) return;
 
     const computed = sanitizeKcalTarget(adaptive.dailyCalorieTarget, ringCalorieTarget);
 
-    if (isSuspiciousInflation({
-      goal: profile.goal,
-      persistedTargetKcal: ringCalorieTarget,
-      computedTargetKcal: computed,
-    })) {
-      // Keep UI + persisted target stable; log for debugging.
-      // eslint-disable-next-line no-console
-      console.warn('[CalorieTargetGuard] Ignored suspicious computed target', { persisted: ringCalorieTarget, computed });
+    // Generic guard: block obviously suspicious values (e.g. > 5000 kcal).
+    if (computed > 5000) {
+      console.warn('[CalorieTargetGuard] Blocked excessive target', { computed });
       return;
     }
 
-    // Only tighten (lower). If it matches or is higher, do nothing.
-    if (computed >= ringCalorieTarget) return;
+    // Skip if already in sync.
+    if (computed === ringCalorieTarget) return;
 
     const key = `${profile.targetDate ?? 'no-date'}:${computed}`;
     if (lastSyncKeyRef.current === key) return;
