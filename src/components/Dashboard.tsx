@@ -463,6 +463,21 @@ export default function Dashboard({
           <motion.div
             initial={{ scale: 0, opacity: 0, rotate: -90 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ delay: 0.7, type: 'spring', stiffness: 400, damping: 20 }}
+          >
+            <motion.div whileHover={{ scale: 1.12, rotate: 10 }} whileTap={{ scale: 0.88 }}>
+              <Button
+                onClick={() => setView('ai-coach')}
+                variant="outline"
+                className="h-11 w-11 rounded-full shadow-md p-0 bg-card border-border/80 hover:bg-muted transition-all duration-200"
+              >
+                <Sparkles className="w-[18px] h-[18px]" />
+              </Button>
+            </motion.div>
+          </motion.div>
+          <motion.div
+            initial={{ scale: 0, opacity: 0, rotate: -90 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ delay: 0.6, type: 'spring', stiffness: 400, damping: 20 }}
           >
             <motion.div whileHover={{ scale: 1.12, rotate: 10 }} whileTap={{ scale: 0.88 }}>
