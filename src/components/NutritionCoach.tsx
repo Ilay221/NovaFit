@@ -139,7 +139,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
             <p className="text-[11px] text-muted-foreground">Your personal nutrition coach</p>
           </div>
         </div>
-        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
       </div>
 
       {/* Messages */}
