@@ -99,6 +99,9 @@ export function useProfile() {
       carbs_target: p.carbsTarget,
       fats_target: p.fatsTarget,
       target_date: p.targetDate || null,
+      favorite_food: p.favoriteFood || '',
+      dietary_weakness: p.dietaryWeakness || '',
+      daily_habits: p.dailyHabits || '',
       updated_at: new Date().toISOString(),
     };
     
