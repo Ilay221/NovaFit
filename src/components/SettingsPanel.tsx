@@ -4,10 +4,11 @@ import { ArrowLeft, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Cale
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AccentColor, ThemeMode, UserProfile } from '@/lib/types';
+import { AccentColor, ThemeMode, UserProfile, WeightEntry } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 
 interface SettingsPanelProps {
   theme: {
@@ -17,6 +18,7 @@ interface SettingsPanelProps {
     setAccent: (a: AccentColor) => void;
   };
   profile: UserProfile;
+  weightHistory: WeightEntry[];
   onUpdateProfile: (p: UserProfile | null) => void;
   onClose: () => void;
 }
