@@ -64,6 +64,26 @@ export function calculateAdaptiveTargets(
 
   // Total kcal change needed
   const weightDiff = currentWeight - targetWeightKg; // positive = need to lose
+
+  // Guardrails: if user is already at/over the target for their goal direction, don't "flip" the math.
+  // This prevents inflated targets (e.g. 3000+ kcal) when goal/target weight are inconsistent.
+  const goalDirectionSatisfied =
+    (goal === 'lose' && weightDiff <= 0) ||
+    (goal === 'gain' && weightDiff >= 0);
+
+  if (goalDirectionSatisfied) {
+    const macros = calculateMacros(profile.dailyCalorieTarget, goal);
+    return {
+      dailyCalorieTarget: profile.dailyCalorieTarget,
+      proteinTarget: macros.protein,
+      carbsTarget: macros.carbs,
+      fatsTarget: macros.fats,
+      isSafe: true,
+      dailyDeficit: 0,
+      daysRemaining,
+    };
+  }
+
   const totalKcalNeeded = weightDiff * KCAL_PER_KG;
 
   // Daily deficit/surplus needed

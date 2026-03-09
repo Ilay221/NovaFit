@@ -37,7 +37,8 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
       if (t < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-  }, [remaining]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining, isOver]);
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>

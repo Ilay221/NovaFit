@@ -224,12 +224,12 @@ export default function Dashboard({
             className="nova-card p-6 nova-breathe"
           >
             <div className="flex flex-col items-center">
-              <CalorieRing consumed={totals.calories} target={effectiveCalorieTarget} />
+              <CalorieRing consumed={totals.calories} target={ringCalorieTarget} />
               <div className="flex gap-10 mt-6">
                 {[
-                  { label: 'Target', value: effectiveCalorieTarget },
+                  { label: 'Target', value: ringCalorieTarget },
                   { label: 'Consumed', value: totals.calories },
-                  { label: 'Remaining', value: effectiveCalorieTarget - totals.calories },
+                  { label: 'Remaining', value: ringCalorieTarget - totals.calories },
                 ].map((item, i) => (
                   <motion.div
                     key={item.label}
@@ -256,7 +256,7 @@ export default function Dashboard({
                   <span className="text-[11px] font-semibold text-primary tabular-nums">{daysRemaining} days left</span>
                 </motion.div>
               )}
-              {hasTimeline && !adaptive.isSafe && (
+              {hasTimeline && adaptive && !adaptive.isSafe && (
                 <motion.div
                   className="mt-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20"
                   initial={{ opacity: 0 }}
