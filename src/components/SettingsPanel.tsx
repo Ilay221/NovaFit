@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AccentColor, ThemeMode, UserProfile } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { format, parseISO, addDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface SettingsPanelProps {
   theme: {
@@ -46,6 +51,27 @@ const itemVariants = {
 
 export default function SettingsPanel({ theme, profile, onUpdateProfile, onClose }: SettingsPanelProps) {
   const { signOut } = useAuth();
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+
+  const currentTargetDate = profile.targetDate ? parseISO(profile.targetDate) : null;
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      onUpdateProfile({
+        ...profile,
+        targetDate: date.toISOString().slice(0, 10),
+      });
+    }
+    setDatePickerOpen(false);
+  };
+
+  const handleClearTargetDate = () => {
+    onUpdateProfile({
+      ...profile,
+      targetDate: null,
+    });
+  };
+
   return (
     <motion.div
       initial={{ x: '100%' }}
@@ -95,6 +121,60 @@ export default function SettingsPanel({ theme, profile, onUpdateProfile, onClose
             ))}
           </div>
         </motion.div>
+
+        {/* Target Date */}
+        {profile.goal !== 'maintain' && (
+          <motion.div variants={itemVariants} className="nova-card p-5">
+            <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4 flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5 text-primary" /> Target Date
+            </h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Set a deadline to reach your goal weight. Your daily calorie target will adjust automatically.
+            </p>
+            <div className="flex gap-2">
+              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "flex-1 justify-start text-left font-normal h-11 rounded-xl",
+                      !currentTargetDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {currentTargetDate ? format(currentTargetDate, "PPP") : <span>Pick a target date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={currentTargetDate ?? undefined}
+                    onSelect={handleDateSelect}
+                    disabled={(date) => date < addDays(new Date(), 7)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {currentTargetDate && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                >
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleClearTargetDate}
+                    className="h-11 w-11 rounded-xl text-muted-foreground hover:text-destructive hover:border-destructive/30"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* Theme Mode */}
         <motion.div variants={itemVariants} className="nova-card p-5">
