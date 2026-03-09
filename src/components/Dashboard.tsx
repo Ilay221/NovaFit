@@ -150,6 +150,9 @@ export default function Dashboard({
         {view === 'analytics' && (
           <WeeklyAnalytics profile={profile} onClose={() => setView('dashboard')} />
         )}
+        {view === 'ai-coach' && (
+          <NutritionCoach onClose={() => setView('dashboard')} userName={profile.name} />
+        )}
       </AnimatePresence>
 
       {view === 'dashboard' && (
