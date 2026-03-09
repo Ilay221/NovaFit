@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Activity, Target, Dumbbell, Ruler, Check, Sparkles, Calendar, AlertTriangle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Activity, Target, Dumbbell, Ruler, Check, Sparkles, Calendar, AlertTriangle, Heart, Cookie, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import { calculateBMR, calculateTDEE, calculateCalorieTarget, calculateMacros } 
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import { format, addDays, differenceInDays, parseISO } from 'date-fns';
 
-const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'timeline', 'results'] as const;
+const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'preferences', 'timeline', 'results'] as const;
 type Step = typeof STEPS[number];
 
 interface OnboardingProps {
@@ -28,6 +28,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [goal, setGoal] = useState<Goal>('lose');
   const [targetDays, setTargetDays] = useState(90);
   const [useTimeline, setUseTimeline] = useState(false);
+  const [favoriteFood, setFavoriteFood] = useState('');
+  const [dietaryWeakness, setDietaryWeakness] = useState('');
+  const [dailyHabits, setDailyHabits] = useState('');
 
   const stepIndex = STEPS.indexOf(step);
   const next = () => setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)]);
@@ -62,6 +65,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       dailyCalorieTarget: finalCalories,
       proteinTarget: finalMacros.protein, carbsTarget: finalMacros.carbs, fatsTarget: finalMacros.fats,
       targetDate: targetDateStr,
+      favoriteFood, dietaryWeakness, dailyHabits,
     });
   };
 
@@ -379,6 +383,88 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   </motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                     <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">See My Plan <ArrowRight className="w-4 h-4" /></Button>
+                  </motion.div>
+                </div>
+              </div>
+            )}
+
+            {step === 'preferences' && (
+              <div className="space-y-8">
+                <div>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <motion.div
+                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
+                      initial={{ scale: 0, rotate: -30 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                    >
+                      <Heart className="w-4 h-4 text-primary" />
+                    </motion.div>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Get Personal</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Help your AI coach know you better</p>
+                </div>
+
+                <div className="space-y-5">
+                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5">
+                      <Heart className="w-3 h-3" /> Favorite Food
+                    </Label>
+                    <Input
+                      value={favoriteFood}
+                      onChange={e => setFavoriteFood(e.target.value)}
+                      placeholder="e.g., Sushi, Pasta, Steak..."
+                      className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1.5">What food makes you happiest?</p>
+                  </motion.div>
+
+                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.18 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5">
+                      <Cookie className="w-3 h-3" /> Dietary Weakness
+                    </Label>
+                    <Input
+                      value={dietaryWeakness}
+                      onChange={e => setDietaryWeakness(e.target.value)}
+                      placeholder="e.g., Chocolate, Pizza, Ice cream..."
+                      className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1.5">That one thing you can't resist 😅</p>
+                  </motion.div>
+
+                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.26 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5">
+                      <Clock className="w-3 h-3" /> Daily Habits
+                    </Label>
+                    <textarea
+                      value={dailyHabits}
+                      onChange={e => setDailyHabits(e.target.value)}
+                      placeholder="e.g., I skip breakfast, snack at night, eat lunch at 1pm..."
+                      rows={3}
+                      className="flex w-full rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md px-3 py-3 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring resize-none"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1.5">Your AI coach will use this to give smarter advice</p>
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10"
+                >
+                  <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Your AI nutrition coach will use these preferences to give you <span className="text-foreground font-medium">personalized meal suggestions</span> and help you manage cravings smartly.
+                  </p>
+                </motion.div>
+
+                <div className="flex gap-3 pt-2">
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
+                  </motion.div>
+                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">Continue <ArrowRight className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>

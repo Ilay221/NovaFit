@@ -64,6 +64,9 @@ export function useProfile() {
           fatsTarget: data.fats_target,
           isPremium: (data as any).is_premium ?? false,
           targetDate: (data as any).target_date ?? null,
+          favoriteFood: (data as any).favorite_food ?? '',
+          dietaryWeakness: (data as any).dietary_weakness ?? '',
+          dailyHabits: (data as any).daily_habits ?? '',
         });
       }
       setLoading(false);
@@ -96,6 +99,9 @@ export function useProfile() {
       carbs_target: p.carbsTarget,
       fats_target: p.fatsTarget,
       target_date: p.targetDate || null,
+      favorite_food: p.favoriteFood || '',
+      dietary_weakness: p.dietaryWeakness || '',
+      daily_habits: p.dailyHabits || '',
       updated_at: new Date().toISOString(),
     };
     

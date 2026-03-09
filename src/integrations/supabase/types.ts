@@ -102,7 +102,10 @@ export type Database = {
           carbs_target: number
           created_at: string
           daily_calorie_target: number
+          daily_habits: string
+          dietary_weakness: string
           fats_target: number
+          favorite_food: string
           gender: string
           goal: string
           height_cm: number
@@ -123,7 +126,10 @@ export type Database = {
           carbs_target?: number
           created_at?: string
           daily_calorie_target?: number
+          daily_habits?: string
+          dietary_weakness?: string
           fats_target?: number
+          favorite_food?: string
           gender?: string
           goal?: string
           height_cm?: number
@@ -144,7 +150,10 @@ export type Database = {
           carbs_target?: number
           created_at?: string
           daily_calorie_target?: number
+          daily_habits?: string
+          dietary_weakness?: string
           fats_target?: number
+          favorite_food?: string
           gender?: string
           goal?: string
           height_cm?: number

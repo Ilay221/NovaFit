@@ -15,6 +15,7 @@ import SettingsPanel from './SettingsPanel';
 import AIFoodScanner from './AIFoodScanner';
 import NLPFoodInput from './NLPFoodInput';
 import WeeklyAnalytics from './WeeklyAnalytics';
+import NutritionCoach from './NutritionCoach';
 import { useTheme } from '@/lib/store';
 import { format, parseISO, differenceInDays } from 'date-fns';
 
@@ -29,7 +30,7 @@ interface DashboardProps {
   onUpdateProfile: (profile: UserProfile | null) => void;
 }
 
-type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics';
+type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -148,6 +149,9 @@ export default function Dashboard({
         )}
         {view === 'analytics' && (
           <WeeklyAnalytics profile={profile} onClose={() => setView('dashboard')} />
+        )}
+        {view === 'ai-coach' && (
+          <NutritionCoach onClose={() => setView('dashboard')} userName={profile.name} />
         )}
       </AnimatePresence>
 
@@ -456,6 +460,21 @@ export default function Dashboard({
       {/* FAB Group */}
       {view === 'dashboard' && (
         <div className="fixed bottom-6 right-5 z-40 flex flex-col gap-2.5 items-end">
+          <motion.div
+            initial={{ scale: 0, opacity: 0, rotate: -90 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ delay: 0.7, type: 'spring', stiffness: 400, damping: 20 }}
+          >
+            <motion.div whileHover={{ scale: 1.12, rotate: 10 }} whileTap={{ scale: 0.88 }}>
+              <Button
+                onClick={() => setView('ai-coach')}
+                variant="outline"
+                className="h-11 w-11 rounded-full shadow-md p-0 bg-card border-border/80 hover:bg-muted transition-all duration-200"
+              >
+                <Sparkles className="w-[18px] h-[18px]" />
+              </Button>
+            </motion.div>
+          </motion.div>
           <motion.div
             initial={{ scale: 0, opacity: 0, rotate: -90 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
