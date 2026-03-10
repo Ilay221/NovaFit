@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu } from 'lucide-react';
+import { ArrowRight, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
@@ -18,25 +18,22 @@ const CLIENT_TIMEOUT_MS = 45000;
 const MAX_CLIENT_RETRIES = 2;
 
 const FRIENDLY_ERRORS: Record<string, string> = {
-  RATE_LIMITED: "🧘 I'm getting a lot of questions right now! Give me a moment and try again.",
-  CREDITS_EXHAUSTED: "⚡ AI credits are used up for now. Please try again later.",
-  TIMEOUT: "⏳ That took longer than expected. Let's try again!",
-  SERVICE_ERROR: "🔧 Quick maintenance moment. Please try again shortly!",
-  INTERNAL_ERROR: "🤔 Something unexpected happened. Let's give it another try!",
-  FETCH_FAILED: "😅 Couldn't reach the server. Please try again in a moment.",
+  RATE_LIMITED: "🧘 אני מקבל הרבה שאלות כרגע! תן לי רגע ונסה שוב.",
+  CREDITS_EXHAUSTED: "⚡ נגמרו הקרדיטים של ה-AI. נסה שוב מאוחר יותר.",
+  TIMEOUT: "⏳ זה לקח יותר מדי זמן. בוא ננסה שוב!",
+  SERVICE_ERROR: "🔧 רגע של תחזוקה. נסה שוב בקרוב!",
+  INTERNAL_ERROR: "🤔 קרה משהו לא צפוי. בוא ננסה שוב!",
+  FETCH_FAILED: "😅 לא הצלחתי להתחבר לשרת. נסה שוב בעוד רגע.",
 };
 
 function getFriendlyError(code?: string): string {
   if (code && FRIENDLY_ERRORS[code]) return FRIENDLY_ERRORS[code];
-  return "🤔 Your AI coach is taking a quick breather. Please try again in a moment!";
+  return "🤔 מאמן ה-AI שלך לוקח הפסקה קצרה. נסה שוב בעוד רגע!";
 }
 
-/** Classify fetch errors without falsely blaming the user's network */
 function classifyError(e: any): string {
   if (e?.code) return e.code;
   if (e?.name === 'AbortError') return 'TIMEOUT';
-  // Don't say "check your internet" — the server may be down.
-  // Just say fetch failed and let the user retry.
   return 'FETCH_FAILED';
 }
 
@@ -85,7 +82,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
     if (!user) return null;
     const { data, error } = await supabase
       .from('chat_sessions')
-      .insert({ user_id: user.id, title: 'New Chat' })
+      .insert({ user_id: user.id, title: 'שיחה חדשה' })
       .select()
       .single();
     if (error || !data) return null;
@@ -126,7 +123,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
       });
       if (resp.ok) {
         const { title } = await resp.json();
-        if (title && title !== 'New Chat') {
+        if (title && title !== 'שיחה חדשה') {
           await supabase.from('chat_sessions').update({ title }).eq('id', sessionId);
           setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title } : s));
         }
@@ -298,10 +295,10 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
   }, [lastFailedInput, send]);
 
   const suggestions = [
-    '🍽️ What should I eat for dinner?',
-    '🥤 How much water should I drink?',
-    '💪 Am I hitting my protein goals?',
-    '🍫 I\'m craving something sweet',
+    '🍽️ מה כדאי לי לאכול לארוחת ערב?',
+    '🥤 כמה מים כדאי לי לשתות?',
+    '💪 האם אני עומד ביעדי החלבון?',
+    '🍫 אני משתוקק למשהו מתוק',
   ];
 
   return (
@@ -340,7 +337,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
       {/* Header */}
       <div className="flex items-center gap-3 px-5 pt-safe pb-3 border-b border-border/50 bg-background/80 backdrop-blur-xl relative z-[1]">
         <motion.button onClick={onClose} whileTap={{ scale: 0.9 }} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center">
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4" />
         </motion.button>
         <motion.button onClick={() => setSidebarOpen(true)} whileTap={{ scale: 0.9 }} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center">
           <Menu className="w-4 h-4" />
@@ -353,7 +350,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
             <h2 className="font-bold font-display text-[15px] leading-tight truncate">
               {activeSessionId ? sessions.find(s => s.id === activeSessionId)?.title || 'NovaFit AI' : 'NovaFit AI'}
             </h2>
-            <p className="text-[11px] text-muted-foreground">Your personal nutrition coach</p>
+            <p className="text-[11px] text-muted-foreground">מאמן התזונה האישי שלך</p>
           </div>
         </div>
         <div className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
@@ -375,9 +372,9 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
             >
               <Sparkles className="w-8 h-8 text-primary-foreground" />
             </motion.div>
-            <h3 className="font-bold font-display text-lg">Hey {userName}! 👋</h3>
+            <h3 className="font-bold font-display text-lg">היי {userName}! 👋</h3>
             <p className="text-sm text-muted-foreground mt-2 max-w-[260px]">
-              I'm your AI nutrition coach. Ask me anything!
+              אני מאמן התזונה שלך. שאל אותי כל דבר!
             </p>
             <div className="grid grid-cols-2 gap-2 mt-6 w-full max-w-sm">
               {suggestions.map((s, i) => (
@@ -388,7 +385,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
                   transition={{ delay: 0.4 + i * 0.08 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setInput(s)}
-                  className="text-left p-3 rounded-xl bg-muted/50 border border-border/50 text-xs font-medium hover:bg-muted/80 transition-colors"
+                  className="text-right p-3 rounded-xl bg-muted/50 border border-border/50 text-xs font-medium hover:bg-muted/80 transition-colors"
                 >
                   {s}
                 </motion.button>
@@ -404,11 +401,11 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
               initial={{ opacity: 0, y: 8, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.3 }}
-              className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}
             >
-              {msg.role === 'assistant' && (
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 ${msg.error ? 'bg-destructive/10' : 'nova-gradient'}`}>
-                  {msg.error ? <AlertCircle className="w-3.5 h-3.5 text-destructive" /> : <Bot className="w-3.5 h-3.5 text-primary-foreground" />}
+              {msg.role === 'user' && (
+                <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-1">
+                  <User className="w-3.5 h-3.5 text-muted-foreground" />
                 </div>
               )}
               <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
@@ -431,7 +428,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
                         className="mt-2 flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
                       >
                         <RefreshCw className="w-3 h-3" />
-                        Try again
+                        נסה שוב
                       </motion.button>
                     )}
                   </>
@@ -439,9 +436,9 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
                   <span>{msg.content}</span>
                 )}
               </div>
-              {msg.role === 'user' && (
-                <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-1">
-                  <User className="w-3.5 h-3.5 text-muted-foreground" />
+              {msg.role === 'assistant' && (
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 ${msg.error ? 'bg-destructive/10' : 'nova-gradient'}`}>
+                  {msg.error ? <AlertCircle className="w-3.5 h-3.5 text-destructive" /> : <Bot className="w-3.5 h-3.5 text-primary-foreground" />}
                 </div>
               )}
             </motion.div>
@@ -449,10 +446,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
         </AnimatePresence>
 
         {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2.5">
-            <div className="w-7 h-7 rounded-full nova-gradient flex items-center justify-center shrink-0">
-              <Bot className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2.5 justify-end">
             <div className="bg-muted/60 border border-border/40 rounded-2xl rounded-bl-md px-4 py-3">
               <div className="flex gap-1">
                 {[0, 1, 2].map(i => (
@@ -465,6 +459,9 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
                 ))}
               </div>
             </div>
+            <div className="w-7 h-7 rounded-full nova-gradient flex items-center justify-center shrink-0">
+              <Bot className="w-3.5 h-3.5 text-primary-foreground" />
+            </div>
           </motion.div>
         )}
       </div>
@@ -476,7 +473,7 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="Ask me anything about your nutrition..."
+            placeholder="שאל אותי כל דבר על התזונה שלך..."
             rows={1}
             className="flex-1 resize-none rounded-xl bg-muted/50 border border-border/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all min-h-[42px] max-h-[120px]"
             style={{ height: 'auto', overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, ArrowLeft, Utensils } from 'lucide-react';
+import { Search, Plus, ArrowRight, Utensils } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { searchFoods } from '@/lib/food-database';
 import { FoodItem, MealEntry } from '@/lib/types';
@@ -12,10 +12,10 @@ interface FoodLoggerProps {
 }
 
 const MEAL_TYPES: { value: MealEntry['mealType']; label: string }[] = [
-  { value: 'breakfast', label: 'Breakfast' },
-  { value: 'lunch', label: 'Lunch' },
-  { value: 'dinner', label: 'Dinner' },
-  { value: 'snack', label: 'Snack' },
+  { value: 'breakfast', label: 'בוקר' },
+  { value: 'lunch', label: 'צהריים' },
+  { value: 'dinner', label: 'ערב' },
+  { value: 'snack', label: 'חטיף' },
 ];
 
 export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
@@ -63,12 +63,12 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
         <motion.button
           onClick={onClose}
           whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.9, rotate: -10 }}
+          whileTap={{ scale: 0.9, rotate: 10 }}
           className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4" />
         </motion.button>
-        <h2 className="text-[17px] font-bold font-display tracking-tight">Log Food</h2>
+        <h2 className="text-[17px] font-bold font-display tracking-tight">רישום אוכל</h2>
       </motion.div>
 
       <div className="px-5 space-y-4 flex-1 overflow-auto hide-scrollbar pb-8">
@@ -106,12 +106,12 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.4 }}
         >
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search foods..."
+            placeholder="חפש מאכלים..."
             value={query}
             onChange={e => setQuery(e.target.value)}
-            className="pl-10 h-11 rounded-xl bg-muted/40 border-0 focus-visible:ring-1 text-[14px]"
+            className="ps-10 h-11 rounded-xl bg-muted/40 border-0 focus-visible:ring-1 text-[14px]"
             autoFocus
           />
         </motion.div>
@@ -124,10 +124,10 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
                 key={food.id}
                 initial={{ opacity: 0, y: 10, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95, x: 40 }}
+                exit={{ opacity: 0, scale: 0.95, x: -40 }}
                 transition={{ delay: i * 0.025, duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
                 layout
-                whileHover={{ x: 4, backgroundColor: 'hsl(var(--muted) / 0.4)' }}
+                whileHover={{ x: -4, backgroundColor: 'hsl(var(--muted) / 0.4)' }}
                 className={`flex items-center gap-3 p-3.5 rounded-xl transition-colors cursor-pointer group ${
                   addedId === food.id ? 'bg-primary/10' : ''
                 }`}
@@ -135,11 +135,11 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-[14px]">{food.name}</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">{food.servingSize} · {food.calories} kcal</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{food.servingSize} · {food.calories} קק"ל</div>
                   <div className="flex gap-2.5 mt-1.5 text-[10px] font-medium">
-                    <span className="text-nova-protein tabular-nums">P {food.protein}g</span>
-                    <span className="text-nova-carbs tabular-nums">C {food.carbs}g</span>
-                    <span className="text-nova-fats tabular-nums">F {food.fats}g</span>
+                    <span className="text-nova-protein tabular-nums">ח {food.protein} גר׳</span>
+                    <span className="text-nova-carbs tabular-nums">פ {food.carbs} גר׳</span>
+                    <span className="text-nova-fats tabular-nums">ש {food.fats} גר׳</span>
                   </div>
                 </div>
                 <motion.div

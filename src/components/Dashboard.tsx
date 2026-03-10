@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronRight, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
@@ -46,10 +46,10 @@ const itemVariants = {
 };
 
 const MEAL_LABELS: Record<string, string> = {
-  breakfast: 'Breakfast',
-  lunch: 'Lunch',
-  dinner: 'Dinner',
-  snack: 'Snack',
+  breakfast: 'ארוחת בוקר',
+  lunch: 'ארוחת צהריים',
+  dinner: 'ארוחת ערב',
+  snack: 'חטיף',
 };
 
 export default function Dashboard({
@@ -71,38 +71,28 @@ export default function Dashboard({
 
   const hasTimeline = !!profile.targetDate && profile.goal !== 'maintain';
 
-  // Compute adaptive targets for timeline users, but NEVER let the UI ring exceed the persisted Daily Target.
   const adaptive = useMemo(
     () => (hasTimeline ? calculateAdaptiveTargets(profile, weightHistory) : null),
     [hasTimeline, profile, weightHistory]
   );
 
-  // Single source of truth for the ring: the persisted backend Daily Target.
   const ringCalorieTarget = sanitizeKcalTarget(profile.dailyCalorieTarget, 0);
   const effectiveProteinTarget = profile.proteinTarget;
   const effectiveCarbsTarget = profile.carbsTarget;
   const effectiveFatsTarget = profile.fatsTarget;
 
-  // Sync adaptive targets when they differ from persisted (e.g. target date changed, weight updated).
   const lastSyncKeyRef = useRef<string>('');
   useEffect(() => {
     if (!hasTimeline || !adaptive) return;
-
     const computed = sanitizeKcalTarget(adaptive.dailyCalorieTarget, ringCalorieTarget);
-
-    // Generic guard: block obviously suspicious values (e.g. > 5000 kcal).
     if (computed > 5000) {
       console.warn('[CalorieTargetGuard] Blocked excessive target', { computed });
       return;
     }
-
-    // Skip if already in sync.
     if (computed === ringCalorieTarget) return;
-
     const key = `${profile.targetDate ?? 'no-date'}:${computed}`;
     if (lastSyncKeyRef.current === key) return;
     lastSyncKeyRef.current = key;
-
     onUpdateProfile({
       ...profile,
       dailyCalorieTarget: computed,
@@ -167,7 +157,7 @@ export default function Dashboard({
             <div>
               <motion.p
                 className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.12em]"
-                initial={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
               >
@@ -176,7 +166,7 @@ export default function Dashboard({
               <div className="flex items-center gap-2 mt-0.5">
                 <motion.h1
                   className="text-[22px] font-bold font-display tracking-tight"
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.4 }}
                 >
@@ -190,7 +180,7 @@ export default function Dashboard({
                     className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20"
                   >
                     <Crown className="w-3 h-3 text-primary" />
-                    <span className="text-[10px] font-semibold text-primary uppercase tracking-[0.08em]">Premium</span>
+                    <span className="text-[10px] font-semibold text-primary uppercase tracking-[0.08em]">פרימיום</span>
                   </motion.div>
                 )}
               </div>
@@ -226,9 +216,9 @@ export default function Dashboard({
               <CalorieRing consumed={totals.calories} target={ringCalorieTarget} />
               <div className="flex gap-10 mt-6">
                 {[
-                  { label: 'Target', value: ringCalorieTarget },
-                  { label: 'Consumed', value: totals.calories },
-                  { label: 'Remaining', value: ringCalorieTarget - totals.calories },
+                  { label: 'יעד', value: ringCalorieTarget },
+                  { label: 'נצרך', value: totals.calories },
+                  { label: 'נותר', value: ringCalorieTarget - totals.calories },
                 ].map((item, i) => (
                   <motion.div
                     key={item.label}
@@ -237,7 +227,7 @@ export default function Dashboard({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.8 + i * 0.1, duration: 0.4 }}
                   >
-                    <div className={`text-[17px] font-bold font-display tabular-nums ${item.label === 'Remaining' && item.value < 0 ? 'text-[hsl(0_72%_51%)]' : ''}`}>
+                    <div className={`text-[17px] font-bold font-display tabular-nums ${item.label === 'נותר' && item.value < 0 ? 'text-[hsl(0_72%_51%)]' : ''}`}>
                       {item.value}
                     </div>
                     <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.1em] mt-1">{item.label}</div>
@@ -252,7 +242,7 @@ export default function Dashboard({
                   transition={{ delay: 1.2 }}
                 >
                   <Calendar className="w-3 h-3 text-primary" />
-                  <span className="text-[11px] font-semibold text-primary tabular-nums">{daysRemaining} days left</span>
+                  <span className="text-[11px] font-semibold text-primary tabular-nums">{daysRemaining} ימים נותרו</span>
                 </motion.div>
               )}
               {hasTimeline && adaptive && !adaptive.isSafe && (
@@ -262,7 +252,7 @@ export default function Dashboard({
                   animate={{ opacity: 1 }}
                 >
                   <AlertTriangle className="w-3 h-3 text-destructive" />
-                  <span className="text-[10px] font-medium text-destructive">Safety-capped intake</span>
+                  <span className="text-[10px] font-medium text-destructive">צריכה מוגבלת לבטיחות</span>
                 </motion.div>
               )}
             </div>
@@ -270,18 +260,18 @@ export default function Dashboard({
 
           {/* Macros Card */}
           <motion.div variants={itemVariants} className="nova-card p-5 mt-4 space-y-4">
-            <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">Macronutrients</h3>
-            <MacroBar label="Protein" current={totals.protein} target={effectiveProteinTarget} color="hsl(var(--nova-protein))" />
-            <MacroBar label="Carbs" current={totals.carbs} target={effectiveCarbsTarget} color="hsl(var(--nova-carbs))" />
-            <MacroBar label="Fats" current={totals.fats} target={effectiveFatsTarget} color="hsl(var(--nova-fats))" />
+            <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">מאקרו תזונתיים</h3>
+            <MacroBar label="חלבון" current={totals.protein} target={effectiveProteinTarget} color="hsl(var(--nova-protein))" />
+            <MacroBar label="פחמימות" current={totals.carbs} target={effectiveCarbsTarget} color="hsl(var(--nova-carbs))" />
+            <MacroBar label="שומנים" current={totals.fats} target={effectiveFatsTarget} color="hsl(var(--nova-fats))" />
           </motion.div>
 
           {/* Quick Stats */}
           <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3 mt-4">
             {[
-              { icon: <Droplets className="w-[18px] h-[18px] text-nova-info" />, value: `${dailyLog.waterMl}`, unit: 'ml', label: 'Water' },
-              { icon: <Scale className="w-[18px] h-[18px] text-primary" />, value: `${latestWeight}`, unit: 'kg', label: 'Weight' },
-              { icon: <TrendingDown className="w-[18px] h-[18px] text-nova-success" />, value: `${progressKg.toFixed(1)}`, unit: 'kg', label: 'Progress' },
+              { icon: <Droplets className="w-[18px] h-[18px] text-nova-info" />, value: `${dailyLog.waterMl}`, unit: 'מ"ל', label: 'מים' },
+              { icon: <Scale className="w-[18px] h-[18px] text-primary" />, value: `${latestWeight}`, unit: 'ק"ג', label: 'משקל' },
+              { icon: <TrendingDown className="w-[18px] h-[18px] text-nova-success" />, value: `${progressKg.toFixed(1)}`, unit: 'ק"ג', label: 'התקדמות' },
             ].map((stat, i) => (
               <motion.div
                 key={stat.label}
@@ -300,7 +290,7 @@ export default function Dashboard({
                   {stat.icon}
                 </motion.div>
                 <div className="font-bold text-[15px] font-display tabular-nums">
-                  {stat.value}<span className="text-[11px] text-muted-foreground font-normal ml-0.5">{stat.unit}</span>
+                  {stat.value}<span className="text-[11px] text-muted-foreground font-normal me-0.5">{stat.unit}</span>
                 </div>
                 <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.1em] mt-1">{stat.label}</div>
               </motion.div>
@@ -310,7 +300,7 @@ export default function Dashboard({
           {/* Water Quick Add */}
           <motion.div variants={itemVariants} className="nova-card p-5 mt-4">
             <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-3.5 flex items-center gap-2">
-              <Droplets className="w-3.5 h-3.5 text-nova-info" /> Water Intake
+              <Droplets className="w-3.5 h-3.5 text-nova-info" /> צריכת מים
             </h3>
             <div className="flex gap-2">
               {[250, 500, 750].map((ml, i) => (
@@ -324,7 +314,7 @@ export default function Dashboard({
                     onClick={() => onAddWater(ml)}
                     className="w-full text-xs rounded-xl h-10 font-medium transition-colors"
                   >
-                    +{ml}ml
+                    +{ml} מ"ל
                   </Button>
                 </motion.div>
               ))}
@@ -335,22 +325,22 @@ export default function Dashboard({
           <motion.div variants={itemVariants} className="nova-card p-5 mt-4">
             <div className="flex items-center justify-between mb-3.5">
               <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] flex items-center gap-2">
-                <Scale className="w-3.5 h-3.5 text-primary" /> Log Weight
+                <Scale className="w-3.5 h-3.5 text-primary" /> שקילה
               </h3>
               {weightHistory.length > 0 && (
                 <motion.button
                   onClick={() => setView('weight')}
-                  whileHover={{ x: 3 }}
+                  whileHover={{ x: -3 }}
                   className="text-xs text-primary font-medium flex items-center gap-0.5 hover:opacity-70 transition-opacity"
                 >
-                  History <ChevronRight className="w-3 h-3" />
+                  היסטוריה <ChevronLeft className="w-3 h-3" />
                 </motion.button>
               )}
             </div>
             <div className="flex gap-2">
-              <Input type="number" placeholder="Weight (kg)" value={weightInput} onChange={e => setWeightInput(e.target.value)} className="h-10 rounded-xl text-[14px]" />
+              <Input type="number" placeholder='משקל (ק"ג)' value={weightInput} onChange={e => setWeightInput(e.target.value)} className="h-10 rounded-xl text-[14px]" />
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }}>
-                <Button size="sm" onClick={handleLogWeight} className="h-10 px-5 rounded-xl font-medium transition-transform text-[13px]">Log</Button>
+                <Button size="sm" onClick={handleLogWeight} className="h-10 px-5 rounded-xl font-medium transition-transform text-[13px]">שמור</Button>
               </motion.div>
             </div>
             {profile.goal !== 'maintain' && (
@@ -360,7 +350,7 @@ export default function Dashboard({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
               >
-                Estimated goal: <span className="text-foreground font-medium">{format(goalDate, 'MMM d, yyyy')}</span>
+                יעד משוער: <span className="text-foreground font-medium">{format(goalDate, 'MMM d, yyyy')}</span>
               </motion.p>
             )}
           </motion.div>
@@ -368,7 +358,7 @@ export default function Dashboard({
           {/* Today's Meals */}
           <motion.div variants={itemVariants} className="nova-card p-5 mt-4">
             <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-3.5 flex items-center gap-2">
-              <Utensils className="w-3.5 h-3.5 text-primary" /> Today's Meals
+              <Utensils className="w-3.5 h-3.5 text-primary" /> הארוחות של היום
             </h3>
             {dailyLog.meals.length === 0 ? (
               <div className="text-center py-10">
@@ -379,8 +369,8 @@ export default function Dashboard({
                 >
                   <Utensils className="w-5 h-5 text-muted-foreground" />
                 </motion.div>
-                <p className="text-sm text-muted-foreground font-medium">No meals logged yet</p>
-                <p className="text-xs text-muted-foreground mt-1">Tap + to add your first meal</p>
+                <p className="text-sm text-muted-foreground font-medium">עדיין לא נרשמו ארוחות</p>
+                <p className="text-xs text-muted-foreground mt-1">לחץ על + כדי להוסיף ארוחה</p>
               </div>
             ) : (
               <div className="space-y-5">
@@ -391,7 +381,7 @@ export default function Dashboard({
                     <div key={type}>
                       <motion.div
                         className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-2"
-                        initial={{ opacity: 0, x: -6 }}
+                        initial={{ opacity: 0, x: 6 }}
                         animate={{ opacity: 1, x: 0 }}
                       >
                         {MEAL_LABELS[type]}
@@ -401,21 +391,21 @@ export default function Dashboard({
                           <motion.div
                             key={meal.id}
                             layout
-                            initial={{ opacity: 0, x: -12, scale: 0.95 }}
+                            initial={{ opacity: 0, x: 12, scale: 0.95 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: 12, scale: 0.95 }}
+                            exit={{ opacity: 0, x: -12, scale: 0.95 }}
                             transition={{ delay: i * 0.04, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                            whileHover={{ x: 4, backgroundColor: 'hsl(var(--muted) / 0.5)' }}
+                            whileHover={{ x: -4, backgroundColor: 'hsl(var(--muted) / 0.5)' }}
                             className="flex items-center justify-between text-sm p-3.5 rounded-xl bg-muted/30 transition-colors group cursor-default"
                           >
                             <div>
                               <span className="font-medium text-[14px]">{meal.foodItem.name}</span>
                               <div className="flex gap-2 mt-1 text-[11px] text-muted-foreground">
-                                <span className="tabular-nums">{meal.foodItem.calories} kcal</span>
+                                <span className="tabular-nums">{meal.foodItem.calories} קק"ל</span>
                                 <span className="text-border">·</span>
-                                <span className="text-nova-protein tabular-nums">P {meal.foodItem.protein}g</span>
-                                <span className="text-nova-carbs tabular-nums">C {meal.foodItem.carbs}g</span>
-                                <span className="text-nova-fats tabular-nums">F {meal.foodItem.fats}g</span>
+                                <span className="text-nova-protein tabular-nums">ח {meal.foodItem.protein} גר׳</span>
+                                <span className="text-nova-carbs tabular-nums">פ {meal.foodItem.carbs} גר׳</span>
+                                <span className="text-nova-fats tabular-nums">ש {meal.foodItem.fats} גר׳</span>
                               </div>
                             </div>
                             <motion.button
@@ -448,9 +438,9 @@ export default function Dashboard({
           className="max-w-lg mx-auto px-5 pt-8"
         >
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold font-display tracking-tight">Weight History</h2>
+            <h2 className="text-xl font-bold font-display tracking-tight">היסטוריית משקל</h2>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="outline" size="sm" onClick={() => setView('dashboard')} className="rounded-xl text-[13px]">Back</Button>
+              <Button variant="outline" size="sm" onClick={() => setView('dashboard')} className="rounded-xl text-[13px]">חזרה</Button>
             </motion.div>
           </div>
           <WeightChart entries={weightHistory} targetWeight={profile.targetWeightKg} />
@@ -459,7 +449,7 @@ export default function Dashboard({
 
       {/* FAB Group */}
       {view === 'dashboard' && (
-        <div className="fixed bottom-6 right-5 z-40 flex flex-col gap-2.5 items-end">
+        <div className="fixed bottom-6 start-5 z-40 flex flex-col gap-2.5 items-start">
           <motion.div
             initial={{ scale: 0, opacity: 0, rotate: -90 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}

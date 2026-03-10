@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X } from 'lucide-react';
+import { ArrowRight, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -26,21 +26,21 @@ interface SettingsPanelProps {
 }
 
 const ACCENTS: { value: AccentColor; label: string; color: string }[] = [
-  { value: 'green', label: 'Emerald', color: 'hsl(157 72% 40%)' },
-  { value: 'purple', label: 'Violet', color: 'hsl(271 68% 55%)' },
-  { value: 'blue', label: 'Ocean', color: 'hsl(217 91% 60%)' },
-  { value: 'orange', label: 'Sunset', color: 'hsl(25 95% 53%)' },
-  { value: 'pink', label: 'Rose', color: 'hsl(340 82% 52%)' },
-  { value: 'teal', label: 'Teal', color: 'hsl(174 72% 40%)' },
-  { value: 'red', label: 'Ruby', color: 'hsl(0 72% 51%)' },
-  { value: 'amber', label: 'Amber', color: 'hsl(38 92% 50%)' },
-  { value: 'indigo', label: 'Indigo', color: 'hsl(239 84% 67%)' },
+  { value: 'green', label: 'אמרלד', color: 'hsl(157 72% 40%)' },
+  { value: 'purple', label: 'סגול', color: 'hsl(271 68% 55%)' },
+  { value: 'blue', label: 'אוקיינוס', color: 'hsl(217 91% 60%)' },
+  { value: 'orange', label: 'שקיעה', color: 'hsl(25 95% 53%)' },
+  { value: 'pink', label: 'ורד', color: 'hsl(340 82% 52%)' },
+  { value: 'teal', label: 'טיל', color: 'hsl(174 72% 40%)' },
+  { value: 'red', label: 'רובי', color: 'hsl(0 72% 51%)' },
+  { value: 'amber', label: 'ענבר', color: 'hsl(38 92% 50%)' },
+  { value: 'indigo', label: 'אינדיגו', color: 'hsl(239 84% 67%)' },
 ];
 
 const MODES: { value: ThemeMode; icon: typeof Sun; label: string }[] = [
-  { value: 'light', icon: Sun, label: 'Light' },
-  { value: 'dark', icon: Moon, label: 'Dark' },
-  { value: 'system', icon: Monitor, label: 'System' },
+  { value: 'light', icon: Sun, label: 'בהיר' },
+  { value: 'dark', icon: Moon, label: 'כהה' },
+  { value: 'system', icon: Monitor, label: 'מערכת' },
 ];
 
 const containerVariants = {
@@ -62,14 +62,8 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       const newTargetDate = date.toISOString().slice(0, 10);
-      const updatedProfile = {
-        ...profile,
-        targetDate: newTargetDate,
-      };
-      
-      // Recalculate adaptive targets with the new date
+      const updatedProfile = { ...profile, targetDate: newTargetDate };
       const adaptive = calculateAdaptiveTargets(updatedProfile, weightHistory);
-      
       onUpdateProfile({
         ...updatedProfile,
         dailyCalorieTarget: adaptive.dailyCalorieTarget,
@@ -82,14 +76,8 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
   };
 
   const handleClearTargetDate = () => {
-    // When clearing target date, recalculate with standard targets (no timeline)
-    const updatedProfile = {
-      ...profile,
-      targetDate: null,
-    };
-    
+    const updatedProfile = { ...profile, targetDate: null };
     const adaptive = calculateAdaptiveTargets(updatedProfile, weightHistory);
-    
     onUpdateProfile({
       ...updatedProfile,
       dailyCalorieTarget: adaptive.dailyCalorieTarget,
@@ -101,9 +89,9 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
 
   return (
     <motion.div
-      initial={{ x: '100%' }}
+      initial={{ x: '-100%' }}
       animate={{ x: 0 }}
-      exit={{ x: '100%' }}
+      exit={{ x: '-100%' }}
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
       className="fixed inset-0 z-50 bg-background overflow-auto"
     >
@@ -120,9 +108,9 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
             whileTap={{ scale: 0.92 }}
             className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4" />
           </motion.button>
-          <h2 className="text-[20px] font-bold font-display tracking-tight">Settings</h2>
+          <h2 className="text-[20px] font-bold font-display tracking-tight">הגדרות</h2>
         </motion.div>
 
         <motion.div variants={itemVariants}>
@@ -137,10 +125,10 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
         {profile.goal !== 'maintain' && (
           <motion.div variants={itemVariants} className="nova-card p-5">
             <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4 flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5 text-primary" /> Target Date
+              <Calendar className="w-3.5 h-3.5 text-primary" /> תאריך יעד
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Set a deadline to reach your goal weight. Your daily calorie target will adjust automatically.
+              הגדר דד-ליין להגיע למשקל היעד. יעד הקלוריות היומי יתעדכן אוטומטית.
             </p>
             <div className="flex gap-2">
               <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
@@ -148,12 +136,12 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
                   <Button
                     variant="outline"
                     className={cn(
-                      "flex-1 justify-start text-left font-normal h-11 rounded-xl",
+                      "flex-1 justify-start text-start font-normal h-11 rounded-xl",
                       !currentTargetDate && "text-muted-foreground"
                     )}
                   >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {currentTargetDate ? format(currentTargetDate, "PPP") : <span>Pick a target date</span>}
+                    <Calendar className="me-2 h-4 w-4" />
+                    {currentTargetDate ? format(currentTargetDate, "PPP") : <span>בחר תאריך יעד</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -190,7 +178,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
         {/* Theme Mode */}
         <motion.div variants={itemVariants} className="nova-card p-5">
           <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4">
-            Appearance
+            מראה
           </h3>
           <div className="grid grid-cols-3 gap-2">
             {MODES.map(m => (
@@ -215,7 +203,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
         {/* Accent Color */}
         <motion.div variants={itemVariants} className="nova-card p-5">
           <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4 flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-primary" /> App Color
+            <Sparkles className="w-3.5 h-3.5 text-primary" /> צבע האפליקציה
           </h3>
           <div className="grid grid-cols-3 gap-2.5">
             {ACCENTS.map((a, i) => (
@@ -247,7 +235,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+                    className="absolute -top-1 -start-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
                   >
                     <Check className="w-3 h-3 text-primary-foreground" />
                   </motion.div>
@@ -263,7 +251,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
             onClick={() => onUpdateProfile(null)}
             className="w-full gap-2 h-[48px] rounded-xl font-medium active:scale-[0.98] transition-transform text-[13px]"
           >
-            <RotateCcw className="w-4 h-4" /> Reset Profile
+            <RotateCcw className="w-4 h-4" /> איפוס פרופיל
           </Button>
         </motion.div>
 
@@ -273,7 +261,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
             onClick={signOut}
             className="w-full gap-2 h-[48px] rounded-xl font-medium active:scale-[0.98] transition-transform text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
           >
-            <LogOut className="w-4 h-4" /> Sign Out
+            <LogOut className="w-4 h-4" /> התנתקות
           </Button>
         </motion.div>
       </motion.div>
