@@ -103,6 +103,7 @@ export function useProfile() {
       favorite_food: p.favoriteFood || '',
       dietary_weakness: p.dietaryWeakness || '',
       daily_habits: p.dailyHabits || '',
+      medical_conditions: p.medicalConditions || '',
       updated_at: new Date().toISOString(),
     };
     

@@ -66,7 +66,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       dailyCalorieTarget: finalCalories,
       proteinTarget: finalMacros.protein, carbsTarget: finalMacros.carbs, fatsTarget: finalMacros.fats,
       targetDate: targetDateStr,
-      favoriteFood, dietaryWeakness, dailyHabits,
+      favoriteFood, dietaryWeakness, dailyHabits, medicalConditions,
     });
   };
 
