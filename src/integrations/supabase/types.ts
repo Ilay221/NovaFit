@@ -173,6 +173,7 @@ export type Database = {
           height_cm: number
           id: string
           is_premium: boolean
+          medical_conditions: string
           name: string
           protein_target: number
           target_date: string | null
@@ -197,6 +198,7 @@ export type Database = {
           height_cm?: number
           id: string
           is_premium?: boolean
+          medical_conditions?: string
           name?: string
           protein_target?: number
           target_date?: string | null
@@ -221,6 +223,7 @@ export type Database = {
           height_cm?: number
           id?: string
           is_premium?: boolean
+          medical_conditions?: string
           name?: string
           protein_target?: number
           target_date?: string | null
