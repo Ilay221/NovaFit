@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Camera, Upload, Loader2 } from 'lucide-react';
+import { ArrowRight, Camera, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MealEntry } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,10 +22,10 @@ interface AnalyzedFood {
 }
 
 const MEAL_TYPES: { value: MealEntry['mealType']; label: string }[] = [
-  { value: 'breakfast', label: 'Breakfast' },
-  { value: 'lunch', label: 'Lunch' },
-  { value: 'dinner', label: 'Dinner' },
-  { value: 'snack', label: 'Snack' },
+  { value: 'breakfast', label: 'בוקר' },
+  { value: 'lunch', label: 'צהריים' },
+  { value: 'dinner', label: 'ערב' },
+  { value: 'snack', label: 'חטיף' },
 ];
 
 export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps) {
@@ -55,19 +55,17 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
   const analyzeImage = async (base64Image: string) => {
     setAnalyzing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-food', {
-        body: { image: base64Image },
-      });
+      const { data, error } = await supabase.functions.invoke('analyze-food', { body: { image: base64Image } });
       if (error) throw error;
       if (data?.foods && Array.isArray(data.foods) && data.foods.length > 0) {
         setResults(data.foods);
         setShowConfirmation(true);
       } else {
-        toast.error('Could not identify food items in this image');
+        toast.error('לא ניתן לזהות מאכלים בתמונה');
       }
     } catch (err) {
       console.error('AI analysis error:', err);
-      toast.error('Failed to analyze image. Please try again.');
+      toast.error('ניתוח התמונה נכשל. נסה שוב.');
     } finally {
       setAnalyzing(false);
     }
@@ -85,7 +83,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
           carbs: Math.round(food.carbs),
           fats: Math.round(food.fats),
           servingSize: food.servingSize,
-          category: 'AI Scanned',
+          category: 'סריקת AI',
         },
         quantity: 1,
         mealType,
@@ -93,7 +91,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
       };
       onAddMeal(entry);
     }
-    toast.success(`${selectedFoods.length} item${selectedFoods.length > 1 ? 's' : ''} logged!`);
+    toast.success(`${selectedFoods.length} פריט${selectedFoods.length > 1 ? 'ים' : ''} נרשם/ו!`);
     setShowConfirmation(false);
   };
 
@@ -105,26 +103,22 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
       className="fixed inset-0 z-50 bg-background flex flex-col"
     >
-      {/* Header */}
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
         <button onClick={onClose} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95">
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4" />
         </button>
         <div>
-          <h2 className="text-[17px] font-bold font-display tracking-tight">AI Food Scanner</h2>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Take a photo to analyze nutrition</p>
+          <h2 className="text-[17px] font-bold font-display tracking-tight">סורק מזון AI</h2>
+          <p className="text-[11px] text-muted-foreground mt-0.5">צלם תמונה לניתוח תזונתי</p>
         </div>
       </div>
 
       <div className="px-5 space-y-5 flex-1 overflow-auto hide-scrollbar pb-8">
-        {/* Meal type */}
         <div className="flex gap-1.5">
           {MEAL_TYPES.map(mt => (
             <button key={mt.value} onClick={() => setMealType(mt.value)}
               className={`flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-200 active:scale-[0.97] ${
-                mealType === mt.value
-                  ? 'bg-foreground text-background'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                mealType === mt.value ? 'bg-foreground text-background' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
               }`}
             >
               {mt.label}
@@ -138,22 +132,15 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
               <Camera className="w-7 h-7 text-muted-foreground" />
             </div>
             <div className="text-center">
-              <h3 className="font-bold font-display text-[15px]">Snap Your Meal</h3>
-              <p className="text-[13px] text-muted-foreground mt-1.5">AI will analyze the nutritional content</p>
+              <h3 className="font-bold font-display text-[15px]">צלם את הארוחה שלך</h3>
+              <p className="text-[13px] text-muted-foreground mt-1.5">ה-AI ינתח את הערכים התזונתיים</p>
             </div>
             <div className="flex gap-3 w-full">
-              <Button
-                variant="outline"
-                className="flex-1 h-[48px] rounded-xl gap-2 font-medium active:scale-[0.97] text-[13px]"
-                onClick={() => cameraInputRef.current?.click()}
-              >
-                <Camera className="w-4 h-4" /> Camera
+              <Button variant="outline" className="flex-1 h-[48px] rounded-xl gap-2 font-medium active:scale-[0.97] text-[13px]" onClick={() => cameraInputRef.current?.click()}>
+                <Camera className="w-4 h-4" /> מצלמה
               </Button>
-              <Button
-                className="flex-1 h-[48px] rounded-xl gap-2 font-medium active:scale-[0.97] text-[13px]"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="w-4 h-4" /> Gallery
+              <Button className="flex-1 h-[48px] rounded-xl gap-2 font-medium active:scale-[0.97] text-[13px]" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="w-4 h-4" /> גלריה
               </Button>
             </div>
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
@@ -163,50 +150,35 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
           <div className="space-y-4">
             <div className="nova-card overflow-hidden">
               <div className="relative">
-                <img src={image} alt="Food" className="w-full h-52 object-cover" />
+                <img src={image} alt="מזון" className="w-full h-52 object-cover" />
                 {analyzing && (
                   <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
                     <Loader2 className="w-6 h-6 text-foreground animate-spin" />
-                    <p className="text-[13px] font-medium">Analyzing your meal...</p>
+                    <p className="text-[13px] font-medium">מנתח את הארוחה שלך...</p>
                   </div>
                 )}
               </div>
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl text-[12px]"
-              onClick={() => { setImage(null); setResults([]); setShowConfirmation(false); }}
-            >
-              Take Another Photo
+            <Button variant="outline" size="sm" className="rounded-xl text-[12px]" onClick={() => { setImage(null); setResults([]); setShowConfirmation(false); }}>
+              צלם תמונה אחרת
             </Button>
-
             {results.length > 0 && !showConfirmation && (
               <div className="space-y-3">
-                <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">
-                  Detected Items
-                </h3>
+                <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">פריטים שזוהו</h3>
                 {results.map((food, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                    className="nova-card p-4"
-                  >
+                  <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="nova-card p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="font-medium text-[14px]">{food.name}</div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">{food.servingSize} · {Math.round(food.calories)} kcal</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">{food.servingSize} · {Math.round(food.calories)} קק"ל</div>
                         <div className="flex gap-2 mt-2 text-[10px] font-medium">
-                          <span className="text-nova-protein tabular-nums px-2 py-0.5 rounded-md bg-nova-protein/8">P {Math.round(food.protein)}g</span>
-                          <span className="text-nova-carbs tabular-nums px-2 py-0.5 rounded-md bg-nova-carbs/8">C {Math.round(food.carbs)}g</span>
-                          <span className="text-nova-fats tabular-nums px-2 py-0.5 rounded-md bg-nova-fats/8">F {Math.round(food.fats)}g</span>
+                          <span className="text-nova-protein tabular-nums px-2 py-0.5 rounded-md bg-nova-protein/8">ח {Math.round(food.protein)} גר׳</span>
+                          <span className="text-nova-carbs tabular-nums px-2 py-0.5 rounded-md bg-nova-carbs/8">פ {Math.round(food.carbs)} גר׳</span>
+                          <span className="text-nova-fats tabular-nums px-2 py-0.5 rounded-md bg-nova-fats/8">ש {Math.round(food.fats)} גר׳</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 text-[11px] font-medium text-primary">
-                        <span>✓ Added</span>
+                        <span>✓ נוסף</span>
                       </div>
                     </div>
                   </motion.div>
@@ -217,14 +189,9 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
         )}
       </div>
 
-      {/* Confirmation modal */}
       <AnimatePresence>
         {showConfirmation && results.length > 0 && (
-          <AIFoodConfirmation
-            foods={results}
-            onConfirm={handleConfirm}
-            onCancel={() => setShowConfirmation(false)}
-          />
+          <AIFoodConfirmation foods={results} onConfirm={handleConfirm} onCancel={() => setShowConfirmation(false)} />
         )}
       </AnimatePresence>
     </motion.div>

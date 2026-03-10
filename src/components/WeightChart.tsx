@@ -15,8 +15,8 @@ export default function WeightChart({ entries, targetWeight }: WeightChartProps)
         <div className="w-12 h-12 rounded-2xl bg-muted/60 mx-auto flex items-center justify-center mb-3">
           <Scale className="w-5 h-5 text-muted-foreground" />
         </div>
-        <p className="text-sm text-muted-foreground font-medium">No weight entries yet</p>
-        <p className="text-xs text-muted-foreground mt-1">Log your weight to see progress</p>
+        <p className="text-sm text-muted-foreground font-medium">אין רשומות משקל עדיין</p>
+        <p className="text-xs text-muted-foreground mt-1">שקול את עצמך כדי לראות התקדמות</p>
       </div>
     );
   }
@@ -28,7 +28,7 @@ export default function WeightChart({ entries, targetWeight }: WeightChartProps)
   }));
 
   return (
-    <div className="nova-card p-5">
+    <div className="nova-card p-5" dir="ltr">
       <ResponsiveContainer width="100%" height={260}>
         <LineChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.4} />
@@ -43,7 +43,7 @@ export default function WeightChart({ entries, targetWeight }: WeightChartProps)
               boxShadow: '0 4px 20px hsl(0 0% 0% / 0.06)',
             }}
           />
-          <ReferenceLine y={targetWeight} stroke="hsl(var(--primary))" strokeDasharray="6 4" strokeOpacity={0.5} label={{ value: 'Goal', fill: 'hsl(var(--primary))', fontSize: 11, fontWeight: 600 }} />
+          <ReferenceLine y={targetWeight} stroke="hsl(var(--primary))" strokeDasharray="6 4" strokeOpacity={0.5} label={{ value: 'יעד', fill: 'hsl(var(--primary))', fontSize: 11, fontWeight: 600 }} />
           <Line type="monotone" dataKey="weight" stroke="hsl(var(--foreground))" strokeWidth={2} dot={{ r: 3.5, fill: 'hsl(var(--primary))', strokeWidth: 2, stroke: 'hsl(var(--card))' }} activeDot={{ r: 5, fill: 'hsl(var(--primary))' }} />
         </LineChart>
       </ResponsiveContainer>

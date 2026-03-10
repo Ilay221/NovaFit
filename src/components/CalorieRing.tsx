@@ -1,4 +1,4 @@
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 interface CalorieRingProps {
@@ -17,12 +17,11 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
 
   const isOver = safeTarget > 0 ? safeConsumed > safeTarget : safeConsumed > 0;
   const progress = safeTarget > 0 ? Math.min(safeConsumed / safeTarget, 1) : 0;
-  const remaining = safeTarget - safeConsumed; // can be negative
+  const remaining = safeTarget - safeConsumed;
   const offset = circumference * (1 - progress);
   const center = size / 2;
   const percentage = Math.round(progress * 100);
 
-  // Animated counter
   const [displayRemaining, setDisplayRemaining] = useState(0);
   useEffect(() => {
     const duration = 1200;
@@ -43,7 +42,6 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        {/* Background track */}
         <circle
           cx={center} cy={center} r={radius}
           stroke="hsl(var(--muted))"
@@ -51,7 +49,6 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
           fill="none"
           strokeLinecap="round"
         />
-        {/* Gradient definition */}
         <defs>
           <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={isOver ? "hsl(0 72% 51%)" : "hsl(var(--primary))"} />
@@ -65,7 +62,6 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
             </feMerge>
           </filter>
         </defs>
-        {/* Progress arc with glow */}
         <motion.circle
           cx={center} cy={center} r={radius}
           stroke="url(#ringGradient)"
@@ -87,7 +83,7 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
           animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
           transition={{ delay: 0.4, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
         >
-          {isOver ? '' : ''}{displayRemaining}
+          {displayRemaining}
         </motion.span>
         <motion.span
           className={`text-[11px] font-medium mt-1 ${isOver ? 'text-[hsl(0_72%_51%)]' : 'text-muted-foreground'}`}
@@ -95,7 +91,7 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          {isOver ? 'kcal over' : 'kcal left'}
+          {isOver ? 'קק"ל מעל' : 'קק"ל נותרו'}
         </motion.span>
         <motion.div
           className="mt-2 px-2.5 py-[3px] rounded-full bg-muted text-[10px] font-semibold text-muted-foreground tabular-nums"

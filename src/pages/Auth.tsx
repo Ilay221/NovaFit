@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, ArrowRight, ArrowLeft, Mail, Lock, Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
+import { Activity, ArrowLeft, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,9 +29,9 @@ export default function Auth() {
       });
       setLoading(false);
       if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        toast({ title: 'שגיאה', description: error.message, variant: 'destructive' });
       } else {
-        toast({ title: 'Check your email', description: 'We sent you a password reset link.' });
+        toast({ title: 'בדוק את האימייל שלך', description: 'שלחנו לך קישור לאיפוס סיסמה.' });
         setView('signin');
       }
       return;
@@ -46,9 +46,9 @@ export default function Auth() {
     setLoading(false);
 
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'שגיאה', description: error.message, variant: 'destructive' });
     } else if (view === 'signup') {
-      toast({ title: 'Check your email', description: 'We sent you a verification link to confirm your account.' });
+      toast({ title: 'בדוק את האימייל שלך', description: 'שלחנו לך קישור אימות לאישור החשבון.' });
     }
   };
 
@@ -72,7 +72,7 @@ export default function Auth() {
           transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute right-0 bottom-0 w-[300px] h-[300px] rounded-full opacity-[0.04]"
+          className="absolute left-0 bottom-0 w-[300px] h-[300px] rounded-full opacity-[0.04]"
           style={{ background: 'radial-gradient(circle, hsl(var(--nova-info)), transparent)' }}
           animate={{
             x: ['10%', '-15%', '10%'],
@@ -116,7 +116,7 @@ export default function Auth() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35 }}
           >
-            AI-powered nutrition tracking
+            מעקב תזונה מונע בינה מלאכותית
           </motion.p>
         </motion.div>
 
@@ -133,60 +133,62 @@ export default function Auth() {
           >
             <div>
               <h2 className="text-xl font-bold font-display tracking-tight">
-                {view === 'signin' && 'Welcome Back'}
-                {view === 'signup' && 'Create Account'}
-                {view === 'forgot' && 'Reset Password'}
+                {view === 'signin' && 'ברוך הבא'}
+                {view === 'signup' && 'יצירת חשבון'}
+                {view === 'forgot' && 'איפוס סיסמה'}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {view === 'signin' && 'Sign in to continue tracking'}
-                {view === 'signup' && 'Start your nutrition journey'}
-                {view === 'forgot' && "Enter your email and we'll send a reset link"}
+                {view === 'signin' && 'התחבר כדי להמשיך לעקוב'}
+                {view === 'signup' && 'התחל את המסע התזונתי שלך'}
+                {view === 'forgot' && 'הכנס את האימייל שלך ונשלח לך קישור לאיפוס'}
               </p>
             </div>
 
             <div className="space-y-4">
               <motion.div
-                initial={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1, duration: 0.4 }}
               >
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Email</Label>
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">אימייל</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Mail className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     type="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="h-12 pl-10 rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all duration-300 focus:shadow-md"
+                    className="h-12 ps-10 rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all duration-300 focus:shadow-md"
                     required
+                    dir="ltr"
                   />
                 </div>
               </motion.div>
 
               {view !== 'forgot' && (
                 <motion.div
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.15, duration: 0.4 }}
                 >
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Password</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">סיסמה</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Lock className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="h-12 pl-10 pr-10 rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all duration-300 focus:shadow-md"
+                      className="h-12 ps-10 pe-10 rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all duration-300 focus:shadow-md"
                       required
                       minLength={6}
+                      dir="ltr"
                     />
                     <motion.button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       whileTap={{ scale: 0.85 }}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute end-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </motion.button>
@@ -197,7 +199,7 @@ export default function Auth() {
 
             {view === 'signin' && (
               <motion.div
-                className="text-right -mt-1"
+                className="text-start -mt-1"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
@@ -207,7 +209,7 @@ export default function Auth() {
                   onClick={() => setView('forgot')}
                   className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
                 >
-                  Forgot password?
+                  שכחת סיסמה?
                 </button>
               </motion.div>
             )}
@@ -225,10 +227,9 @@ export default function Auth() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    {view === 'signin' && 'Sign In'}
-                    {view === 'signup' && 'Create Account'}
-                    {view === 'forgot' && 'Send Reset Link'}
-                    <ArrowRight className="w-4 h-4" />
+                    {view === 'signin' && 'התחברות'}
+                    {view === 'signup' && 'יצירת חשבון'}
+                    {view === 'forgot' && 'שלח קישור איפוס'}
                   </>
                 )}
               </Button>
@@ -246,7 +247,7 @@ export default function Auth() {
                   onClick={() => setView('signin')}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 mx-auto"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" /> Back to sign in
+                  <ArrowLeft className="w-3.5 h-3.5" /> חזרה להתחברות
                 </button>
               ) : (
                 <button
@@ -254,8 +255,8 @@ export default function Auth() {
                   onClick={() => setView(view === 'signin' ? 'signup' : 'signin')}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {view === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
-                  <span className="font-semibold text-primary">{view === 'signup' ? 'Sign In' : 'Sign Up'}</span>
+                  {view === 'signup' ? 'כבר יש לך חשבון? ' : 'אין לך חשבון? '}
+                  <span className="font-semibold text-primary">{view === 'signup' ? 'התחבר' : 'הירשם'}</span>
                 </button>
               )}
             </motion.div>

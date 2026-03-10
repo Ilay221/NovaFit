@@ -44,7 +44,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   const targetDateStr = useTimeline ? addDays(new Date(), targetDays).toISOString().slice(0, 10) : null;
 
-  // Build a temporary profile for adaptive calculation
   const tempProfile: UserProfile = {
     name, age, gender, heightCm, weightKg, targetWeightKg,
     activityLevel, goal, bmr, tdee,
@@ -71,37 +70,31 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   };
 
   const activities: { value: ActivityLevel; label: string; desc: string }[] = [
-    { value: 'sedentary', label: 'Sedentary', desc: 'Little or no exercise' },
-    { value: 'light', label: 'Lightly Active', desc: 'Exercise 1–3 days/week' },
-    { value: 'moderate', label: 'Moderate', desc: 'Exercise 3–5 days/week' },
-    { value: 'active', label: 'Active', desc: 'Exercise 6–7 days/week' },
-    { value: 'very_active', label: 'Very Active', desc: 'Hard exercise daily' },
+    { value: 'sedentary', label: 'יושבני', desc: 'מעט או ללא פעילות גופנית' },
+    { value: 'light', label: 'פעילות קלה', desc: 'אימון 1–3 ימים בשבוע' },
+    { value: 'moderate', label: 'בינוני', desc: 'אימון 3–5 ימים בשבוע' },
+    { value: 'active', label: 'פעיל', desc: 'אימון 6–7 ימים בשבוע' },
+    { value: 'very_active', label: 'פעיל מאוד', desc: 'אימון קשה יומי' },
   ];
 
   const pageVariants = {
-    enter: { x: 50, opacity: 0, filter: 'blur(8px)' },
+    enter: { x: -50, opacity: 0, filter: 'blur(8px)' },
     center: { x: 0, opacity: 1, filter: 'blur(0px)' },
-    exit: { x: -50, opacity: 0, filter: 'blur(8px)' },
+    exit: { x: 50, opacity: 0, filter: 'blur(8px)' },
   };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6 overflow-hidden relative">
-      {/* Ambient background */}
       <motion.div
-        className="absolute w-[500px] h-[500px] rounded-full opacity-[0.03] top-[-200px] left-[-100px]"
+        className="absolute w-[500px] h-[500px] rounded-full opacity-[0.03] top-[-200px] right-[-100px]"
         style={{ background: 'radial-gradient(circle, hsl(var(--primary)), transparent)' }}
         animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
         transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
       />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Progress */}
         {step !== 'welcome' && (
-          <motion.div
-            className="flex gap-1.5 mb-12"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <motion.div className="flex gap-1.5 mb-12" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
             {STEPS.slice(1).map((s, i) => (
               <div key={s} className="h-[3px] flex-1 rounded-full overflow-hidden bg-border">
                 <motion.div
@@ -109,7 +102,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: i <= STEPS.slice(1).indexOf(step) ? 1 : 0 }}
                   transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
-                  style={{ transformOrigin: 'left' }}
+                  style={{ transformOrigin: 'right' }}
                 />
               </div>
             ))}
@@ -136,51 +129,24 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   <Activity className="w-10 h-10 text-primary-foreground" />
                   <motion.div
                     className="absolute inset-0 rounded-[22px]"
-                    animate={{
-                      boxShadow: [
-                        '0 0 0px hsl(var(--primary) / 0)',
-                        '0 0 40px hsl(var(--primary) / 0.3)',
-                        '0 0 0px hsl(var(--primary) / 0)',
-                      ],
-                    }}
+                    animate={{ boxShadow: ['0 0 0px hsl(var(--primary) / 0)', '0 0 40px hsl(var(--primary) / 0.3)', '0 0 0px hsl(var(--primary) / 0)'] }}
                     transition={{ duration: 3, repeat: Infinity }}
                   />
                 </motion.div>
                 <div>
-                  <motion.h1
-                    initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
-                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                    transition={{ delay: 0.3, duration: 0.6 }}
-                    className="text-[40px] font-extrabold font-display tracking-tight leading-none"
-                  >
+                  <motion.h1 initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ delay: 0.3, duration: 0.6 }} className="text-[40px] font-extrabold font-display tracking-tight leading-none">
                     NovaFit
                   </motion.h1>
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="text-muted-foreground mt-3 text-[15px]"
-                  >
-                    AI-powered nutrition tracking
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-muted-foreground mt-3 text-[15px]">
+                    מעקב תזונה מונע בינה מלאכותית
                   </motion.p>
                 </div>
-                <motion.p
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto"
-                >
-                  Build a personalized plan based on your body composition and goals.
+                <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
+                  בנה תוכנית מותאמת אישית על בסיס הרכב הגוף והמטרות שלך.
                 </motion.p>
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                   <Button onClick={next} className="w-full gap-2.5 h-[52px] text-[15px] rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl">
-                    Get Started <ArrowRight className="w-4 h-4" />
+                    בואו נתחיל <ArrowLeft className="w-4 h-4" />
                   </Button>
                 </motion.div>
               </div>
@@ -189,32 +155,25 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             {step === 'basics' && (
               <div className="space-y-8">
                 <div>
-                  <h2 className="text-[28px] font-extrabold font-display leading-tight">About You</h2>
-                  <p className="text-sm text-muted-foreground mt-1.5">Basic information to personalize your plan</p>
+                  <h2 className="text-[28px] font-extrabold font-display leading-tight">קצת עליך</h2>
+                  <p className="text-sm text-muted-foreground mt-1.5">מידע בסיסי להתאמה אישית של התוכנית</p>
                 </div>
                 <div className="space-y-5">
-                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Name</Label>
-                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                  <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">שם</Label>
+                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="השם שלך" className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Age</Label>
+                  <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">גיל</Label>
                     <Input type="number" value={age} onChange={e => setAge(+e.target.value)} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Gender</Label>
+                  <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">מין</Label>
                     <div className="grid grid-cols-2 gap-3">
                       {(['male', 'female'] as Gender[]).map(g => (
-                        <motion.button key={g} onClick={() => setGender(g)}
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.95 }}
-                          className={`h-[48px] rounded-xl text-[14px] font-semibold transition-all duration-300 ${
-                            gender === g
-                              ? 'bg-foreground text-background shadow-md'
-                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                          }`}
-                        >
-                          {g === 'male' ? 'Male' : 'Female'}
+                        <motion.button key={g} onClick={() => setGender(g)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }}
+                          className={`h-[48px] rounded-xl text-[14px] font-semibold transition-all duration-300 ${gender === g ? 'bg-foreground text-background shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}>
+                          {g === 'male' ? 'זכר' : 'נקבה'}
                         </motion.button>
                       ))}
                     </div>
@@ -222,10 +181,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 </div>
                 <div className="flex gap-3 pt-2">
                   <motion.div whileTap={{ scale: 0.9 }}>
-                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
+                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button>
                   </motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg" disabled={!name}>Continue <ArrowRight className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg" disabled={!name}>המשך <ArrowLeft className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>
@@ -235,41 +194,29 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center gap-3 mb-1.5">
-                    <motion.div
-                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
-                      initial={{ scale: 0, rotate: -45 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: 'spring', stiffness: 300 }}
-                    >
+                    <motion.div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center" initial={{ scale: 0, rotate: -45 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 300 }}>
                       <Ruler className="w-4 h-4 text-primary" />
                     </motion.div>
-                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Body Stats</h2>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">נתוני גוף</h2>
                   </div>
-                  <p className="text-sm text-muted-foreground">Your current measurements</p>
+                  <p className="text-sm text-muted-foreground">המידות הנוכחיות שלך</p>
                 </div>
                 <div className="space-y-5">
                   {[
-                    { label: 'Height (cm)', value: heightCm, set: setHeightCm },
-                    { label: 'Current Weight (kg)', value: weightKg, set: setWeightKg },
-                    { label: 'Target Weight (kg)', value: targetWeightKg, set: setTargetWeightKg },
+                    { label: 'גובה (ס"מ)', value: heightCm, set: setHeightCm },
+                    { label: 'משקל נוכחי (ק"ג)', value: weightKg, set: setWeightKg },
+                    { label: 'משקל יעד (ק"ג)', value: targetWeightKg, set: setTargetWeightKg },
                   ].map((field, i) => (
-                    <motion.div
-                      key={field.label}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 + i * 0.06 }}
-                    >
+                    <motion.div key={field.label} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.06 }}>
                       <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">{field.label}</Label>
                       <Input type="number" value={field.value} onChange={e => field.set(+e.target.value)} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
                     </motion.div>
                   ))}
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}>
-                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">Continue <ArrowRight className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">המשך <ArrowLeft className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>
@@ -279,52 +226,29 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center gap-3 mb-1.5">
-                    <motion.div
-                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
-                      initial={{ scale: 0, rotate: 45 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: 'spring', stiffness: 300 }}
-                    >
+                    <motion.div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center" initial={{ scale: 0, rotate: 45 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 300 }}>
                       <Dumbbell className="w-4 h-4 text-primary" />
                     </motion.div>
-                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Activity Level</h2>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">רמת פעילות</h2>
                   </div>
-                  <p className="text-sm text-muted-foreground">How active are you on a typical week?</p>
+                  <p className="text-sm text-muted-foreground">כמה פעיל אתה בשבוע טיפוסי?</p>
                 </div>
                 <div className="space-y-2">
                   {activities.map((a, i) => (
-                    <motion.button
-                      key={a.value}
-                      onClick={() => setActivityLevel(a.value)}
-                      initial={{ opacity: 0, x: -16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.08 + i * 0.05, duration: 0.4 }}
-                      whileHover={{ x: 4, scale: 1.01 }}
-                      whileTap={{ scale: 0.97 }}
-                      className={`w-full text-left p-4 rounded-xl transition-all duration-300 flex items-center justify-between ${
-                        activityLevel === a.value
-                          ? 'bg-foreground text-background shadow-md'
-                          : 'bg-muted/40 text-foreground hover:bg-muted/60'
-                      }`}
-                    >
+                    <motion.button key={a.value} onClick={() => setActivityLevel(a.value)} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.08 + i * 0.05, duration: 0.4 }} whileHover={{ x: -4, scale: 1.01 }} whileTap={{ scale: 0.97 }}
+                      className={`w-full text-right p-4 rounded-xl transition-all duration-300 flex items-center justify-between ${activityLevel === a.value ? 'bg-foreground text-background shadow-md' : 'bg-muted/40 text-foreground hover:bg-muted/60'}`}>
                       <div>
                         <div className={`font-semibold text-[14px] ${activityLevel === a.value ? 'text-background' : ''}`}>{a.label}</div>
                         <div className={`text-xs mt-0.5 ${activityLevel === a.value ? 'text-background/60' : 'text-muted-foreground'}`}>{a.desc}</div>
                       </div>
-                      {activityLevel === a.value && (
-                        <motion.div initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500 }}>
-                          <Check className="w-4 h-4" />
-                        </motion.div>
-                      )}
+                      {activityLevel === a.value && <motion.div initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500 }}><Check className="w-4 h-4" /></motion.div>}
                     </motion.button>
                   ))}
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}>
-                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">Continue <ArrowRight className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">המשך <ArrowLeft className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>
@@ -334,56 +258,33 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center gap-3 mb-1.5">
-                    <motion.div
-                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 300 }}
-                    >
+                    <motion.div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 300 }}>
                       <Target className="w-4 h-4 text-primary" />
                     </motion.div>
-                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Your Goal</h2>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">המטרה שלך</h2>
                   </div>
-                  <p className="text-sm text-muted-foreground">What would you like to achieve?</p>
+                  <p className="text-sm text-muted-foreground">מה תרצה להשיג?</p>
                 </div>
                 <div className="space-y-2">
                   {([
-                    { value: 'lose' as Goal, label: 'Lose Weight', desc: 'Calorie deficit for fat loss' },
-                    { value: 'maintain' as Goal, label: 'Maintain Weight', desc: 'Eat at maintenance calories' },
-                    { value: 'gain' as Goal, label: 'Build Muscle', desc: 'Calorie surplus for muscle gain' },
+                    { value: 'lose' as Goal, label: 'ירידה במשקל', desc: 'גירעון קלורי לשריפת שומן' },
+                    { value: 'maintain' as Goal, label: 'שמירה על משקל', desc: 'אכילה בקלוריות תחזוקה' },
+                    { value: 'gain' as Goal, label: 'בניית שריר', desc: 'עודף קלורי לבניית שריר' },
                   ]).map((g, i) => (
-                    <motion.button
-                      key={g.value}
-                      onClick={() => setGoal(g.value)}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 + i * 0.08 }}
-                      whileHover={{ scale: 1.02, x: 4 }}
-                      whileTap={{ scale: 0.97 }}
-                      className={`w-full text-left p-5 rounded-xl transition-all duration-300 flex items-center justify-between ${
-                        goal === g.value
-                          ? 'bg-foreground text-background shadow-lg'
-                          : 'bg-muted/40 text-foreground hover:bg-muted/60'
-                      }`}
-                    >
+                    <motion.button key={g.value} onClick={() => setGoal(g.value)} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.08 }} whileHover={{ scale: 1.02, x: -4 }} whileTap={{ scale: 0.97 }}
+                      className={`w-full text-right p-5 rounded-xl transition-all duration-300 flex items-center justify-between ${goal === g.value ? 'bg-foreground text-background shadow-lg' : 'bg-muted/40 text-foreground hover:bg-muted/60'}`}>
                       <div>
                         <div className={`font-bold text-[15px] ${goal === g.value ? 'text-background' : ''}`}>{g.label}</div>
                         <div className={`text-xs mt-0.5 ${goal === g.value ? 'text-background/60' : 'text-muted-foreground'}`}>{g.desc}</div>
                       </div>
-                      {goal === g.value && (
-                        <motion.div initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500 }}>
-                          <Check className="w-4 h-4" />
-                        </motion.div>
-                      )}
+                      {goal === g.value && <motion.div initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500 }}><Check className="w-4 h-4" /></motion.div>}
                     </motion.button>
                   ))}
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}>
-                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">See My Plan <ArrowRight className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">ראה את התוכנית <ArrowLeft className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>
@@ -393,79 +294,41 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center gap-3 mb-1.5">
-                    <motion.div
-                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
-                      initial={{ scale: 0, rotate: -30 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: 'spring', stiffness: 300 }}
-                    >
+                    <motion.div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center" initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 300 }}>
                       <Heart className="w-4 h-4 text-primary" />
                     </motion.div>
-                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Get Personal</h2>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">בואו נכיר</h2>
                   </div>
-                  <p className="text-sm text-muted-foreground">Help your AI coach know you better</p>
+                  <p className="text-sm text-muted-foreground">עזור למאמן ה-AI להכיר אותך יותר טוב</p>
                 </div>
-
                 <div className="space-y-5">
-                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5">
-                      <Heart className="w-3 h-3" /> Favorite Food
-                    </Label>
-                    <Input
-                      value={favoriteFood}
-                      onChange={e => setFavoriteFood(e.target.value)}
-                      placeholder="e.g., Sushi, Pasta, Steak..."
-                      className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md"
-                    />
-                    <p className="text-[11px] text-muted-foreground mt-1.5">What food makes you happiest?</p>
+                  <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5"><Heart className="w-3 h-3" /> אוכל אהוב</Label>
+                    <Input value={favoriteFood} onChange={e => setFavoriteFood(e.target.value)} placeholder="למשל: סושי, פסטה, שווארמה..." className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                    <p className="text-[11px] text-muted-foreground mt-1.5">איזה אוכל הכי משמח אותך?</p>
                   </motion.div>
-
-                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.18 }}>
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5">
-                      <Cookie className="w-3 h-3" /> Dietary Weakness
-                    </Label>
-                    <Input
-                      value={dietaryWeakness}
-                      onChange={e => setDietaryWeakness(e.target.value)}
-                      placeholder="e.g., Chocolate, Pizza, Ice cream..."
-                      className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md"
-                    />
-                    <p className="text-[11px] text-muted-foreground mt-1.5">That one thing you can't resist 😅</p>
+                  <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.18 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5"><Cookie className="w-3 h-3" /> חולשה תזונתית</Label>
+                    <Input value={dietaryWeakness} onChange={e => setDietaryWeakness(e.target.value)} placeholder="למשל: שוקולד, פיצה, גלידה..." className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                    <p className="text-[11px] text-muted-foreground mt-1.5">הדבר שאתה לא יכול לעמוד בפניו 😅</p>
                   </motion.div>
-
-                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.26 }}>
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5">
-                      <Clock className="w-3 h-3" /> Daily Habits
-                    </Label>
-                    <textarea
-                      value={dailyHabits}
-                      onChange={e => setDailyHabits(e.target.value)}
-                      placeholder="e.g., I skip breakfast, snack at night, eat lunch at 1pm..."
-                      rows={3}
-                      className="flex w-full rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md px-3 py-3 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring resize-none"
-                    />
-                    <p className="text-[11px] text-muted-foreground mt-1.5">Your AI coach will use this to give smarter advice</p>
+                  <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.26 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5"><Clock className="w-3 h-3" /> הרגלים יומיים</Label>
+                    <textarea value={dailyHabits} onChange={e => setDailyHabits(e.target.value)} placeholder="למשל: מדלג על ארוחת בוקר, נשנש בלילה, אוכל צהריים ב-13:00..." rows={3}
+                      className="flex w-full rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md px-3 py-3 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring resize-none" />
+                    <p className="text-[11px] text-muted-foreground mt-1.5">מאמן ה-AI ישתמש בזה לייעוץ חכם יותר</p>
                   </motion.div>
                 </div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10"
-                >
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
                   <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Your AI nutrition coach will use these preferences to give you <span className="text-foreground font-medium">personalized meal suggestions</span> and help you manage cravings smartly.
+                    מאמן התזונה ישתמש בהעדפות אלו כדי לתת לך <span className="text-foreground font-medium">המלצות ארוחות מותאמות אישית</span> ולעזור לך לנהל תשוקות בצורה חכמה.
                   </p>
                 </motion.div>
-
                 <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}>
-                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">Continue <ArrowRight className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">המשך <ArrowLeft className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>
@@ -475,55 +338,31 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center gap-3 mb-1.5">
-                    <motion.div
-                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
-                      initial={{ scale: 0, rotate: -30 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: 'spring', stiffness: 300 }}
-                    >
+                    <motion.div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center" initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 300 }}>
                       <Stethoscope className="w-4 h-4 text-primary" />
                     </motion.div>
-                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Health Info</h2>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">מידע בריאותי</h2>
                   </div>
-                  <p className="text-sm text-muted-foreground">Anything your AI coach should know about</p>
+                  <p className="text-sm text-muted-foreground">משהו שמאמן ה-AI צריך לדעת</p>
                 </div>
-
                 <div className="space-y-5">
-                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5">
-                      <Stethoscope className="w-3 h-3" /> Medical Conditions & Allergies
-                    </Label>
-                    <textarea
-                      value={medicalConditions}
-                      onChange={e => setMedicalConditions(e.target.value)}
-                      placeholder="e.g., Diabetes type 2, Celiac disease, Lactose intolerant, Nut allergy..."
-                      rows={4}
-                      className="flex w-full rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md px-3 py-3 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring resize-none"
-                    />
-                    <p className="text-[11px] text-muted-foreground mt-1.5">
-                      Include any medical conditions, food allergies, intolerances, or medications that affect your diet
-                    </p>
+                  <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5"><Stethoscope className="w-3 h-3" /> מצבים רפואיים ואלרגיות</Label>
+                    <textarea value={medicalConditions} onChange={e => setMedicalConditions(e.target.value)} placeholder="למשל: סוכרת סוג 2, צליאק, אי-סבילות ללקטוז, אלרגיה לאגוזים..." rows={4}
+                      className="flex w-full rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md px-3 py-3 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring resize-none" />
+                    <p className="text-[11px] text-muted-foreground mt-1.5">כלול מצבים רפואיים, אלרגיות, רגישויות או תרופות שמשפיעות על התזונה</p>
                   </motion.div>
                 </div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex items-start gap-3 p-4 rounded-xl bg-destructive/5 border border-destructive/10"
-                >
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex items-start gap-3 p-4 rounded-xl bg-destructive/5 border border-destructive/10">
                   <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    This information helps your AI coach provide <span className="text-foreground font-medium">safe, personalized advice</span>. It will never recommend foods that conflict with your medical needs. You can update this anytime in Settings.
+                    מידע זה עוזר למאמן ה-AI לתת <span className="text-foreground font-medium">ייעוץ בטוח ומותאם אישית</span>. הוא לעולם לא ימליץ על מזונות שמתנגשים עם הצרכים הרפואיים שלך. ניתן לעדכן בכל עת בהגדרות.
                   </p>
                 </motion.div>
-
                 <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}>
-                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">Continue <ArrowRight className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">המשך <ArrowLeft className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>
@@ -533,107 +372,50 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center gap-3 mb-1.5">
-                    <motion.div
-                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 300 }}
-                    >
+                    <motion.div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 300 }}>
                       <Calendar className="w-4 h-4 text-primary" />
                     </motion.div>
-                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Timeline</h2>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">ציר זמן</h2>
                   </div>
-                  <p className="text-sm text-muted-foreground">Set a deadline to reach your target weight</p>
+                  <p className="text-sm text-muted-foreground">הגדר דד-ליין להגיע למשקל היעד</p>
                 </div>
-
                 {goal !== 'maintain' && (
                   <div className="space-y-5">
-                    <motion.button
-                      onClick={() => setUseTimeline(!useTimeline)}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                      className={`w-full text-left p-5 rounded-xl transition-all duration-300 flex items-center justify-between ${
-                        useTimeline
-                          ? 'bg-foreground text-background shadow-lg'
-                          : 'bg-muted/40 text-foreground hover:bg-muted/60'
-                      }`}
-                    >
+                    <motion.button onClick={() => setUseTimeline(!useTimeline)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                      className={`w-full text-right p-5 rounded-xl transition-all duration-300 flex items-center justify-between ${useTimeline ? 'bg-foreground text-background shadow-lg' : 'bg-muted/40 text-foreground hover:bg-muted/60'}`}>
                       <div>
-                        <div className={`font-bold text-[15px] ${useTimeline ? 'text-background' : ''}`}>Set a deadline</div>
-                        <div className={`text-xs mt-0.5 ${useTimeline ? 'text-background/60' : 'text-muted-foreground'}`}>
-                          Auto-calculate daily calories to hit your target on time
-                        </div>
+                        <div className={`font-bold text-[15px] ${useTimeline ? 'text-background' : ''}`}>הגדר דד-ליין</div>
+                        <div className={`text-xs mt-0.5 ${useTimeline ? 'text-background/60' : 'text-muted-foreground'}`}>חישוב אוטומטי של קלוריות יומיות להשגת היעד בזמן</div>
                       </div>
-                      {useTimeline && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
-                          <Check className="w-4 h-4" />
-                        </motion.div>
-                      )}
+                      {useTimeline && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}><Check className="w-4 h-4" /></motion.div>}
                     </motion.button>
-
                     {useTimeline && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="space-y-4"
-                      >
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4">
                         <div>
-                          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Days from now</Label>
-                            <Input
-                              type="number"
-                              value={targetDays || ''}
-                              onChange={e => {
-                                const val = parseInt(e.target.value);
-                                if (!isNaN(val) && val > 0) {
-                                  setTargetDays(val);
-                                }
-                              }}
-                              min={1}
-                              className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]"
-                            />
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Target date: <span className="text-foreground font-medium">{format(addDays(new Date(), targetDays), 'MMM d, yyyy')}</span>
-                          </p>
+                          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">מספר ימים מהיום</Label>
+                          <Input type="number" value={targetDays || ''} onChange={e => { const val = parseInt(e.target.value); if (!isNaN(val) && val > 0) setTargetDays(val); }} min={1} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]" />
+                          <p className="text-xs text-muted-foreground mt-2">תאריך יעד: <span className="text-foreground font-medium">{format(addDays(new Date(), targetDays), 'MMM d, yyyy')}</span></p>
                         </div>
-
-                        <motion.div
-                          className="nova-card p-4 space-y-2"
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
+                        <motion.div className="nova-card p-4 space-y-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                           <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Adaptive daily target</span>
-                            <span className="font-bold tabular-nums">{adaptive.dailyCalorieTarget} kcal</span>
+                            <span className="text-muted-foreground">יעד יומי מותאם</span>
+                            <span className="font-bold tabular-nums">{adaptive.dailyCalorieTarget} קק"ל</span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Daily deficit</span>
-                            <span className="font-medium tabular-nums">{adaptive.dailyDeficit} kcal</span>
+                            <span className="text-muted-foreground">גירעון יומי</span>
+                            <span className="font-medium tabular-nums">{adaptive.dailyDeficit} קק"ל</span>
                           </div>
                         </motion.div>
-
                         {!adaptive.isSafe && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20"
-                          >
+                          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20">
                             <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
                             <div>
-                              <p className="text-sm font-medium text-destructive">Unsafe timeline</p>
+                              <p className="text-sm font-medium text-destructive">ציר זמן לא בטוח</p>
                               <p className="text-xs text-muted-foreground mt-1">{adaptive.unsafeReason}</p>
                               {adaptive.safestDate && (
                                 <p className="text-xs mt-2">
-                                  Suggested safe date: <span className="text-foreground font-semibold">{format(parseISO(adaptive.safestDate), 'MMM d, yyyy')}</span>
-                                  <button
-                                    onClick={() => {
-                                      const safeDays = differenceInDays(parseISO(adaptive.safestDate!), new Date());
-                                      setTargetDays(safeDays);
-                                    }}
-                                    className="ml-2 text-primary underline font-medium"
-                                  >
-                                    Use this
-                                  </button>
+                                  תאריך בטוח מוצע: <span className="text-foreground font-semibold">{format(parseISO(adaptive.safestDate), 'MMM d, yyyy')}</span>
+                                  <button onClick={() => { const safeDays = differenceInDays(parseISO(adaptive.safestDate!), new Date()); setTargetDays(safeDays); }} className="me-2 text-primary underline font-medium">השתמש בזה</button>
                                 </p>
                               )}
                             </div>
@@ -643,19 +425,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     )}
                   </div>
                 )}
-
                 {goal === 'maintain' && (
-                  <div className="text-center py-8">
-                    <p className="text-sm text-muted-foreground">Timeline targets are available for weight loss and gain goals.</p>
-                  </div>
+                  <div className="text-center py-8"><p className="text-sm text-muted-foreground">יעדי ציר זמן זמינים רק למטרות ירידה או עלייה במשקל.</p></div>
                 )}
-
                 <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}>
-                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">See My Plan <ArrowRight className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">ראה את התוכנית <ArrowLeft className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>
@@ -664,89 +440,50 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             {step === 'results' && (
               <div className="space-y-8">
                 <div className="text-center">
-                  <motion.div
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                    className="w-14 h-14 rounded-2xl bg-primary/10 mx-auto flex items-center justify-center mb-5"
-                  >
+                  <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} className="w-14 h-14 rounded-2xl bg-primary/10 mx-auto flex items-center justify-center mb-5">
                     <Check className="w-7 h-7 text-primary" />
                   </motion.div>
-                  <motion.h2
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-[28px] font-extrabold font-display"
-                  >
-                    Your Plan
+                  <motion.h2 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-[28px] font-extrabold font-display">
+                    התוכנית שלך
                   </motion.h2>
-                  <p className="text-sm text-muted-foreground mt-1">Personalized daily nutrition targets</p>
+                  <p className="text-sm text-muted-foreground mt-1">יעדי תזונה יומיים מותאמים אישית</p>
                 </div>
-
-                <motion.div
-                  initial={{ scale: 0.85, opacity: 0, rotateY: 15 }}
-                  animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-                  transition={{ delay: 0.2, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
-                  className="nova-card p-8 text-center nova-breathe"
-                >
-                  <motion.div
-                    className="text-[48px] font-extrabold font-display tracking-tight nova-text-gradient leading-none"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
-                  >
+                <motion.div initial={{ scale: 0.85, opacity: 0, rotateY: 15 }} animate={{ scale: 1, opacity: 1, rotateY: 0 }} transition={{ delay: 0.2, duration: 0.6, ease: [0.32, 0.72, 0, 1] }} className="nova-card p-8 text-center nova-breathe">
+                  <motion.div className="text-[48px] font-extrabold font-display tracking-tight nova-text-gradient leading-none" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}>
                     {finalCalories}
                   </motion.div>
                   <div className="text-sm text-muted-foreground mt-2 font-medium">
-                    {useTimeline ? 'adaptive calories per day' : 'calories per day'}
+                    {useTimeline ? 'קלוריות מותאמות ליום' : 'קלוריות ליום'}
                   </div>
                 </motion.div>
-
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { value: finalMacros.protein, label: 'Protein', color: 'text-nova-protein', unit: 'g' },
-                    { value: finalMacros.carbs, label: 'Carbs', color: 'text-nova-carbs', unit: 'g' },
-                    { value: finalMacros.fats, label: 'Fats', color: 'text-nova-fats', unit: 'g' },
+                    { value: finalMacros.protein, label: 'חלבון', color: 'text-nova-protein', unit: 'גר׳' },
+                    { value: finalMacros.carbs, label: 'פחמימות', color: 'text-nova-carbs', unit: 'גר׳' },
+                    { value: finalMacros.fats, label: 'שומנים', color: 'text-nova-fats', unit: 'גר׳' },
                   ].map((m, i) => (
-                    <motion.div
-                      key={m.label}
-                      initial={{ opacity: 0, y: 16, rotateX: 20 }}
-                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                      transition={{ delay: 0.4 + i * 0.1, duration: 0.5 }}
-                      whileHover={{ scale: 1.05, y: -3 }}
-                      className="nova-card p-4 text-center"
-                    >
+                    <motion.div key={m.label} initial={{ opacity: 0, y: 16, rotateX: 20 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: 0.4 + i * 0.1, duration: 0.5 }} whileHover={{ scale: 1.05, y: -3 }} className="nova-card p-4 text-center">
                       <div className={`text-xl font-bold font-display ${m.color}`}>{m.value}{m.unit}</div>
                       <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-1.5">{m.label}</div>
                     </motion.div>
                   ))}
                 </div>
-
                 <div className="space-y-1.5">
                   {[
-                    { label: 'Basal Metabolic Rate', value: `${bmr} kcal` },
-                    { label: 'Total Daily Expenditure', value: `${tdee} kcal` },
+                    { label: 'חילוף חומרים בסיסי', value: `${bmr} קק"ל` },
+                    { label: 'הוצאה יומית כוללת', value: `${tdee} קק"ל` },
                   ].map((item, i) => (
-                    <motion.div
-                      key={item.label}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 + i * 0.08 }}
-                      className="flex justify-between p-3.5 rounded-xl bg-muted/40 text-sm"
-                    >
+                    <motion.div key={item.label} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 + i * 0.08 }} className="flex justify-between p-3.5 rounded-xl bg-muted/40 text-sm">
                       <span className="text-muted-foreground">{item.label}</span>
                       <span className="font-semibold tabular-nums">{item.value}</span>
                     </motion.div>
                   ))}
                 </div>
-
                 <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}>
-                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                     <Button onClick={finish} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">
-                      Start Tracking <ArrowRight className="w-4 h-4" />
+                      התחל מעקב <ArrowLeft className="w-4 h-4" />
                     </Button>
                   </motion.div>
                 </div>

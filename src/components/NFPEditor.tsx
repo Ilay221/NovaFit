@@ -39,45 +39,45 @@ export default function NFPEditor({ profile, onUpdateProfile }: NFPEditorProps) 
     });
     setTimeout(() => {
       setSaving(false);
-      toast.success('Preferences updated! AI coach will use these immediately.');
+      toast.success('ההעדפות עודכנו! מאמן ה-AI ישתמש בהן מיידית.');
     }, 300);
   };
 
   const fields = [
     {
       icon: Heart,
-      label: 'Favorite Food',
-      description: 'What food makes you happiest?',
+      label: 'אוכל אהוב',
+      description: 'איזה אוכל הכי משמח אותך?',
       value: favoriteFood,
       onChange: setFavoriteFood,
-      placeholder: 'e.g., Sushi, Pasta, Shawarma...',
+      placeholder: 'למשל: סושי, פסטה, שווארמה...',
       multiline: false,
     },
     {
       icon: Cookie,
-      label: 'Dietary Weakness',
-      description: "What food can't you resist?",
+      label: 'חולשה תזונתית',
+      description: 'איזה אוכל אתה לא יכול לעמוד בפניו?',
       value: dietaryWeakness,
       onChange: setDietaryWeakness,
-      placeholder: 'e.g., Ice cream, Chocolate, Pizza...',
+      placeholder: 'למשל: גלידה, שוקולד, פיצה...',
       multiline: false,
     },
     {
       icon: Clock,
-      label: 'Daily Habits',
-      description: 'Your eating patterns and routines',
+      label: 'הרגלים יומיים',
+      description: 'דפוסי האכילה והשגרה שלך',
       value: dailyHabits,
       onChange: setDailyHabits,
-      placeholder: 'e.g., Skip breakfast, Late dinner, Snack at work...',
+      placeholder: 'למשל: מדלג על ארוחת בוקר, אוכל מאוחר, נשנש בעבודה...',
       multiline: false,
     },
     {
       icon: Stethoscope,
-      label: 'Medical Conditions & Allergies',
-      description: 'Health info your AI coach needs to know',
+      label: 'מצבים רפואיים ואלרגיות',
+      description: 'מידע בריאותי שמאמן ה-AI צריך לדעת',
       value: medicalConditions,
       onChange: setMedicalConditions,
-      placeholder: 'e.g., Diabetes, Lactose intolerant, Nut allergy...',
+      placeholder: 'למשל: סוכרת, אי-סבילות ללקטוז, אלרגיה לאגוזים...',
       multiline: true,
     },
   ];
@@ -85,10 +85,10 @@ export default function NFPEditor({ profile, onUpdateProfile }: NFPEditorProps) 
   return (
     <motion.div variants={itemVariants} className="nova-card p-5">
       <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-1 flex items-center gap-2">
-        <Heart className="w-3.5 h-3.5 text-primary" /> Food Preferences (NFP)
+        <Heart className="w-3.5 h-3.5 text-primary" /> העדפות אוכל (NFP)
       </h3>
       <p className="text-[11px] text-muted-foreground mb-4">
-        Your AI coach uses these to give personalized advice. Changes apply instantly.
+        מאמן ה-AI משתמש בנתונים אלו לייעוץ מותאם אישית. שינויים חלים מיידית.
       </p>
 
       <div className="space-y-4">
@@ -134,7 +134,7 @@ export default function NFPEditor({ profile, onUpdateProfile }: NFPEditorProps) 
             className="w-full gap-2 h-10 rounded-xl text-xs font-semibold"
           >
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            Save Preferences
+            שמור העדפות
           </Button>
         </motion.div>
       )}

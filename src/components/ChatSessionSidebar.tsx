@@ -52,9 +52,9 @@ export default function ChatSessionSidebar({
       <motion.div
         key={s.id}
         layout
-        initial={{ opacity: 0, x: -12 }}
+        initial={{ opacity: 0, x: 12 }}
         animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -12 }}
+        exit={{ opacity: 0, x: 12 }}
         className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
           isActive ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/60'
         }`}
@@ -87,7 +87,7 @@ export default function ChatSessionSidebar({
             <button
               onClick={(e) => { e.stopPropagation(); onPin(s.id, !s.is_pinned); }}
               className="p-1 rounded hover:bg-muted"
-              title={s.is_pinned ? 'Unpin' : 'Pin'}
+              title={s.is_pinned ? 'בטל הצמדה' : 'הצמד'}
             >
               {s.is_pinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
             </button>
@@ -111,15 +111,15 @@ export default function ChatSessionSidebar({
 
   return (
     <motion.div
-      initial={{ x: -280, opacity: 0 }}
+      initial={{ x: 280, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      exit={{ x: -280, opacity: 0 }}
+      exit={{ x: 280, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="absolute inset-y-0 left-0 w-[280px] z-10 bg-card border-r border-border/50 flex flex-col shadow-xl"
+      className="absolute inset-y-0 end-0 w-[280px] z-10 bg-card border-s border-border/50 flex flex-col shadow-xl"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-safe pb-3 border-b border-border/50">
-        <h3 className="font-bold font-display text-sm">Chat History</h3>
+        <h3 className="font-bold font-display text-sm">היסטוריית שיחות</h3>
         <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted">
           <X className="w-4 h-4" />
         </button>
@@ -129,7 +129,7 @@ export default function ChatSessionSidebar({
       <div className="px-3 py-2">
         <Button onClick={onNew} variant="outline" size="sm" className="w-full gap-2 text-xs">
           <Plus className="w-3.5 h-3.5" />
-          New Chat
+          שיחה חדשה
         </Button>
       </div>
 
@@ -138,7 +138,7 @@ export default function ChatSessionSidebar({
         {pinned.length > 0 && (
           <>
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">
-              📌 Pinned
+              📌 מוצמדים
             </p>
             <AnimatePresence>
               {pinned.map(renderSession)}
@@ -149,7 +149,7 @@ export default function ChatSessionSidebar({
           <>
             {pinned.length > 0 && (
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-3 pb-1">
-                Recent
+                אחרונים
               </p>
             )}
             <AnimatePresence>
@@ -159,7 +159,7 @@ export default function ChatSessionSidebar({
         )}
         {sessions.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-8">
-            No conversations yet.<br />Start a new chat!
+            אין שיחות עדיין.<br />התחל שיחה חדשה!
           </p>
         )}
       </div>

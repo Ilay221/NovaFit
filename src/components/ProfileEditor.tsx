@@ -17,17 +17,17 @@ interface ProfileEditorProps {
 }
 
 const ACTIVITIES: { value: ActivityLevel; label: string }[] = [
-  { value: 'sedentary', label: 'Sedentary' },
-  { value: 'light', label: 'Light' },
-  { value: 'moderate', label: 'Moderate' },
-  { value: 'active', label: 'Active' },
-  { value: 'very_active', label: 'Very Active' },
+  { value: 'sedentary', label: 'יושבני' },
+  { value: 'light', label: 'קל' },
+  { value: 'moderate', label: 'בינוני' },
+  { value: 'active', label: 'פעיל' },
+  { value: 'very_active', label: 'פעיל מאוד' },
 ];
 
 const GOALS: { value: Goal; label: string }[] = [
-  { value: 'lose', label: 'Lose weight' },
-  { value: 'maintain', label: 'Maintain weight' },
-  { value: 'gain', label: 'Gain weight' },
+  { value: 'lose', label: 'ירידה במשקל' },
+  { value: 'maintain', label: 'שמירה על משקל' },
+  { value: 'gain', label: 'עלייה במשקל' },
 ];
 
 export default function ProfileEditor({ profile, weightHistory, onUpdateProfile }: ProfileEditorProps) {
@@ -59,23 +59,23 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
 
   const handleSave = () => {
     if (!form.name.trim()) {
-      toast.error('Name cannot be empty');
+      toast.error('השם לא יכול להיות ריק');
       return;
     }
     if (form.age < 10 || form.age > 120) {
-      toast.error('Age must be between 10 and 120');
+      toast.error('הגיל חייב להיות בין 10 ל-120');
       return;
     }
     if (form.heightCm < 100 || form.heightCm > 250) {
-      toast.error('Height must be between 100 and 250 cm');
+      toast.error('הגובה חייב להיות בין 100 ל-250 ס"מ');
       return;
     }
     if (form.weightKg < 30 || form.weightKg > 300) {
-      toast.error('Weight must be between 30 and 300 kg');
+      toast.error('המשקל חייב להיות בין 30 ל-300 ק"ג');
       return;
     }
     if (form.targetWeightKg < 30 || form.targetWeightKg > 300) {
-      toast.error('Target weight must be between 30 and 300 kg');
+      toast.error('משקל היעד חייב להיות בין 30 ל-300 ק"ג');
       return;
     }
 
@@ -89,7 +89,6 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
       tdee,
     };
 
-    // Recalculate targets
     const adaptive = calculateAdaptiveTargets(updatedProfile, weightHistory);
     updatedProfile.dailyCalorieTarget = adaptive.dailyCalorieTarget;
     updatedProfile.proteinTarget = adaptive.proteinTarget;
@@ -98,14 +97,14 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
 
     onUpdateProfile(updatedProfile);
     setEditing(false);
-    toast.success('Profile updated!');
+    toast.success('הפרופיל עודכן!');
   };
 
   if (!editing) {
     return (
       <div className="nova-card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">Profile</h3>
+          <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">פרופיל</h3>
           <motion.button
             onClick={handleEdit}
             whileHover={{ scale: 1.05 }}
@@ -117,20 +116,20 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
         </div>
         <div className="space-y-3">
           {[
-            { label: 'Name', value: profile.name },
-            { label: 'Age', value: `${profile.age} years` },
-            { label: 'Gender', value: profile.gender === 'male' ? 'Male' : 'Female' },
-            { label: 'Height', value: `${profile.heightCm} cm` },
-            { label: 'Weight', value: `${profile.weightKg} kg` },
-            { label: 'Target Weight', value: `${profile.targetWeightKg} kg` },
-            { label: 'Activity', value: ACTIVITIES.find(a => a.value === profile.activityLevel)?.label || profile.activityLevel },
-            { label: 'Goal', value: `${profile.goal.charAt(0).toUpperCase() + profile.goal.slice(1)} weight` },
-            { label: 'Daily Target', value: `${profile.dailyCalorieTarget} kcal` },
+            { label: 'שם', value: profile.name },
+            { label: 'גיל', value: `${profile.age} שנים` },
+            { label: 'מין', value: profile.gender === 'male' ? 'זכר' : 'נקבה' },
+            { label: 'גובה', value: `${profile.heightCm} ס"מ` },
+            { label: 'משקל', value: `${profile.weightKg} ק"ג` },
+            { label: 'משקל יעד', value: `${profile.targetWeightKg} ק"ג` },
+            { label: 'פעילות', value: ACTIVITIES.find(a => a.value === profile.activityLevel)?.label || profile.activityLevel },
+            { label: 'מטרה', value: GOALS.find(g => g.value === profile.goal)?.label || profile.goal },
+            { label: 'יעד יומי', value: `${profile.dailyCalorieTarget} קק"ל` },
             { label: 'BMR / TDEE', value: `${profile.bmr} / ${profile.tdee}` },
           ].map((item, i) => (
             <motion.div
               key={item.label}
-              initial={{ opacity: 0, x: -8 }}
+              initial={{ opacity: 0, x: 8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 + i * 0.05, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
               className="flex justify-between items-center py-1"
@@ -151,7 +150,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
       className="nova-card p-5"
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">Edit Profile</h3>
+        <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">עריכת פרופיל</h3>
         <motion.button
           onClick={() => setEditing(false)}
           whileHover={{ scale: 1.05 }}
@@ -164,7 +163,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Name</Label>
+          <Label className="text-xs text-muted-foreground">שם</Label>
           <Input
             value={form.name}
             onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -175,7 +174,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Age</Label>
+            <Label className="text-xs text-muted-foreground">גיל</Label>
             <Input
               type="number"
               value={form.age}
@@ -186,21 +185,21 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Gender</Label>
+            <Label className="text-xs text-muted-foreground">מין</Label>
             <Select value={form.gender} onValueChange={(v: Gender) => setForm(f => ({ ...f, gender: v }))}>
               <SelectTrigger className="h-10 rounded-xl bg-muted/30 border-muted">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
+                <SelectItem value="male">זכר</SelectItem>
+                <SelectItem value="female">נקבה</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Height (cm)</Label>
+          <Label className="text-xs text-muted-foreground">גובה (ס"מ)</Label>
           <Input
             type="number"
             value={form.heightCm}
@@ -213,7 +212,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Weight (kg)</Label>
+            <Label className="text-xs text-muted-foreground">משקל (ק"ג)</Label>
             <Input
               type="number"
               value={form.weightKg}
@@ -225,7 +224,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Target (kg)</Label>
+            <Label className="text-xs text-muted-foreground">יעד (ק"ג)</Label>
             <Input
               type="number"
               value={form.targetWeightKg}
@@ -239,7 +238,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Activity Level</Label>
+          <Label className="text-xs text-muted-foreground">רמת פעילות</Label>
           <Select value={form.activityLevel} onValueChange={(v: ActivityLevel) => setForm(f => ({ ...f, activityLevel: v }))}>
             <SelectTrigger className="h-10 rounded-xl bg-muted/30 border-muted">
               <SelectValue />
@@ -253,7 +252,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Goal</Label>
+          <Label className="text-xs text-muted-foreground">מטרה</Label>
           <Select value={form.goal} onValueChange={(v: Goal) => setForm(f => ({ ...f, goal: v }))}>
             <SelectTrigger className="h-10 rounded-xl bg-muted/30 border-muted">
               <SelectValue />
@@ -270,7 +269,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
           onClick={handleSave}
           className="w-full h-11 rounded-xl gap-2 font-medium text-[13px]"
         >
-          <Save className="w-4 h-4" /> Save Changes
+          <Save className="w-4 h-4" /> שמור שינויים
         </Button>
       </div>
     </motion.div>
