@@ -31,6 +31,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [favoriteFood, setFavoriteFood] = useState('');
   const [dietaryWeakness, setDietaryWeakness] = useState('');
   const [dailyHabits, setDailyHabits] = useState('');
+  const [medicalConditions, setMedicalConditions] = useState('');
 
   const stepIndex = STEPS.indexOf(step);
   const next = () => setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)]);
