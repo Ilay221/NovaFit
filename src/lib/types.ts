@@ -28,6 +28,7 @@ export interface UserProfile {
   favoriteFood?: string;
   dietaryWeakness?: string;
   dailyHabits?: string;
+  medicalConditions?: string;
 }
 
 export interface FoodItem {

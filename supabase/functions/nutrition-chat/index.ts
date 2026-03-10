@@ -84,27 +84,54 @@ async function buildSystemPrompt(supabase: any, user: any): Promise<string> {
     const today = new Date().toISOString().slice(0, 10);
     const { data: todayLog } = await supabase.from("daily_logs").select("*").eq("user_id", user.id).eq("date", today).maybeSingle();
 
-    let mealsInfo = "No meals logged today.";
+    let mealsBreakdown = "No meals logged today.";
     let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFats = 0;
+    let mealsByType: Record<string, string[]> = { breakfast: [], lunch: [], dinner: [], snack: [] };
 
     if (todayLog) {
-      const { data: meals } = await supabase.from("meal_entries").select("*").eq("daily_log_id", todayLog.id);
+      const { data: meals } = await supabase.from("meal_entries").select("*").eq("daily_log_id", todayLog.id).order("logged_at", { ascending: true });
       if (meals && meals.length > 0) {
-        totalCalories = meals.reduce((s: number, m: any) => s + m.calories * m.quantity, 0);
-        totalProtein = meals.reduce((s: number, m: any) => s + m.protein * m.quantity, 0);
-        totalCarbs = meals.reduce((s: number, m: any) => s + m.carbs * m.quantity, 0);
-        totalFats = meals.reduce((s: number, m: any) => s + m.fats * m.quantity, 0);
-        mealsInfo = `Today's meals: ${meals.map((m: any) => `${m.food_name} (${Math.round(m.calories * m.quantity)} kcal)`).join(", ")}`;
+        for (const m of meals) {
+          const cal = Math.round(m.calories * m.quantity);
+          const p = Math.round(m.protein * m.quantity);
+          const c = Math.round(m.carbs * m.quantity);
+          const f = Math.round(m.fats * m.quantity);
+          totalCalories += cal;
+          totalProtein += p;
+          totalCarbs += c;
+          totalFats += f;
+          const type = m.meal_type || 'snack';
+          if (!mealsByType[type]) mealsByType[type] = [];
+          mealsByType[type].push(`${m.food_name} (${cal} kcal, P:${p}g C:${c}g F:${f}g)`);
+        }
+        const parts: string[] = [];
+        for (const [type, items] of Object.entries(mealsByType)) {
+          if (items.length > 0) parts.push(`  ${type.charAt(0).toUpperCase() + type.slice(1)}: ${items.join(", ")}`);
+        }
+        mealsBreakdown = `Today's meals:\n${parts.join("\n")}`;
       }
     }
 
-    const { data: latestWeight } = await supabase.from("weight_entries").select("weight_kg").eq("user_id", user.id).order("date", { ascending: false }).limit(1);
+    const { data: latestWeight } = await supabase.from("weight_entries").select("weight_kg, date").eq("user_id", user.id).order("date", { ascending: false }).limit(5);
     const currentWeight = latestWeight?.[0]?.weight_kg ?? profile.weight_kg ?? "unknown";
+    const weightTrend = latestWeight && latestWeight.length >= 2
+      ? `Weight trend (last ${latestWeight.length} entries): ${latestWeight.map((w: any) => `${w.weight_kg}kg (${w.date})`).reverse().join(" → ")}`
+      : "No weight trend data yet.";
 
     const remainingCal = Math.round(profile.daily_calorie_target - totalCalories);
     const remainingProtein = Math.round(profile.protein_target - totalProtein);
     const remainingCarbs = Math.round(profile.carbs_target - totalCarbs);
     const remainingFats = Math.round(profile.fats_target - totalFats);
+
+    const calorieStatus = totalCalories > profile.daily_calorie_target
+      ? `⚠️ OVER TARGET by ${Math.abs(remainingCal)} kcal!`
+      : remainingCal < 200
+        ? `Almost at target — only ${remainingCal} kcal remaining.`
+        : `${remainingCal} kcal remaining.`;
+
+    const proteinPct = Math.round((totalProtein / profile.protein_target) * 100);
+    const carbsPct = Math.round((totalCarbs / profile.carbs_target) * 100);
+    const fatsPct = Math.round((totalFats / profile.fats_target) * 100);
 
     return `You are NovaFit AI, a warm, expert, and hyper-personalized nutrition coach. You know everything about this user:
 
@@ -118,17 +145,25 @@ async function buildSystemPrompt(supabase: any, user: any): Promise<string> {
 - Activity level: ${profile.activity_level}
 ${profile.target_date ? `- Target date: ${profile.target_date}` : ''}
 
+## Medical Conditions & Allergies
+${profile.medical_conditions ? profile.medical_conditions : 'None specified.'}
+⚠️ CRITICAL: If the user has medical conditions or allergies listed above, NEVER suggest foods that could be harmful. Always consider these when giving advice.
+
 ## Nutrition Targets
 - Daily calorie target: ${Math.round(profile.daily_calorie_target)} kcal
 - Protein: ${Math.round(profile.protein_target)}g | Carbs: ${Math.round(profile.carbs_target)}g | Fats: ${Math.round(profile.fats_target)}g
 
-## Today's Progress
-- ${mealsInfo}
-- Calories consumed: ${Math.round(totalCalories)} kcal | Remaining: ${remainingCal} kcal
-- Protein remaining: ${remainingProtein}g | Carbs remaining: ${remainingCarbs}g | Fats remaining: ${remainingFats}g
+## Today's Progress (${today})
+- ${mealsBreakdown}
+- Calories consumed: ${Math.round(totalCalories)} kcal — ${calorieStatus}
+- Protein: ${totalProtein}g / ${Math.round(profile.protein_target)}g (${proteinPct}%) | Carbs: ${totalCarbs}g / ${Math.round(profile.carbs_target)}g (${carbsPct}%) | Fats: ${totalFats}g / ${Math.round(profile.fats_target)}g (${fatsPct}%)
+- Remaining: Protein ${remainingProtein}g | Carbs ${remainingCarbs}g | Fats ${remainingFats}g
 - Water intake: ${todayLog?.water_ml ?? 0}ml
 
-## Personal Preferences
+## Weight History
+- ${weightTrend}
+
+## Personal Preferences (NFP)
 - Favorite food: ${profile.favorite_food || 'Not specified'}
 - Dietary weakness/craving: ${profile.dietary_weakness || 'Not specified'}
 - Daily habits: ${profile.daily_habits || 'Not specified'}
@@ -136,10 +171,12 @@ ${profile.target_date ? `- Target date: ${profile.target_date}` : ''}
 ## Instructions
 - Always call the user by their name (${profile.name}).
 - Reference their specific goals, remaining calories, and macros in responses.
-- If they ask for food suggestions, consider their remaining macros AND their preferences/weaknesses.
+- If they ask for food suggestions, consider their remaining macros AND their preferences/weaknesses AND medical conditions.
+- If they exceeded their calorie target today, acknowledge it compassionately and suggest how to handle the rest of the day.
 - Be encouraging but realistic. Use a friendly, coaching tone.
 - Keep responses concise (2-4 paragraphs max).
-- Use metric units (kg, cm).`;
+- Use metric units (kg, cm).
+- If the user asks about their progress today, give them a full breakdown.`;
   } catch (err) {
     console.warn("Failed to build system prompt:", err);
     return defaultPrompt;

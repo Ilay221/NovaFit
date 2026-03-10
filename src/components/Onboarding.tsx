@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Activity, Target, Dumbbell, Ruler, Check, Sparkles, Calendar, AlertTriangle, Heart, Cookie, Clock } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Activity, Target, Dumbbell, Ruler, Check, Sparkles, Calendar, AlertTriangle, Heart, Cookie, Clock, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import { calculateBMR, calculateTDEE, calculateCalorieTarget, calculateMacros } 
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import { format, addDays, differenceInDays, parseISO } from 'date-fns';
 
-const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'preferences', 'timeline', 'results'] as const;
+const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'preferences', 'health', 'timeline', 'results'] as const;
 type Step = typeof STEPS[number];
 
 interface OnboardingProps {
@@ -31,6 +31,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [favoriteFood, setFavoriteFood] = useState('');
   const [dietaryWeakness, setDietaryWeakness] = useState('');
   const [dailyHabits, setDailyHabits] = useState('');
+  const [medicalConditions, setMedicalConditions] = useState('');
 
   const stepIndex = STEPS.indexOf(step);
   const next = () => setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)]);
@@ -65,7 +66,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       dailyCalorieTarget: finalCalories,
       proteinTarget: finalMacros.protein, carbsTarget: finalMacros.carbs, fatsTarget: finalMacros.fats,
       targetDate: targetDateStr,
-      favoriteFood, dietaryWeakness, dailyHabits,
+      favoriteFood, dietaryWeakness, dailyHabits, medicalConditions,
     });
   };
 
@@ -456,6 +457,64 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Your AI nutrition coach will use these preferences to give you <span className="text-foreground font-medium">personalized meal suggestions</span> and help you manage cravings smartly.
+                  </p>
+                </motion.div>
+
+                <div className="flex gap-3 pt-2">
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowLeft className="w-4 h-4" /></Button>
+                  </motion.div>
+                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">Continue <ArrowRight className="w-4 h-4" /></Button>
+                  </motion.div>
+                </div>
+              </div>
+            )}
+
+            {step === 'health' && (
+              <div className="space-y-8">
+                <div>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <motion.div
+                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"
+                      initial={{ scale: 0, rotate: -30 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                    >
+                      <Stethoscope className="w-4 h-4 text-primary" />
+                    </motion.div>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">Health Info</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Anything your AI coach should know about</p>
+                </div>
+
+                <div className="space-y-5">
+                  <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block flex items-center gap-1.5">
+                      <Stethoscope className="w-3 h-3" /> Medical Conditions & Allergies
+                    </Label>
+                    <textarea
+                      value={medicalConditions}
+                      onChange={e => setMedicalConditions(e.target.value)}
+                      placeholder="e.g., Diabetes type 2, Celiac disease, Lactose intolerant, Nut allergy..."
+                      rows={4}
+                      className="flex w-full rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md px-3 py-3 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring resize-none"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      Include any medical conditions, food allergies, intolerances, or medications that affect your diet
+                    </p>
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex items-start gap-3 p-4 rounded-xl bg-destructive/5 border border-destructive/10"
+                >
+                  <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    This information helps your AI coach provide <span className="text-foreground font-medium">safe, personalized advice</span>. It will never recommend foods that conflict with your medical needs. You can update this anytime in Settings.
                   </p>
                 </motion.div>
 

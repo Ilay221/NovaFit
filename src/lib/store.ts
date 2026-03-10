@@ -67,6 +67,7 @@ export function useProfile() {
           favoriteFood: (data as any).favorite_food ?? '',
           dietaryWeakness: (data as any).dietary_weakness ?? '',
           dailyHabits: (data as any).daily_habits ?? '',
+          medicalConditions: (data as any).medical_conditions ?? '',
         });
       }
       setLoading(false);
@@ -102,6 +103,7 @@ export function useProfile() {
       favorite_food: p.favoriteFood || '',
       dietary_weakness: p.dietaryWeakness || '',
       daily_habits: p.dailyHabits || '',
+      medical_conditions: p.medicalConditions || '',
       updated_at: new Date().toISOString(),
     };
     
