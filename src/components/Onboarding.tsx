@@ -9,7 +9,7 @@ import { calculateBMR, calculateTDEE, calculateCalorieTarget, calculateMacros } 
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import { format, addDays, differenceInDays, parseISO } from 'date-fns';
 
-const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'preferences', 'timeline', 'results'] as const;
+const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'preferences', 'health', 'timeline', 'results'] as const;
 type Step = typeof STEPS[number];
 
 interface OnboardingProps {
