@@ -67,6 +67,7 @@ export function useProfile() {
           favoriteFood: (data as any).favorite_food ?? '',
           dietaryWeakness: (data as any).dietary_weakness ?? '',
           dailyHabits: (data as any).daily_habits ?? '',
+          medicalConditions: (data as any).medical_conditions ?? '',
         });
       }
       setLoading(false);
