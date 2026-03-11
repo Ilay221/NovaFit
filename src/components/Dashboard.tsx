@@ -25,6 +25,7 @@ interface DashboardProps {
   weightHistory: WeightEntry[];
   onAddMeal: (entry: MealEntry) => void;
   onRemoveMeal: (id: string) => void;
+  onMoveMeal: (id: string, newMealType: MealEntry['mealType']) => void;
   onAddWater: (ml: number) => void;
   onAddWeight: (entry: WeightEntry) => void;
   onUpdateProfile: (profile: UserProfile | null) => void;
