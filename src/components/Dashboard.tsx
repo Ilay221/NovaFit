@@ -54,11 +54,14 @@ const MEAL_LABELS: Record<string, string> = {
 };
 
 export default function Dashboard({
-  profile, dailyLog, weightHistory, onAddMeal, onRemoveMeal, onAddWater, onAddWeight, onUpdateProfile
+  profile, dailyLog, weightHistory, onAddMeal, onRemoveMeal, onMoveMeal, onAddWater, onAddWeight, onUpdateProfile
 }: DashboardProps) {
   const [view, setView] = useState<View>('dashboard');
   const [weightInput, setWeightInput] = useState('');
   const theme = useTheme();
+  const [draggingMeal, setDraggingMeal] = useState<string | null>(null);
+  const [dragOverType, setDragOverType] = useState<string | null>(null);
+  const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const totals = dailyLog.meals.reduce(
     (acc, m) => ({
