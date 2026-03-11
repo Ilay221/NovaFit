@@ -126,6 +126,31 @@ export default function Dashboard({
 
   const mealGroups = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
+  const handleDragEnd = useCallback((mealId: string, originalType: string) => {
+    if (dragOverType && dragOverType !== originalType) {
+      onMoveMeal(mealId, dragOverType as MealEntry['mealType']);
+    }
+    setDraggingMeal(null);
+    setDragOverType(null);
+  }, [dragOverType, onMoveMeal]);
+
+  const handlePointerMoveWhileDragging = useCallback((e: PointerEvent | MouseEvent | TouchEvent) => {
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+    let found: string | null = null;
+    for (const type of mealGroups) {
+      const el = groupRefs.current[type];
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        if (clientY >= rect.top - 20 && clientY <= rect.bottom + 20 && clientX >= rect.left && clientX <= rect.right) {
+          found = type;
+          break;
+        }
+      }
+    }
+    setDragOverType(found);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background pb-28">
       <AnimatePresence mode="wait">
