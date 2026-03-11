@@ -112,6 +112,49 @@ async function buildSystemPrompt(supabase: any, user: any): Promise<string> {
       }
     }
 
+    // Fetch last 7 days of meal history (excluding today)
+    const pastDays: string[] = [];
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      pastDays.push(d.toISOString().slice(0, 10));
+    }
+    const { data: pastLogs } = await supabase.from("daily_logs").select("id, date, water_ml").eq("user_id", user.id).in("date", pastDays);
+    let pastMealsHistory = "";
+    if (pastLogs && pastLogs.length > 0) {
+      const logIds = pastLogs.map((l: any) => l.id);
+      const { data: pastMeals } = await supabase.from("meal_entries").select("*").in("daily_log_id", logIds).order("logged_at", { ascending: true });
+      if (pastMeals && pastMeals.length > 0) {
+        const byDate: Record<string, { meals: string[], cal: number, p: number, c: number, f: number, water: number }> = {};
+        for (const log of pastLogs) {
+          byDate[log.date] = { meals: [], cal: 0, p: 0, c: 0, f: 0, water: log.water_ml || 0 };
+        }
+        for (const m of pastMeals) {
+          const log = pastLogs.find((l: any) => l.id === m.daily_log_id);
+          if (!log) continue;
+          const cal = Math.round(m.calories * m.quantity);
+          const p = Math.round(m.protein * m.quantity);
+          const c = Math.round(m.carbs * m.quantity);
+          const f = Math.round(m.fats * m.quantity);
+          byDate[log.date].cal += cal;
+          byDate[log.date].p += p;
+          byDate[log.date].c += c;
+          byDate[log.date].f += f;
+          const type = m.meal_type || 'snack';
+          byDate[log.date].meals.push(`[${type}] ${m.food_name} (${cal} kcal, P:${p}g C:${c}g F:${f}g)`);
+        }
+        const sortedDates = Object.keys(byDate).sort();
+        const parts: string[] = [];
+        for (const date of sortedDates) {
+          const d = byDate[date];
+          if (d.meals.length === 0) continue;
+          const overUnder = d.cal > profile.daily_calorie_target ? `⚠️ OVER by ${d.cal - Math.round(profile.daily_calorie_target)} kcal` : `${Math.round(profile.daily_calorie_target) - d.cal} kcal under target`;
+          parts.push(`### ${date}\n  Total: ${d.cal} kcal (${overUnder}) | P:${d.p}g C:${d.c}g F:${d.f}g | Water: ${d.water}ml\n  ${d.meals.join("\n  ")}`);
+        }
+        if (parts.length > 0) pastMealsHistory = parts.join("\n");
+      }
+    }
+
     const { data: latestWeight } = await supabase.from("weight_entries").select("weight_kg, date").eq("user_id", user.id).order("date", { ascending: false }).limit(5);
     const currentWeight = latestWeight?.[0]?.weight_kg ?? profile.weight_kg ?? "unknown";
     const weightTrend = latestWeight && latestWeight.length >= 2
@@ -163,6 +206,10 @@ ${profile.medical_conditions ? profile.medical_conditions : 'None specified.'}
 ## Weight History
 - ${weightTrend}
 
+## Meal History (Last 7 Days)
+${pastMealsHistory || "No meal history from previous days."}
+When the user asks about what they ate on a specific day (e.g. "yesterday", "2 days ago"), use this history to give a detailed breakdown.
+
 ## Personal Preferences (NFP)
 - Favorite food: ${profile.favorite_food || 'Not specified'}
 - Dietary weakness/craving: ${profile.dietary_weakness || 'Not specified'}
@@ -173,6 +220,7 @@ ${profile.medical_conditions ? profile.medical_conditions : 'None specified.'}
 - Reference their specific goals, remaining calories, and macros in responses.
 - If they ask for food suggestions, consider their remaining macros AND their preferences/weaknesses AND medical conditions.
 - If they exceeded their calorie target today, acknowledge it compassionately and suggest how to handle the rest of the day.
+- When the user asks about meals from a previous day, give a full detailed breakdown from the meal history above.
 - Be encouraging but realistic. Use a friendly, coaching tone.
 - Keep responses concise (2-4 paragraphs max).
 - Use metric units (kg, cm).
