@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
@@ -25,6 +25,7 @@ interface DashboardProps {
   weightHistory: WeightEntry[];
   onAddMeal: (entry: MealEntry) => void;
   onRemoveMeal: (id: string) => void;
+  onMoveMeal: (id: string, newMealType: MealEntry['mealType']) => void;
   onAddWater: (ml: number) => void;
   onAddWeight: (entry: WeightEntry) => void;
   onUpdateProfile: (profile: UserProfile | null) => void;
@@ -53,11 +54,14 @@ const MEAL_LABELS: Record<string, string> = {
 };
 
 export default function Dashboard({
-  profile, dailyLog, weightHistory, onAddMeal, onRemoveMeal, onAddWater, onAddWeight, onUpdateProfile
+  profile, dailyLog, weightHistory, onAddMeal, onRemoveMeal, onMoveMeal, onAddWater, onAddWeight, onUpdateProfile
 }: DashboardProps) {
   const [view, setView] = useState<View>('dashboard');
   const [weightInput, setWeightInput] = useState('');
   const theme = useTheme();
+  const [draggingMeal, setDraggingMeal] = useState<string | null>(null);
+  const [dragOverType, setDragOverType] = useState<string | null>(null);
+  const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const totals = dailyLog.meals.reduce(
     (acc, m) => ({
@@ -121,6 +125,31 @@ export default function Dashboard({
   };
 
   const mealGroups = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
+
+  const handleDragEnd = useCallback((mealId: string, originalType: string) => {
+    if (dragOverType && dragOverType !== originalType) {
+      onMoveMeal(mealId, dragOverType as MealEntry['mealType']);
+    }
+    setDraggingMeal(null);
+    setDragOverType(null);
+  }, [dragOverType, onMoveMeal]);
+
+  const handlePointerMoveWhileDragging = useCallback((e: PointerEvent | MouseEvent | TouchEvent) => {
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+    let found: string | null = null;
+    for (const type of mealGroups) {
+      const el = groupRefs.current[type];
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        if (clientY >= rect.top - 20 && clientY <= rect.bottom + 20 && clientX >= rect.left && clientX <= rect.right) {
+          found = type;
+          break;
+        }
+      }
+    }
+    setDragOverType(found);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -376,48 +405,99 @@ export default function Dashboard({
               <div className="space-y-5">
                 {mealGroups.map(type => {
                   const meals = dailyLog.meals.filter(m => m.mealType === type);
-                  if (meals.length === 0) return null;
+                  const isDropTarget = draggingMeal !== null && dragOverType === type;
+                  const hasMealsOrDragging = meals.length > 0 || draggingMeal !== null;
+                  if (!hasMealsOrDragging) return null;
                   return (
-                    <div key={type}>
+                    <div
+                      key={type}
+                      ref={el => { groupRefs.current[type] = el; }}
+                      className={`rounded-xl transition-all duration-200 ${
+                        isDropTarget ? 'bg-primary/10 ring-2 ring-primary/30 p-2 -m-2' : ''
+                      }`}
+                    >
                       <motion.div
                         className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-2"
                         initial={{ opacity: 0, x: 6 }}
                         animate={{ opacity: 1, x: 0 }}
                       >
                         {MEAL_LABELS[type]}
+                        {isDropTarget && (
+                          <span className="text-primary me-2">← שחרר כאן</span>
+                        )}
                       </motion.div>
                       <div className="space-y-1.5">
-                        {meals.map((meal, i) => (
-                          <motion.div
-                            key={meal.id}
-                            layout
-                            initial={{ opacity: 0, x: 12, scale: 0.95 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: -12, scale: 0.95 }}
-                            transition={{ delay: i * 0.04, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                            whileHover={{ x: -4, backgroundColor: 'hsl(var(--muted) / 0.5)' }}
-                            className="flex items-center justify-between text-sm p-3.5 rounded-xl bg-muted/30 transition-colors group cursor-default"
-                          >
-                            <div>
-                              <span className="font-medium text-[14px]">{meal.foodItem.name}</span>
-                              <div className="flex gap-2 mt-1 text-[11px] text-muted-foreground">
-                                <span className="tabular-nums">{meal.foodItem.calories} קק"ל</span>
-                                <span className="text-border">·</span>
-                                <span className="text-nova-protein tabular-nums">ח {meal.foodItem.protein} גר׳</span>
-                                <span className="text-nova-carbs tabular-nums">פ {meal.foodItem.carbs} גר׳</span>
-                                <span className="text-nova-fats tabular-nums">ש {meal.foodItem.fats} גר׳</span>
-                              </div>
-                            </div>
-                            <motion.button
-                              onClick={() => onRemoveMeal(meal.id)}
-                              whileHover={{ scale: 1.15 }}
-                              whileTap={{ scale: 0.85 }}
-                              className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
+                        {meals.map((meal, i) => {
+                          const isDragging = draggingMeal === meal.id;
+                          return (
+                            <motion.div
+                              key={meal.id}
+                              layout
+                              drag="y"
+                              dragSnapToOrigin
+                              dragElastic={0.5}
+                              dragMomentum={false}
+                              onDragStart={() => setDraggingMeal(meal.id)}
+                              onDrag={(_, info) => {
+                                const el = document.elementFromPoint(
+                                  info.point.x,
+                                  info.point.y
+                                );
+                                if (el) {
+                                  let found: string | null = null;
+                                  for (const t of mealGroups) {
+                                    const ref = groupRefs.current[t];
+                                    if (ref) {
+                                      const rect = ref.getBoundingClientRect();
+                                      if (info.point.y >= rect.top - 20 && info.point.y <= rect.bottom + 20) {
+                                        found = t;
+                                        break;
+                                      }
+                                    }
+                                  }
+                                  setDragOverType(found);
+                                }
+                              }}
+                              onDragEnd={() => handleDragEnd(meal.id, type)}
+                              initial={{ opacity: 0, x: 12, scale: 0.95 }}
+                              animate={{ opacity: isDragging ? 0.7 : 1, x: 0, scale: isDragging ? 1.03 : 1 }}
+                              exit={{ opacity: 0, x: -12, scale: 0.95 }}
+                              transition={{ delay: i * 0.04, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+                              whileHover={{ x: -4, backgroundColor: 'hsl(var(--muted) / 0.5)' }}
+                              className={`flex items-center justify-between text-sm p-3.5 rounded-xl bg-muted/30 transition-colors group cursor-grab active:cursor-grabbing ${
+                                isDragging ? 'z-50 shadow-lg ring-2 ring-primary/30' : ''
+                              }`}
+                              style={{ touchAction: 'none' }}
                             >
-                              <X className="w-3.5 h-3.5" />
-                            </motion.button>
-                          </motion.div>
-                        ))}
+                              <div className="flex items-center gap-2">
+                                <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+                                <div>
+                                  <span className="font-medium text-[14px]">{meal.foodItem.name}</span>
+                                  <div className="flex gap-2 mt-1 text-[11px] text-muted-foreground">
+                                    <span className="tabular-nums">{meal.foodItem.calories} קק"ל</span>
+                                    <span className="text-border">·</span>
+                                    <span className="text-nova-protein tabular-nums">ח {meal.foodItem.protein} גר׳</span>
+                                    <span className="text-nova-carbs tabular-nums">פ {meal.foodItem.carbs} גר׳</span>
+                                    <span className="text-nova-fats tabular-nums">ש {meal.foodItem.fats} גר׳</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <motion.button
+                                onClick={() => onRemoveMeal(meal.id)}
+                                whileHover={{ scale: 1.15 }}
+                                whileTap={{ scale: 0.85 }}
+                                className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </motion.button>
+                            </motion.div>
+                          );
+                        })}
+                        {meals.length === 0 && isDropTarget && (
+                          <div className="py-4 text-center text-[12px] text-primary/60 font-medium border-2 border-dashed border-primary/20 rounded-xl">
+                            שחרר כאן להעברה
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

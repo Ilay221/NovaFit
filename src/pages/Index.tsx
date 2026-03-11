@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile, setProfile, loading: profileLoading } = useProfile();
-  const { getLog, addMeal, removeMeal, addWater } = useDailyLog();
+  const { getLog, addMeal, removeMeal, moveMeal, addWater } = useDailyLog();
   const { entries: weightHistory, addEntry: addWeight } = useWeightHistory();
   useTheme();
 
@@ -93,6 +93,7 @@ const Index = () => {
       weightHistory={weightHistory}
       onAddMeal={addMeal}
       onRemoveMeal={removeMeal}
+      onMoveMeal={moveMeal}
       onAddWater={addWater}
       onAddWeight={addWeight}
       onUpdateProfile={setProfile}

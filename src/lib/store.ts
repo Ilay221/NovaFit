@@ -202,6 +202,15 @@ export function useDailyLog() {
     await fetchLog();
   }, [user, fetchLog]);
 
+  const moveMeal = useCallback(async (mealId: string, newMealType: MealEntry['mealType']) => {
+    if (!user) return;
+    await supabase.from('meal_entries').update({ meal_type: newMealType }).eq('id', mealId);
+    setTodayLog(prev => ({
+      ...prev,
+      meals: prev.meals.map(m => m.id === mealId ? { ...m, mealType: newMealType } : m),
+    }));
+  }, [user]);
+
   const addWater = useCallback(async (ml: number) => {
     if (!user || !todayLogId) return;
     const newWater = todayLog.waterMl + ml;
@@ -209,7 +218,7 @@ export function useDailyLog() {
     setTodayLog(prev => ({ ...prev, waterMl: newWater }));
   }, [user, todayLogId, todayLog.waterMl]);
 
-  return { logs: {}, getLog, addMeal, removeMeal, addWater };
+  return { logs: {}, getLog, addMeal, removeMeal, moveMeal, addWater };
 }
 
 export function useWeightHistory() {
