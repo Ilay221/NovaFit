@@ -93,6 +93,7 @@ const Index = () => {
       weightHistory={weightHistory}
       onAddMeal={addMeal}
       onRemoveMeal={removeMeal}
+      onMoveMeal={moveMeal}
       onAddWater={addWater}
       onAddWeight={addWeight}
       onUpdateProfile={setProfile}
