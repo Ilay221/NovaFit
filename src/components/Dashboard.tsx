@@ -432,9 +432,10 @@ export default function Dashboard({
                           return (
                             <motion.div
                               key={meal.id}
-                              layout="position"
+                              layout
                               drag="y"
-                              dragElastic={0.3}
+                              dragSnapToOrigin
+                              dragElastic={0.5}
                               dragMomentum={false}
                               onDragStart={() => setDraggingMeal(meal.id)}
                               onDrag={(_, info) => {
