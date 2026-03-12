@@ -61,6 +61,7 @@ export default function Dashboard({
   const theme = useTheme();
   const [draggingMeal, setDraggingMeal] = useState<string | null>(null);
   const [dragOverType, setDragOverType] = useState<string | null>(null);
+  const dragOverTypeRef = useRef<string | null>(null);
   const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const totals = dailyLog.meals.reduce(
@@ -127,27 +128,28 @@ export default function Dashboard({
   const mealGroups = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
   const handleDragEnd = useCallback((mealId: string, originalType: string) => {
-    if (dragOverType && dragOverType !== originalType) {
-      onMoveMeal(mealId, dragOverType as MealEntry['mealType']);
+    const target = dragOverTypeRef.current;
+    if (target && target !== originalType) {
+      onMoveMeal(mealId, target as MealEntry['mealType']);
     }
     setDraggingMeal(null);
     setDragOverType(null);
-  }, [dragOverType, onMoveMeal]);
+    dragOverTypeRef.current = null;
+  }, [onMoveMeal]);
 
-  const handlePointerMoveWhileDragging = useCallback((e: PointerEvent | MouseEvent | TouchEvent) => {
-    const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
-    const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+  const updateDragOver = useCallback((y: number) => {
     let found: string | null = null;
     for (const type of mealGroups) {
       const el = groupRefs.current[type];
       if (el) {
         const rect = el.getBoundingClientRect();
-        if (clientY >= rect.top - 20 && clientY <= rect.bottom + 20 && clientX >= rect.left && clientX <= rect.right) {
+        if (y >= rect.top - 30 && y <= rect.bottom + 30) {
           found = type;
           break;
         }
       }
     }
+    dragOverTypeRef.current = found;
     setDragOverType(found);
   }, []);
 
@@ -439,24 +441,7 @@ export default function Dashboard({
                               dragMomentum={false}
                               onDragStart={() => setDraggingMeal(meal.id)}
                               onDrag={(_, info) => {
-                                const el = document.elementFromPoint(
-                                  info.point.x,
-                                  info.point.y
-                                );
-                                if (el) {
-                                  let found: string | null = null;
-                                  for (const t of mealGroups) {
-                                    const ref = groupRefs.current[t];
-                                    if (ref) {
-                                      const rect = ref.getBoundingClientRect();
-                                      if (info.point.y >= rect.top - 20 && info.point.y <= rect.bottom + 20) {
-                                        found = t;
-                                        break;
-                                      }
-                                    }
-                                  }
-                                  setDragOverType(found);
-                                }
+                                updateDragOver(info.point.y);
                               }}
                               onDragEnd={() => handleDragEnd(meal.id, type)}
                               initial={{ opacity: 0, x: 12, scale: 0.95 }}
