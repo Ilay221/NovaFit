@@ -224,7 +224,23 @@ When the user asks about what they ate on a specific day (e.g. "yesterday", "2 d
 - Be encouraging but realistic. Use a friendly, coaching tone.
 - Keep responses concise (2-4 paragraphs max).
 - Use metric units (kg, cm).
-- If the user asks about their progress today, give them a full breakdown.`;
+- If the user asks about their progress today, give them a full breakdown.
+
+## Food Logging from Chat
+When the user mentions they ATE or DRANK something (past tense, e.g. "אכלתי אורז", "שתיתי קפה", "I had rice"), you MUST include a special hidden tag at the END of your response with nutritional data for logging.
+Format (JSON inside HTML comment, MUST be valid JSON):
+<!--FOOD_ADD:{"foods":[{"name":"אורז לבן","calories":206,"protein":4,"carbs":45,"fats":0.4,"serving_size":"כוס אחת","quantity":1,"meal_type":"lunch"}]}-->
+
+Rules for the FOOD_ADD tag:
+- Only include it when the user explicitly says they ate/drank something NOW or TODAY
+- Do NOT include it for hypothetical questions ("what should I eat?", "is rice healthy?")
+- Estimate realistic nutritional values per serving
+- Use the most appropriate meal_type based on context or time: "breakfast", "lunch", "dinner", or "snack"
+- If user mentions quantity (e.g. "2 cups of rice"), set quantity accordingly
+- If multiple foods are mentioned ("אכלתי אורז ועוף"), include all in the foods array
+- The tag must be the LAST thing in your response
+- Always respond naturally BEFORE the tag (acknowledge what they ate, give tips, etc.)`;
+
   } catch (err) {
     console.warn("Failed to build system prompt:", err);
     return defaultPrompt;
