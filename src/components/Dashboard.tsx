@@ -61,6 +61,7 @@ export default function Dashboard({
   const theme = useTheme();
   const [draggingMeal, setDraggingMeal] = useState<string | null>(null);
   const [dragOverType, setDragOverType] = useState<string | null>(null);
+  const dragOverTypeRef = useRef<string | null>(null);
   const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const totals = dailyLog.meals.reduce(
