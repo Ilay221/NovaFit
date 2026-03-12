@@ -1,16 +1,48 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu } from 'lucide-react';
+import { ArrowRight, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu, Check, X, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
 import ChatSessionSidebar, { type ChatSession } from './ChatSessionSidebar';
+import type { MealEntry } from '@/lib/types';
+import { toast } from 'sonner';
 
-type Msg = { role: 'user' | 'assistant'; content: string; error?: boolean };
+interface DetectedFood {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  serving_size: string;
+  quantity: number;
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+}
+
+interface FoodAction {
+  foods: DetectedFood[];
+}
+
+type Msg = { role: 'user' | 'assistant'; content: string; error?: boolean; foodAction?: FoodAction; foodActionHandled?: boolean };
 
 interface NutritionCoachProps {
   onClose: () => void;
   userName: string;
+  onAddMeal?: (entry: MealEntry) => void;
+}
+
+const FOOD_TAG_REGEX = /<!--FOOD_ADD:([\s\S]*?)-->/;
+
+function parseFoodAction(content: string): { cleanContent: string; foodAction?: FoodAction } {
+  const match = content.match(FOOD_TAG_REGEX);
+  if (!match) return { cleanContent: content };
+  try {
+    const parsed = JSON.parse(match[1]);
+    if (parsed?.foods?.length > 0) {
+      return { cleanContent: content.replace(FOOD_TAG_REGEX, '').trim(), foodAction: parsed as FoodAction };
+    }
+  } catch {}
+  return { cleanContent: content.replace(FOOD_TAG_REGEX, '').trim() };
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nutrition-chat`;
@@ -37,7 +69,7 @@ function classifyError(e: any): string {
   return 'FETCH_FAILED';
 }
 
-export default function NutritionCoach({ onClose, userName }: NutritionCoachProps) {
+export default function NutritionCoach({ onClose, userName, onAddMeal }: NutritionCoachProps) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -266,8 +298,17 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
 
         succeeded = true;
         if (assistantSoFar) {
-          await saveMessage(sessionId!, 'assistant', assistantSoFar);
-          autoGenerateTitle(sessionId!, [...prevMessages, { role: 'assistant' as const, content: assistantSoFar }]);
+          const { cleanContent, foodAction } = parseFoodAction(assistantSoFar);
+          // Update the message with clean content and food action
+          setMessages(prev => {
+            const last = prev[prev.length - 1];
+            if (last?.role === 'assistant' && !last.error) {
+              return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: cleanContent, foodAction } : m);
+            }
+            return prev;
+          });
+          await saveMessage(sessionId!, 'assistant', cleanContent);
+          autoGenerateTitle(sessionId!, [...prevMessages, { role: 'assistant' as const, content: cleanContent }]);
         }
       } catch (e: any) {
         if (e?.noRetry || attempt >= MAX_CLIENT_RETRIES || controller.signal.aborted) {
@@ -293,6 +334,40 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
       send(lastFailedInput);
     }
   }, [lastFailedInput, send]);
+
+  const handleFoodAction = useCallback(async (msgIndex: number, accepted: boolean) => {
+    setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, foodActionHandled: true } : m));
+    
+    if (!accepted || !onAddMeal) return;
+    
+    const msg = messages[msgIndex];
+    if (!msg?.foodAction?.foods) return;
+
+    const mealTypeLabels: Record<string, string> = { breakfast: 'בוקר', lunch: 'צהריים', dinner: 'ערב', snack: 'חטיף' };
+
+    for (const food of msg.foodAction.foods) {
+      const entry: MealEntry = {
+        id: crypto.randomUUID(),
+        foodItem: {
+          id: crypto.randomUUID(),
+          name: food.name,
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fats: food.fats,
+          servingSize: food.serving_size,
+          category: 'general',
+        },
+        quantity: food.quantity,
+        mealType: food.meal_type,
+        timestamp: new Date().toISOString(),
+      };
+      await onAddMeal(entry);
+    }
+
+    const foodNames = msg.foodAction.foods.map(f => f.name).join(', ');
+    toast.success(`✅ ${foodNames} נוסף ליומן!`);
+  }, [messages, onAddMeal]);
 
   const suggestions = [
     '🍽️ מה כדאי לי לאכול לארוחת ערב?',
@@ -430,6 +505,52 @@ export default function NutritionCoach({ onClose, userName }: NutritionCoachProp
                         <RefreshCw className="w-3 h-3" />
                         נסה שוב
                       </motion.button>
+                    )}
+                    {msg.foodAction && !msg.foodActionHandled && !isLoading && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/20"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <UtensilsCrossed className="w-4 h-4 text-primary" />
+                          <span className="text-xs font-semibold text-foreground">האם להוסיף ליומן?</span>
+                        </div>
+                        <div className="space-y-1.5 mb-3">
+                          {msg.foodAction.foods.map((food, fi) => (
+                            <div key={fi} className="flex items-center justify-between text-xs">
+                              <span className="font-medium">{food.name} {food.quantity > 1 ? `×${food.quantity}` : ''}</span>
+                              <span className="text-muted-foreground">{Math.round(food.calories * food.quantity)} קק״ל</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleFoodAction(i, true)}
+                            className="flex-1 h-8 text-xs gap-1.5"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            כן, הוסף
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleFoodAction(i, false)}
+                            className="h-8 text-xs gap-1.5 px-3"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            לא
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                    {msg.foodActionHandled && msg.foodAction && (
+                      <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-primary" />
+                        נוסף ליומן
+                      </div>
                     )}
                   </>
                 ) : (
