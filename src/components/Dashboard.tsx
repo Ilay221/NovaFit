@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, GripVertical } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, GripVertical, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
@@ -63,6 +63,7 @@ export default function Dashboard({
   const [dragOverType, setDragOverType] = useState<string | null>(null);
   const dragOverTypeRef = useRef<string | null>(null);
   const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [moveMenuMealId, setMoveMenuMealId] = useState<string | null>(null);
 
   const totals = dailyLog.meals.reduce(
     (acc, m) => ({
@@ -152,6 +153,14 @@ export default function Dashboard({
     dragOverTypeRef.current = found;
     setDragOverType(found);
   }, []);
+
+  // Close move menu on outside click
+  useEffect(() => {
+    if (!moveMenuMealId) return;
+    const handler = () => setMoveMenuMealId(null);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [moveMenuMealId]);
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -467,14 +476,50 @@ export default function Dashboard({
                                   </div>
                                 </div>
                               </div>
-                              <motion.button
-                                onClick={() => onRemoveMeal(meal.id)}
-                                whileHover={{ scale: 1.15 }}
-                                whileTap={{ scale: 0.85 }}
-                                className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </motion.button>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <div className="relative">
+                                  <motion.button
+                                    onClick={(e) => { e.stopPropagation(); setMoveMenuMealId(moveMenuMealId === meal.id ? null : meal.id); }}
+                                    whileTap={{ scale: 0.85 }}
+                                    className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all p-1.5 rounded-lg hover:bg-primary/10"
+                                  >
+                                    <ArrowLeftRight className="w-3.5 h-3.5" />
+                                  </motion.button>
+                                  <AnimatePresence>
+                                    {moveMenuMealId === meal.id && (
+                                      <motion.div
+                                        initial={{ opacity: 0, scale: 0.9, y: -4 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9, y: -4 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute left-0 top-full mt-1 z-50 bg-popover border border-border rounded-xl shadow-lg py-1 min-w-[120px]"
+                                      >
+                                        {mealGroups.filter(t => t !== type).map(t => (
+                                          <button
+                                            key={t}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onMoveMeal(meal.id, t);
+                                              setMoveMenuMealId(null);
+                                            }}
+                                            className="w-full text-right px-3 py-2 text-xs font-medium hover:bg-muted/60 transition-colors"
+                                          >
+                                            {MEAL_LABELS[t]}
+                                          </button>
+                                        ))}
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+                                <motion.button
+                                  onClick={() => onRemoveMeal(meal.id)}
+                                  whileHover={{ scale: 1.15 }}
+                                  whileTap={{ scale: 0.85 }}
+                                  className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </motion.button>
+                              </div>
                             </motion.div>
                           );
                         })}
