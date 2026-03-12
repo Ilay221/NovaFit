@@ -63,6 +63,7 @@ export default function Dashboard({
   const [dragOverType, setDragOverType] = useState<string | null>(null);
   const dragOverTypeRef = useRef<string | null>(null);
   const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [moveMenuMealId, setMoveMenuMealId] = useState<string | null>(null);
 
   const totals = dailyLog.meals.reduce(
     (acc, m) => ({
