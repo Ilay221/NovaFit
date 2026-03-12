@@ -335,7 +335,40 @@ export default function NutritionCoach({ onClose, userName, onAddMeal }: Nutriti
     }
   }, [lastFailedInput, send]);
 
-  const suggestions = [
+  const handleFoodAction = useCallback(async (msgIndex: number, accepted: boolean) => {
+    setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, foodActionHandled: true } : m));
+    
+    if (!accepted || !onAddMeal) return;
+    
+    const msg = messages[msgIndex];
+    if (!msg?.foodAction?.foods) return;
+
+    const mealTypeLabels: Record<string, string> = { breakfast: 'בוקר', lunch: 'צהריים', dinner: 'ערב', snack: 'חטיף' };
+
+    for (const food of msg.foodAction.foods) {
+      const entry: MealEntry = {
+        id: crypto.randomUUID(),
+        foodItem: {
+          id: crypto.randomUUID(),
+          name: food.name,
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fats: food.fats,
+          servingSize: food.serving_size,
+          category: 'general',
+        },
+        quantity: food.quantity,
+        mealType: food.meal_type,
+        timestamp: new Date().toISOString(),
+      };
+      await onAddMeal(entry);
+    }
+
+    const foodNames = msg.foodAction.foods.map(f => f.name).join(', ');
+    toast.success(`✅ ${foodNames} נוסף ליומן!`);
+  }, [messages, onAddMeal]);
+
     '🍽️ מה כדאי לי לאכול לארוחת ערב?',
     '🥤 כמה מים כדאי לי לשתות?',
     '💪 האם אני עומד ביעדי החלבון?',
