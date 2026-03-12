@@ -154,6 +154,14 @@ export default function Dashboard({
     setDragOverType(found);
   }, []);
 
+  // Close move menu on outside click
+  useEffect(() => {
+    if (!moveMenuMealId) return;
+    const handler = () => setMoveMenuMealId(null);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [moveMenuMealId]);
+
   return (
     <div className="min-h-screen bg-background pb-28">
       <AnimatePresence mode="wait">
