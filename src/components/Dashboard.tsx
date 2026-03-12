@@ -441,24 +441,7 @@ export default function Dashboard({
                               dragMomentum={false}
                               onDragStart={() => setDraggingMeal(meal.id)}
                               onDrag={(_, info) => {
-                                const el = document.elementFromPoint(
-                                  info.point.x,
-                                  info.point.y
-                                );
-                                if (el) {
-                                  let found: string | null = null;
-                                  for (const t of mealGroups) {
-                                    const ref = groupRefs.current[t];
-                                    if (ref) {
-                                      const rect = ref.getBoundingClientRect();
-                                      if (info.point.y >= rect.top - 20 && info.point.y <= rect.bottom + 20) {
-                                        found = t;
-                                        break;
-                                      }
-                                    }
-                                  }
-                                  setDragOverType(found);
-                                }
+                                updateDragOver(info.point.y);
                               }}
                               onDragEnd={() => handleDragEnd(meal.id, type)}
                               initial={{ opacity: 0, x: 12, scale: 0.95 }}
