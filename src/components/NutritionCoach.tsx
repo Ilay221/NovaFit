@@ -298,8 +298,17 @@ export default function NutritionCoach({ onClose, userName, onAddMeal }: Nutriti
 
         succeeded = true;
         if (assistantSoFar) {
-          await saveMessage(sessionId!, 'assistant', assistantSoFar);
-          autoGenerateTitle(sessionId!, [...prevMessages, { role: 'assistant' as const, content: assistantSoFar }]);
+          const { cleanContent, foodAction } = parseFoodAction(assistantSoFar);
+          // Update the message with clean content and food action
+          setMessages(prev => {
+            const last = prev[prev.length - 1];
+            if (last?.role === 'assistant' && !last.error) {
+              return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: cleanContent, foodAction } : m);
+            }
+            return prev;
+          });
+          await saveMessage(sessionId!, 'assistant', cleanContent);
+          autoGenerateTitle(sessionId!, [...prevMessages, { role: 'assistant' as const, content: cleanContent }]);
         }
       } catch (e: any) {
         if (e?.noRetry || attempt >= MAX_CLIENT_RETRIES || controller.signal.aborted) {
