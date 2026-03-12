@@ -69,7 +69,7 @@ function classifyError(e: any): string {
   return 'FETCH_FAILED';
 }
 
-export default function NutritionCoach({ onClose, userName }: NutritionCoachProps) {
+export default function NutritionCoach({ onClose, userName, onAddMeal }: NutritionCoachProps) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
