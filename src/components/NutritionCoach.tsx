@@ -506,6 +506,52 @@ export default function NutritionCoach({ onClose, userName, onAddMeal }: Nutriti
                         נסה שוב
                       </motion.button>
                     )}
+                    {msg.foodAction && !msg.foodActionHandled && !isLoading && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/20"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <UtensilsCrossed className="w-4 h-4 text-primary" />
+                          <span className="text-xs font-semibold text-foreground">האם להוסיף ליומן?</span>
+                        </div>
+                        <div className="space-y-1.5 mb-3">
+                          {msg.foodAction.foods.map((food, fi) => (
+                            <div key={fi} className="flex items-center justify-between text-xs">
+                              <span className="font-medium">{food.name} {food.quantity > 1 ? `×${food.quantity}` : ''}</span>
+                              <span className="text-muted-foreground">{Math.round(food.calories * food.quantity)} קק״ל</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleFoodAction(i, true)}
+                            className="flex-1 h-8 text-xs gap-1.5"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            כן, הוסף
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleFoodAction(i, false)}
+                            className="h-8 text-xs gap-1.5 px-3"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            לא
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                    {msg.foodActionHandled && msg.foodAction && (
+                      <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-primary" />
+                        נוסף ליומן
+                      </div>
+                    )}
                   </>
                 ) : (
                   <span>{msg.content}</span>
