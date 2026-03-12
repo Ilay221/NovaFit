@@ -1,16 +1,48 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu } from 'lucide-react';
+import { ArrowRight, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu, Check, X, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
 import ChatSessionSidebar, { type ChatSession } from './ChatSessionSidebar';
+import type { MealEntry } from '@/lib/types';
+import { toast } from 'sonner';
 
-type Msg = { role: 'user' | 'assistant'; content: string; error?: boolean };
+interface DetectedFood {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  serving_size: string;
+  quantity: number;
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+}
+
+interface FoodAction {
+  foods: DetectedFood[];
+}
+
+type Msg = { role: 'user' | 'assistant'; content: string; error?: boolean; foodAction?: FoodAction; foodActionHandled?: boolean };
 
 interface NutritionCoachProps {
   onClose: () => void;
   userName: string;
+  onAddMeal?: (entry: MealEntry) => void;
+}
+
+const FOOD_TAG_REGEX = /<!--FOOD_ADD:([\s\S]*?)-->/;
+
+function parseFoodAction(content: string): { cleanContent: string; foodAction?: FoodAction } {
+  const match = content.match(FOOD_TAG_REGEX);
+  if (!match) return { cleanContent: content };
+  try {
+    const parsed = JSON.parse(match[1]);
+    if (parsed?.foods?.length > 0) {
+      return { cleanContent: content.replace(FOOD_TAG_REGEX, '').trim(), foodAction: parsed as FoodAction };
+    }
+  } catch {}
+  return { cleanContent: content.replace(FOOD_TAG_REGEX, '').trim() };
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nutrition-chat`;
