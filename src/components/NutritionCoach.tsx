@@ -369,6 +369,7 @@ export default function NutritionCoach({ onClose, userName, onAddMeal }: Nutriti
     toast.success(`✅ ${foodNames} נוסף ליומן!`);
   }, [messages, onAddMeal]);
 
+  const suggestions = [
     '🍽️ מה כדאי לי לאכול לארוחת ערב?',
     '🥤 כמה מים כדאי לי לשתות?',
     '💪 האם אני עומד ביעדי החלבון?',
