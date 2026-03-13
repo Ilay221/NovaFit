@@ -260,8 +260,43 @@ export default function Dashboard({
             className="nova-card p-6 nova-breathe"
           >
             <div className="flex flex-col items-center">
-              <CalorieRing consumed={totals.calories} target={ringCalorieTarget} />
-              <div className="flex gap-10 mt-6">
+              <CalorieRing consumed={totals.calories} target={ringCalorieTarget} bankingStatus={banking.status} />
+
+              {/* Transparent Math Explanation */}
+              {!banking.loading && banking.status !== 'neutral' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className={`mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-medium leading-snug ${
+                    banking.status === 'saved'
+                      ? 'bg-[hsl(142_71%_45%/0.1)] text-[hsl(142_71%_35%)] border border-[hsl(142_71%_45%/0.2)]'
+                      : 'bg-[hsl(25_95%_53%/0.1)] text-[hsl(25_95%_40%)] border border-[hsl(25_95%_53%/0.2)]'
+                  }`}
+                >
+                  {banking.status === 'saved' ? (
+                    <TrendingUp className="w-3.5 h-3.5 shrink-0" />
+                  ) : (
+                    <Info className="w-3.5 h-3.5 shrink-0" />
+                  )}
+                  <span>{banking.explanation}</span>
+                </motion.div>
+              )}
+
+              {/* Spread toggle for large overages */}
+              {!banking.loading && banking.status === 'overage' && Math.abs(banking.rollover) > 100 && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7 }}
+                  onClick={() => banking.toggleSpread(banking.spreadDays === 0)}
+                  className="mt-2 text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                >
+                  {banking.spreadDays > 0 ? 'קח את כל החריגה היום' : 'פזר על 3 ימים'}
+                </motion.button>
+              )}
+
+              <div className="flex gap-10 mt-5">
                 {[
                   { label: 'יעד', value: ringCalorieTarget },
                   { label: 'נצרך', value: totals.calories },
@@ -304,6 +339,43 @@ export default function Dashboard({
               )}
             </div>
           </motion.div>
+
+          {/* Smart Coach Insight */}
+          {!banking.loading && banking.status !== 'neutral' && (
+            <motion.div
+              variants={itemVariants}
+              initial={{ opacity: 0, y: 10, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className={`nova-card p-4 mt-4 flex items-start gap-3 ${
+                banking.status === 'saved'
+                  ? 'border-[hsl(142_71%_45%/0.3)]'
+                  : 'border-[hsl(25_95%_53%/0.3)]'
+              }`}
+            >
+              <motion.div
+                animate={{ y: [0, -3, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                  banking.status === 'saved'
+                    ? 'bg-[hsl(142_71%_45%/0.15)]'
+                    : 'bg-[hsl(25_95%_53%/0.15)]'
+                }`}
+              >
+                <Zap className={`w-4 h-4 ${
+                  banking.status === 'saved' ? 'text-[hsl(142_71%_45%)]' : 'text-[hsl(25_95%_53%)]'
+                }`} />
+              </motion.div>
+              <div>
+                <p className="text-[13px] font-semibold font-display mb-0.5">
+                  {banking.status === 'saved' ? 'חיסכון קלורי!' : 'איזון חכם'}
+                </p>
+                <p className="text-[12px] text-muted-foreground leading-relaxed">
+                  {banking.coachMessage}
+                </p>
+              </div>
+            </motion.div>
+          )}
 
           {/* Macros Card */}
           <motion.div variants={itemVariants} className="nova-card p-5 mt-4 space-y-4">
