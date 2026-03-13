@@ -5,6 +5,8 @@ interface CalorieRingProps {
   consumed: number;
   target: number;
   size?: number;
+  /** 'saved' = green glow, 'overage' = orange/red, 'neutral' = default */
+  bankingStatus?: 'saved' | 'overage' | 'neutral';
 }
 
 export default function CalorieRing({ consumed, target, size = 180 }: CalorieRingProps) {
