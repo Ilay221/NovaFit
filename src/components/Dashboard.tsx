@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, GripVertical, ArrowLeftRight, Zap, TrendingUp, Info, BookmarkPlus, ScanBarcode } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, GripVertical, ArrowLeftRight, Zap, TrendingUp, Info, BookmarkPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
@@ -16,10 +16,9 @@ import AIFoodScanner from './AIFoodScanner';
 import NLPFoodInput from './NLPFoodInput';
 import WeeklyAnalytics from './WeeklyAnalytics';
 import NutritionCoach from './NutritionCoach';
-import BarcodeScanner from './BarcodeScanner';
 import { useTheme } from '@/lib/store';
 import { useCalorieBanking } from '@/hooks/useCalorieBanking';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInDays, isSameDay } from 'date-fns';
 import { haptics } from '@/lib/haptics';
 import DateStrip from './DateStrip';
 import { useMealTemplates } from '@/hooks/useMealTemplates';
@@ -27,7 +26,7 @@ import { toast } from 'sonner';
 
 import { useAppState } from '@/contexts/AppStateContext';
 
-type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach' | 'barcode-scanner';
+type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -146,6 +145,10 @@ export default function Dashboard() {
   };
 
   const handleRemoveMeal = (id: string) => {
+     if (!isSameDay(selectedDate, new Date())) {
+       const userConfirmed = window.confirm('האם אתה בטוח שברצונך למחוק ארוחה מיום קודם?');
+       if (!userConfirmed) return;
+     }
      haptics.medium();
      onRemoveMeal(id);
   };
@@ -244,9 +247,6 @@ export default function Dashboard() {
               explanation: banking.explanation,
             } : undefined}
           />
-        )}
-        {view === 'barcode-scanner' && (
-          <BarcodeScanner onAddMeal={(entry) => { onAddMeal(entry); }} onClose={() => setView('dashboard')} />
         )}
       </AnimatePresence>
 
@@ -587,9 +587,9 @@ export default function Dashboard() {
                           const isDragging = draggingMeal === meal.id;
                           return (
                             <div key={meal.id} className="relative">
-                              {/* Background Delete Action Area */}
-                              <div className="absolute inset-0 bg-destructive/90 rounded-xl flex items-center justify-end px-5 z-0">
-                                <X className="w-5 h-5 text-destructive-foreground" />
+                              {/* Swipe Delete Action Indicator (Subtle overlay during swipe instead of full background) */}
+                              <div className="absolute inset-y-0 right-0 w-24 flex items-center justify-center opacity-0 z-0 transition-opacity">
+                                <X className="w-5 h-5 text-destructive/50" />
                               </div>
                               
                               <motion.div
@@ -774,23 +774,6 @@ export default function Dashboard() {
               </Button>
             </motion.div>
           </motion.div>
-          
-          {/* Barcode Scanner FAB */}
-          <motion.div
-            initial={{ scale: 0, opacity: 0, rotate: 90 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            transition={{ delay: 0.45, type: 'spring', stiffness: 400, damping: 20 }}
-          >
-            <motion.div whileHover={{ scale: 1.12, rotate: -10 }} whileTap={{ scale: 0.88 }}>
-              <Button
-                onClick={() => setView('barcode-scanner')}
-                variant="outline"
-                className="h-11 w-11 rounded-full shadow-md p-0 bg-card border-border/80 hover:bg-muted transition-all duration-200 text-sky-500 hover:text-sky-600"
-              >
-                <ScanBarcode className="w-[18px] h-[18px]" />
-              </Button>
-            </motion.div>
-          </motion.div>
           <motion.div
             initial={{ scale: 0, rotate: 180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -802,7 +785,13 @@ export default function Dashboard() {
               className="relative"
             >
               <Button
-                onClick={() => setView('food')}
+                onClick={() => {
+                  if (!isSameDay(selectedDate, new Date())) {
+                    const userConfirmed = window.confirm('האם אתה בטוח שברצונך להוסיף ארוחה ליום קודם?');
+                    if (!userConfirmed) return;
+                  }
+                  setView('food');
+                }}
                 className="h-14 w-14 rounded-full shadow-lg p-0 transition-transform duration-200 nova-pulse-ring"
               >
                 <Plus className="w-6 h-6" />

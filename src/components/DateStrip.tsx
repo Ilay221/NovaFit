@@ -17,14 +17,12 @@ export default function DateStrip({ selectedDate, onChangeDate }: DateStripProps
   useEffect(() => {
     const today = new Date();
     const generated: Date[] = [];
-    // 14 days back
-    for (let i = 14; i >= 1; i--) {
+    // 3 days back
+    for (let i = 3; i >= 1; i--) {
       generated.push(subDays(today, i));
     }
     // Today
     generated.push(today);
-    // 1 day forward (for planning tomorrow)
-    generated.push(addDays(today, 1));
     
     setDates(generated);
   }, []);
