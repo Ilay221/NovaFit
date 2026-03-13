@@ -5,9 +5,11 @@ interface CalorieRingProps {
   consumed: number;
   target: number;
   size?: number;
+  /** 'saved' = green glow, 'overage' = orange/red, 'neutral' = default */
+  bankingStatus?: 'saved' | 'overage' | 'neutral';
 }
 
-export default function CalorieRing({ consumed, target, size = 180 }: CalorieRingProps) {
+export default function CalorieRing({ consumed, target, size = 180, bankingStatus = 'neutral' }: CalorieRingProps) {
   const strokeWidth = 10;
   const radius = (size - strokeWidth * 2) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -50,9 +52,21 @@ export default function CalorieRing({ consumed, target, size = 180 }: CalorieRin
           strokeLinecap="round"
         />
         <defs>
-          <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={isOver ? "hsl(0 72% 51%)" : "hsl(var(--primary))"} />
-            <stop offset="100%" stopColor={isOver ? "hsl(0 72% 65%)" : "hsl(var(--nova-glow) / 0.65)"} />
+         <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={
+              isOver ? "hsl(0 72% 51%)" :
+              progress > 0.85 ? "hsl(25 95% 53%)" :
+              bankingStatus === 'saved' ? "hsl(142 71% 45%)" :
+              bankingStatus === 'overage' ? "hsl(25 95% 53%)" :
+              "hsl(var(--primary))"
+            } />
+            <stop offset="100%" stopColor={
+              isOver ? "hsl(0 72% 65%)" :
+              progress > 0.85 ? "hsl(38 92% 50%)" :
+              bankingStatus === 'saved' ? "hsl(142 71% 60%)" :
+              bankingStatus === 'overage' ? "hsl(25 95% 65%)" :
+              "hsl(var(--nova-glow) / 0.65)"
+            } />
           </linearGradient>
           <filter id="ringGlow">
             <feGaussianBlur stdDeviation="3" result="blur" />

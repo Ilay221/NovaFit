@@ -78,23 +78,35 @@ export type Database = {
       }
       daily_logs: {
         Row: {
+          base_calorie_target: number
+          calorie_balance: number
           created_at: string
           date: string
           id: string
+          rollover_calories: number
+          spread_days: number
           user_id: string
           water_ml: number
         }
         Insert: {
+          base_calorie_target?: number
+          calorie_balance?: number
           created_at?: string
           date: string
           id?: string
+          rollover_calories?: number
+          spread_days?: number
           user_id: string
           water_ml?: number
         }
         Update: {
+          base_calorie_target?: number
+          calorie_balance?: number
           created_at?: string
           date?: string
           id?: string
+          rollover_calories?: number
+          spread_days?: number
           user_id?: string
           water_ml?: number
         }
