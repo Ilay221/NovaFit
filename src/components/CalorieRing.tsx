@@ -9,7 +9,7 @@ interface CalorieRingProps {
   bankingStatus?: 'saved' | 'overage' | 'neutral';
 }
 
-export default function CalorieRing({ consumed, target, size = 180 }: CalorieRingProps) {
+export default function CalorieRing({ consumed, target, size = 180, bankingStatus = 'neutral' }: CalorieRingProps) {
   const strokeWidth = 10;
   const radius = (size - strokeWidth * 2) / 2;
   const circumference = 2 * Math.PI * radius;
