@@ -202,7 +202,10 @@ export function useCalorieBanking(
   const tomorrowProjectedTarget = useMemo(() => {
     if (!profile) return baseTarget;
 
-    const todayNet = baseTarget - consumed; // Positive = savings, Negative = overate
+    // STABILIZATION FIX: Assume user eats exactly their dynamic target unless they already overate it.
+    // This prevents "Tomorrow" from showing a huge bonus before any meals are logged.
+    const projectedTodayConsumed = Math.max(consumed, dynamicTarget);
+    const todayNet = baseTarget - projectedTodayConsumed; // Positive = savings, Negative = overate
     const prefSpreadDays = profile.calorieSpreadDays || 1;
     
     // Today's true starting state
@@ -244,7 +247,7 @@ export function useCalorieBanking(
       profile.gender === 'female' ? 800 : 1000,
       Math.round(baseTarget + futureRollover)
     );
-  }, [profile, baseTarget, rollover, consumed, spreadDays]);
+  }, [profile, baseTarget, rollover, consumed, spreadDays, dynamicTarget]);
 
   return {
     dynamicTarget,
