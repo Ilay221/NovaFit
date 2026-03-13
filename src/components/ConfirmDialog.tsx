@@ -23,24 +23,28 @@ export default function ConfirmDialog({
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        /* Full-screen flex container to center the dialog — works reliably on iPhone Safari */
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+          <div
             onClick={onCancel}
-            className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
 
-          {/* Dialog */}
+          {/* Dialog Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.85, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: 30 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className="fixed z-[101] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(85vw,340px)]"
+            className="relative z-10 w-full max-w-[340px]"
           >
             <div className="bg-card border border-border/60 rounded-3xl shadow-2xl overflow-hidden">
               {/* Header Accent */}
@@ -87,7 +91,7 @@ export default function ConfirmDialog({
               </div>
             </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
