@@ -200,50 +200,6 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
           </div>
         </motion.div>
 
-        {/* Accent Color */}
-        <motion.div variants={itemVariants} className="nova-card p-5">
-          <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4 flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-primary" /> צבע האפליקציה
-          </h3>
-          <div className="grid grid-cols-3 gap-2.5">
-            {ACCENTS.map((a, i) => (
-              <motion.button
-                key={a.value}
-                onClick={() => theme.setAccent(a.value)}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 + i * 0.04, type: 'spring', stiffness: 400, damping: 25 }}
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.93 }}
-                className={`relative flex flex-col items-center gap-2 py-3 px-2 rounded-xl transition-all duration-300 ${
-                  theme.accent === a.value
-                    ? 'bg-foreground text-background shadow-lg'
-                    : 'bg-muted/40 text-muted-foreground hover:bg-muted/60'
-                }`}
-              >
-                <motion.div
-                  className="w-6 h-6 rounded-full shadow-sm"
-                  style={{ backgroundColor: a.color }}
-                  animate={theme.accent === a.value ? {
-                    boxShadow: [`0 0 0px ${a.color}40`, `0 0 12px ${a.color}60`, `0 0 0px ${a.color}40`],
-                  } : {}}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-                <span className="text-[10px] font-semibold">{a.label}</span>
-                {theme.accent === a.value && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                    className="absolute -top-1 -start-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
-                  >
-                    <Check className="w-3 h-3 text-primary-foreground" />
-                  </motion.div>
-                )}
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
 
         <motion.div variants={itemVariants}>
           <Button

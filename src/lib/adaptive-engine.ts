@@ -7,7 +7,7 @@ const KCAL_PER_KG = 7700;
 
 // Safety floors
 function getMinCalories(gender: Gender): number {
-  return gender === 'male' ? 1500 : 1200;
+  return gender === 'male' ? 1000 : 800;
 }
 
 export interface AdaptiveResult {

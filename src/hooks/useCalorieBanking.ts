@@ -142,7 +142,7 @@ export function useCalorieBanking(
   useEffect(() => { calculateRollover(); }, [calculateRollover]);
 
   const dynamicTarget = Math.max(
-    profile?.gender === 'female' ? 1200 : 1500,
+    profile?.gender === 'female' ? 800 : 1000,
     Math.round(baseTarget + rollover)
   );
 
