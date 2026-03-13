@@ -4,6 +4,7 @@ import { ArrowRight, ArrowLeft, Activity, Target, Dumbbell, Ruler, Check, Sparkl
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import { UserProfile, Gender, ActivityLevel, Goal } from '@/lib/types';
 import { calculateBMR, calculateTDEE, calculateCalorieTarget, calculateMacros } from '@/lib/calculations';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
@@ -26,8 +27,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [targetWeightKg, setTargetWeightKg] = useState(72);
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate');
   const [goal, setGoal] = useState<Goal>('lose');
-  const [targetDays, setTargetDays] = useState(90);
-  const [useTimeline, setUseTimeline] = useState(false);
+  const [weeklyPaceKg, setWeeklyPaceKg] = useState<number>(0.5); // Ranges from 0.25 to 2.5
+  const [useTimeline, setUseTimeline] = useState(true);
   const [favoriteFood, setFavoriteFood] = useState('');
   const [dietaryWeakness, setDietaryWeakness] = useState('');
   const [dailyHabits, setDailyHabits] = useState('');
@@ -42,7 +43,12 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const dailyCalorieTarget = calculateCalorieTarget(tdee, goal);
   const macros = calculateMacros(dailyCalorieTarget, goal);
 
-  const targetDateStr = useTimeline ? addDays(new Date(), targetDays).toISOString().slice(0, 10) : null;
+  // Real-time calculation of target days based on selected pace
+  const weightDiffAbsolute = Math.abs(weightKg - targetWeightKg);
+  const isLoss = weightKg > targetWeightKg;
+  const calculatedDays = Math.max(1, Math.round((weightDiffAbsolute / weeklyPaceKg) * 7));
+
+  const targetDateStr = useTimeline ? format(addDays(new Date(), calculatedDays), 'yyyy-MM-dd') : null;
 
   const tempProfile: UserProfile = {
     name, age, gender, heightCm, weightKg, targetWeightKg,
@@ -165,7 +171,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   </motion.div>
                   <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">גיל</Label>
-                    <Input type="number" value={age} onChange={e => setAge(+e.target.value)} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                    <Input type="number" value={age === 0 ? '' : age} onChange={e => { const val = parseInt(e.target.value); setAge(isNaN(val) || val <= 0 ? 0 : val); }} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
                   </motion.div>
                   <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">מין</Label>
@@ -184,7 +190,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button>
                   </motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg" disabled={!name}>המשך <ArrowLeft className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg" disabled={!name.trim() || age < 10 || age > 120}>המשך <ArrowLeft className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>
@@ -203,20 +209,20 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 </div>
                 <div className="space-y-5">
                   {[
-                    { label: 'גובה (ס"מ)', value: heightCm, set: setHeightCm },
-                    { label: 'משקל נוכחי (ק"ג)', value: weightKg, set: setWeightKg },
-                    { label: 'משקל יעד (ק"ג)', value: targetWeightKg, set: setTargetWeightKg },
+                    { label: 'גובה (ס"מ)', value: heightCm === 0 ? '' : heightCm, set: setHeightCm },
+                    { label: 'משקל נוכחי (ק"ג)', value: weightKg === 0 ? '' : weightKg, set: setWeightKg },
+                    { label: 'משקל יעד (ק"ג)', value: targetWeightKg === 0 ? '' : targetWeightKg, set: setTargetWeightKg },
                   ].map((field, i) => (
                     <motion.div key={field.label} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.06 }}>
                       <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">{field.label}</Label>
-                      <Input type="number" value={field.value} onChange={e => field.set(+e.target.value)} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                      <Input type="number" value={field.value} onChange={e => { const val = parseFloat(e.target.value); field.set(isNaN(val) || val <= 0 ? 0 : val); }} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
                     </motion.div>
                   ))}
                 </div>
                 <div className="flex gap-3 pt-2">
                   <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">המשך <ArrowLeft className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg" disabled={heightCm < 50 || heightCm > 300 || weightKg < 20 || weightKg > 400 || targetWeightKg < 20 || targetWeightKg > 400}>המשך <ArrowLeft className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>
@@ -379,7 +385,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   </div>
                   <p className="text-sm text-muted-foreground">הגדר דד-ליין להגיע למשקל היעד</p>
                 </div>
-                {goal !== 'maintain' && (
+                {goal !== 'maintain' && weightKg !== targetWeightKg && (
                   <div className="space-y-5">
                     <motion.button onClick={() => setUseTimeline(!useTimeline)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                       className={`w-full text-right p-5 rounded-xl transition-all duration-300 flex items-center justify-between ${useTimeline ? 'bg-foreground text-background shadow-lg' : 'bg-muted/40 text-foreground hover:bg-muted/60'}`}>
@@ -391,31 +397,55 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     </motion.button>
                     {useTimeline && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4">
-                        <div>
-                          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">מספר ימים מהיום</Label>
-                          <Input type="number" value={targetDays || ''} onChange={e => { const val = parseInt(e.target.value); if (!isNaN(val) && val > 0) setTargetDays(val); }} min={1} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px]" />
-                          <p className="text-xs text-muted-foreground mt-2">תאריך יעד: <span className="text-foreground font-medium">{format(addDays(new Date(), targetDays), 'MMM d, yyyy')}</span></p>
+                        <div className="space-y-3 mt-4">
+                          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block text-center mb-6">בחר קצב {isLoss ? 'ירידה' : 'עלייה'}</Label>
+                          
+                          <div className="px-2 space-y-6">
+                            <div className="flex items-end justify-center gap-1 mb-2">
+                              <span className="text-4xl font-extrabold font-display leading-none text-primary">{weeklyPaceKg.toFixed(2)}</span>
+                              <span className="text-sm text-muted-foreground font-medium pb-1">ק"ג בשבוע</span>
+                            </div>
+                            
+                            <Slider 
+                              value={[weeklyPaceKg]} 
+                              min={0.25} 
+                              max={2.5} 
+                              step={0.05} 
+                              onValueChange={(vals) => setWeeklyPaceKg(vals[0])}
+                              className="w-full"
+                            />
+                            
+                            <div className="flex justify-between text-[11px] text-muted-foreground font-medium px-1">
+                              <span>0.25 ק"ג (רגוע)</span>
+                              <span>2.5 ק"ג (קיצוני)</span>
+                            </div>
+                          </div>
+
+                          <div className="bg-muted/40 rounded-xl p-4 mt-6 text-center">
+                            <p className="text-xs text-muted-foreground mb-1">תאריך יעד משוער</p>
+                            <p className="text-lg font-bold text-foreground">{format(addDays(new Date(), calculatedDays), 'd בMMMM, yyyy')}</p>
+                            <p className="text-[11px] text-muted-foreground mt-1">בעוד {calculatedDays} ימים</p>
+                          </div>
                         </div>
-                        <motion.div className="nova-card p-4 space-y-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                        <motion.div className="nova-card p-4 space-y-2 mt-4" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">יעד יומי מותאם</span>
-                            <span className="font-bold tabular-nums">{adaptive.dailyCalorieTarget} קק"ל</span>
+                            <span className="font-bold tabular-nums text-primary">{adaptive.dailyCalorieTarget} קק"ל</span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">גירעון יומי</span>
-                            <span className="font-medium tabular-nums">{adaptive.dailyDeficit} קק"ל</span>
+                            <span className="text-muted-foreground">{isLoss ? 'גירעון יומי' : 'עודף יומי'}</span>
+                            <span className="font-medium tabular-nums">{Math.abs(adaptive.dailyDeficit)} קק"ל</span>
                           </div>
                         </motion.div>
                         {!adaptive.isSafe && (
-                          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20">
+                          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 mt-4">
                             <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
                             <div>
-                              <p className="text-sm font-medium text-destructive">ציר זמן לא בטוח</p>
+                              <p className="text-sm font-medium text-destructive">קצב חריג או מסוכן מדי</p>
                               <p className="text-xs text-muted-foreground mt-1">{adaptive.unsafeReason}</p>
                               {adaptive.safestDate && (
                                 <p className="text-xs mt-2">
-                                  תאריך בטוח מוצע: <span className="text-foreground font-semibold">{format(parseISO(adaptive.safestDate), 'MMM d, yyyy')}</span>
-                                  <button onClick={() => { const safeDays = differenceInDays(parseISO(adaptive.safestDate!), new Date()); setTargetDays(safeDays); }} className="me-2 text-primary underline font-medium">השתמש בזה</button>
+                                  אנא בחר קצב רגוע יותר כדי שהגוף יוכל לעמוד ביעד בבטחה.
                                 </p>
                               )}
                             </div>
@@ -425,13 +455,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     )}
                   </div>
                 )}
-                {goal === 'maintain' && (
-                  <div className="text-center py-8"><p className="text-sm text-muted-foreground">יעדי ציר זמן זמינים רק למטרות ירידה או עלייה במשקל.</p></div>
+                {(goal === 'maintain' || weightKg === targetWeightKg) && (
+                  <div className="text-center py-8"><p className="text-sm text-muted-foreground">יעדי ציר זמן זמינים רק למטרות ירידה או עלייה במשקל השונות מהמשקל הנוכחי.</p></div>
                 )}
                 <div className="flex gap-3 pt-2">
                   <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">ראה את התוכנית <ArrowLeft className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg" disabled={useTimeline && !adaptive.isSafe}>ראה את התוכנית <ArrowLeft className="w-4 h-4" /></Button>
                   </motion.div>
                 </div>
               </div>

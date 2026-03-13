@@ -97,12 +97,13 @@ export default function Dashboard({
   const lastSyncKeyRef = useRef<string>('');
   useEffect(() => {
     if (!hasTimeline || !adaptive) return;
-    const computed = sanitizeKcalTarget(adaptive.dailyCalorieTarget, ringCalorieTarget);
+    // VERY IMPORTANT: Use adaptive target, NOT ring target (which includes rollover) to prevent compounding loops.
+    const computed = sanitizeKcalTarget(adaptive.dailyCalorieTarget, adaptive.dailyCalorieTarget);
     if (computed > 5000) {
       console.warn('[CalorieTargetGuard] Blocked excessive target', { computed });
       return;
     }
-    if (computed === ringCalorieTarget) return;
+    if (computed === profile.dailyCalorieTarget) return;
     const key = `${profile.targetDate ?? 'no-date'}:${computed}`;
     if (lastSyncKeyRef.current === key) return;
     lastSyncKeyRef.current = key;
@@ -113,7 +114,7 @@ export default function Dashboard({
       carbsTarget: adaptive.carbsTarget,
       fatsTarget: adaptive.fatsTarget,
     });
-  }, [adaptive, hasTimeline, onUpdateProfile, profile, ringCalorieTarget]);
+  }, [adaptive, hasTimeline, onUpdateProfile, profile]);
 
   const goalDate = hasTimeline && profile.targetDate
     ? parseISO(profile.targetDate)
@@ -173,22 +174,34 @@ export default function Dashboard({
     <div className="min-h-screen bg-background pb-28">
       <AnimatePresence mode="wait">
         {view === 'food' && (
-          <FoodLogger onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
+          <FoodLogger onAddMeal={(entry) => { onAddMeal(entry); }} onClose={() => setView('dashboard')} />
         )}
         {view === 'settings' && (
           <SettingsPanel theme={theme} profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} onClose={() => setView('dashboard')} />
         )}
         {view === 'ai-scanner' && (
-          <AIFoodScanner onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
+          <AIFoodScanner onAddMeal={(entry) => { onAddMeal(entry); }} onClose={() => setView('dashboard')} />
         )}
         {view === 'nlp-input' && (
-          <NLPFoodInput onAddMeal={(entry) => { onAddMeal(entry); setView('dashboard'); }} onClose={() => setView('dashboard')} />
+          <NLPFoodInput onAddMeal={(entry) => { onAddMeal(entry); }} onClose={() => setView('dashboard')} />
         )}
         {view === 'analytics' && (
           <WeeklyAnalytics profile={profile} onClose={() => setView('dashboard')} />
         )}
         {view === 'ai-coach' && (
-          <NutritionCoach onClose={() => setView('dashboard')} userName={profile.name} onAddMeal={onAddMeal} />
+          <NutritionCoach 
+            onClose={() => setView('dashboard')} 
+            userName={profile.name} 
+            onAddMeal={onAddMeal}
+            bankingContext={!banking.loading ? {
+              dynamicTarget: banking.dynamicTarget,
+              baseTarget: banking.baseTarget,
+              rollover: banking.rollover,
+              spreadDays: banking.spreadDays,
+              status: banking.status,
+              explanation: banking.explanation,
+            } : undefined}
+          />
         )}
       </AnimatePresence>
 
@@ -260,7 +273,12 @@ export default function Dashboard({
             className="nova-card p-6 nova-breathe"
           >
             <div className="flex flex-col items-center">
-              <CalorieRing consumed={totals.calories} target={ringCalorieTarget} bankingStatus={banking.status} />
+              <CalorieRing 
+                consumed={totals.calories} 
+                target={ringCalorieTarget} 
+                bankingStatus={banking.status} 
+                tomorrowTarget={banking.tomorrowProjectedTarget}
+              />
 
               {/* Transparent Math Explanation */}
               {!banking.loading && banking.status !== 'neutral' && (
@@ -283,18 +301,7 @@ export default function Dashboard({
                 </motion.div>
               )}
 
-              {/* Spread toggle for large overages */}
-              {!banking.loading && banking.status === 'overage' && Math.abs(banking.rollover) > 100 && (
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                  onClick={() => banking.toggleSpread(banking.spreadDays === 0)}
-                  className="mt-2 text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-                >
-                  {banking.spreadDays > 0 ? 'קח את כל החריגה היום' : 'פזר על 3 ימים'}
-                </motion.button>
-              )}
+        
 
               <div className="flex gap-10 mt-5">
                 {[
@@ -606,6 +613,9 @@ export default function Dashboard({
                           <div className="py-4 text-center text-[12px] text-primary/60 font-medium border-2 border-dashed border-primary/20 rounded-xl">
                             שחרר כאן להעברה
                           </div>
+                        )}
+                        {meals.length === 0 && !isDropTarget && (
+                          <div className="h-6"></div>
                         )}
                       </div>
                     </div>

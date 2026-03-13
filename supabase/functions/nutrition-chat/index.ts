@@ -161,12 +161,30 @@ async function buildSystemPrompt(supabase: any, user: any): Promise<string> {
       ? `Weight trend (last ${latestWeight.length} entries): ${latestWeight.map((w: any) => `${w.weight_kg}kg (${w.date})`).reverse().join(" → ")}`
       : "No weight trend data yet.";
 
-    const remainingCal = Math.round(profile.daily_calorie_target - totalCalories);
+    const baseTarget = profile.daily_calorie_target;
+    const rollover = todayLog?.rollover_calories || 0;
+    const spreadDays = todayLog?.spread_days || 0;
+    const effectiveTarget = Math.max(profile.gender === 'female' ? 800 : 1000, Math.round(baseTarget + rollover));
+
+    let bankingContext = "";
+    if (rollover > 0) {
+      bankingContext = `(Smart Balance: User has a BONUS of +${Math.round(rollover)} kcal saved from yesterday! The target is temporarily increased from ${Math.round(baseTarget)} to ${effectiveTarget}.)`;
+    } else if (rollover < 0) {
+      if (spreadDays > 0) {
+        bankingContext = `(Smart Balance: User exceeded their target previously. The debt is being spread over ${spreadDays} days. Their target is temporarily reduced by ${Math.abs(Math.round(rollover))} kcal today from ${Math.round(baseTarget)} to ${effectiveTarget}.)`;
+      } else {
+        bankingContext = `(Smart Balance: User exceeded their target yesterday. Their target is temporarily reduced by ${Math.abs(Math.round(rollover))} kcal today from ${Math.round(baseTarget)} to ${effectiveTarget}.)`;
+      }
+    } else {
+      bankingContext = `(Smart Balance is neutral. Base target remains ${Math.round(baseTarget)}.)`;
+    }
+
+    const remainingCal = Math.round(effectiveTarget - totalCalories);
     const remainingProtein = Math.round(profile.protein_target - totalProtein);
     const remainingCarbs = Math.round(profile.carbs_target - totalCarbs);
     const remainingFats = Math.round(profile.fats_target - totalFats);
 
-    const calorieStatus = totalCalories > profile.daily_calorie_target
+    const calorieStatus = totalCalories > effectiveTarget
       ? `⚠️ OVER TARGET by ${Math.abs(remainingCal)} kcal!`
       : remainingCal < 200
         ? `Almost at target — only ${remainingCal} kcal remaining.`
@@ -193,7 +211,8 @@ ${profile.medical_conditions ? profile.medical_conditions : 'None specified.'}
 ⚠️ CRITICAL: If the user has medical conditions or allergies listed above, NEVER suggest foods that could be harmful. Always consider these when giving advice.
 
 ## Nutrition Targets
-- Daily calorie target: ${Math.round(profile.daily_calorie_target)} kcal
+- OVERALL Base daily calorie target: ${Math.round(baseTarget)} kcal
+- TODAY'S Dynamic calorie target: ${effectiveTarget} kcal ${bankingContext}
 - Protein: ${Math.round(profile.protein_target)}g | Carbs: ${Math.round(profile.carbs_target)}g | Fats: ${Math.round(profile.fats_target)}g
 
 ## Today's Progress (${today})

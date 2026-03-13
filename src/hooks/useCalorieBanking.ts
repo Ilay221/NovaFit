@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserProfile, DailyLog } from '@/lib/types';
+import { format, subDays } from 'date-fns';
 
 export interface CalorieBankingResult {
   /** The dynamic target for today (base ± rollover) */
@@ -18,18 +19,16 @@ export interface CalorieBankingResult {
   coachMessage: string;
   /** 'saved' | 'overage' | 'neutral' */
   status: 'saved' | 'overage' | 'neutral';
+  /** The dynamically predicted calorie target for tomorrow based on current consumption */
+  tomorrowProjectedTarget: number;
   /** Whether data has loaded */
   loading: boolean;
-  /** Toggle spreading overages across multiple days */
-  toggleSpread: (enabled: boolean) => Promise<void>;
 }
 
-const todayKey = () => new Date().toISOString().slice(0, 10);
+const todayKey = () => format(new Date(), 'yyyy-MM-dd');
 
 function yesterdayKey(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  return format(subDays(new Date(), 1), 'yyyy-MM-dd');
 }
 
 export function useCalorieBanking(
@@ -55,21 +54,15 @@ export function useCalorieBanking(
 
     const today = todayKey();
     const yesterday = yesterdayKey();
+    const prefSpreadDays = profile.calorieSpreadDays || 1;
 
-    // Check if today already has a rollover saved
+    // Check what is currently saved for today
     const { data: todayData } = await supabase
       .from('daily_logs')
       .select('rollover_calories, spread_days')
       .eq('user_id', user.id)
       .eq('date', today)
       .maybeSingle();
-
-    if (todayData && (todayData as any).rollover_calories !== 0) {
-      setRollover((todayData as any).rollover_calories);
-      setSpreadDays((todayData as any).spread_days || 0);
-      setLoading(false);
-      return;
-    }
 
     // Calculate from yesterday's data
     const { data: yesterdayLog } = await supabase
@@ -79,60 +72,89 @@ export function useCalorieBanking(
       .eq('date', yesterday)
       .maybeSingle();
 
-    if (!yesterdayLog) { setLoading(false); return; }
+    let todayRollover = 0;
+    let todaySpread = 1;
 
-    // Get yesterday's meals total
-    const { data: yesterdayMeals } = await supabase
-      .from('meal_entries')
-      .select('calories, quantity')
-      .eq('daily_log_id', yesterdayLog.id);
+    if (yesterdayLog) {
+      // Get yesterday's meals total
+      const { data: yesterdayMeals } = await supabase
+        .from('meal_entries')
+        .select('calories, quantity')
+        .eq('daily_log_id', yesterdayLog.id);
 
-    const yesterdayConsumed = (yesterdayMeals || []).reduce(
-      (sum: number, m: any) => sum + m.calories * m.quantity, 0
-    );
+      const yesterdayConsumed = (yesterdayMeals || []).reduce(
+        (sum: number, m: any) => sum + m.calories * m.quantity, 0
+      );
 
-    const yesterdayTarget = (yesterdayLog as any).base_calorie_target || baseTarget;
-    const balance = yesterdayTarget - yesterdayConsumed; // positive = saved, negative = overage
+      const yesterdayTarget = (yesterdayLog as any).base_calorie_target || baseTarget;
+      const yesterdayNet = yesterdayTarget - yesterdayConsumed; // Positive = savings, Negative = overate
 
-    // Check for remaining spread from previous days
-    const prevSpreadDays = (yesterdayLog as any).spread_days || 0;
-    let newRollover = balance;
-
-    // If yesterday had a spread active, carry forward the remaining portion
-    if (prevSpreadDays > 1) {
-      // There's still spread debt from before
+      // Yesterday's true starting state
+      const prevSpreadDays = Math.max(1, (yesterdayLog as any).spread_days || 1);
       const prevRollover = (yesterdayLog as any).rollover_calories || 0;
-      if (prevRollover < 0) {
-        // Add remaining spread portion
-        const remainingSpreadDebt = prevRollover * ((prevSpreadDays - 1) / prevSpreadDays);
-        newRollover += remainingSpreadDebt;
+      
+      const yesterdayTotalStartingBalance = prevRollover * prevSpreadDays;
+      const todayTotalBalance = yesterdayTotalStartingBalance + yesterdayNet;
+
+      // Save a trace of the raw net to yesterday
+      await supabase.from('daily_logs')
+        .update({ calorie_balance: yesterdayNet, base_calorie_target: yesterdayTarget })
+        .eq('id', yesterdayLog.id);
+
+      // --- THE SMART SPREAD ALGORITHM ---
+      if (todayTotalBalance < 0 && prefSpreadDays > 1) {
+        if (prevSpreadDays > 1) {
+           const expectedPayment = Math.abs(prevRollover);
+           // Allow a 15 kcal margin of error for "staying on track"
+           const stayedOnTrack = yesterdayNet >= (expectedPayment - 15);
+           
+           if (stayedOnTrack) {
+              // Smooth countdown: decrease remaining days to keep installment perfectly flat
+              const remainingDays = prevSpreadDays - 1;
+              if (remainingDays >= 1) {
+                 todaySpread = remainingDays;
+                 todayRollover = todayTotalBalance / todaySpread;
+              } else {
+                 todaySpread = prefSpreadDays;
+                 todayRollover = todayTotalBalance / todaySpread;
+              }
+              // If user changed settings to a much shorter spread, respect it immediately
+              if (prefSpreadDays < todaySpread) {
+                  todaySpread = prefSpreadDays;
+                  todayRollover = todayTotalBalance / todaySpread;
+              }
+           } else {
+              // Missed payment (overate). Compassionate recalculation: respread total over full preferred duration.
+              todaySpread = prefSpreadDays;
+              todayRollover = todayTotalBalance / todaySpread;
+           }
+        } else {
+           // Fresh start of a spread plan
+           todaySpread = prefSpreadDays;
+           todayRollover = todayTotalBalance / todaySpread;
+        }
+      } else {
+        todayRollover = todayTotalBalance;
+        todaySpread = 1;
       }
     }
 
-    // Save balance to yesterday
-    await supabase.from('daily_logs')
-      .update({ calorie_balance: balance, base_calorie_target: yesterdayTarget })
-      .eq('id', yesterdayLog.id);
+    todayRollover = Math.round(todayRollover);
 
-    // Determine spread for today
-    let todayRollover = newRollover;
-    let todaySpread = 0;
+    const savedRollover = todayData ? (todayData as any).rollover_calories : undefined;
+    const savedSpread = todayData ? (todayData as any).spread_days : undefined;
 
-    // Large overage: auto-suggest spreading across 3 days if > 500 kcal over
-    if (newRollover < -500) {
-      todaySpread = 3;
-      todayRollover = Math.round(newRollover / 3);
+    // Save today's calculated rollover ONLY if it differs from what's currently saved
+    if (savedRollover !== todayRollover || savedSpread !== todaySpread) {
+      await supabase.from('daily_logs')
+        .update({
+          rollover_calories: todayRollover,
+          spread_days: todaySpread,
+          base_calorie_target: baseTarget,
+        })
+        .eq('user_id', user.id)
+        .eq('date', today);
     }
-
-    // Save today's rollover
-    await supabase.from('daily_logs')
-      .update({
-        rollover_calories: todayRollover,
-        spread_days: todaySpread,
-        base_calorie_target: baseTarget,
-      })
-      .eq('user_id', user.id)
-      .eq('date', today);
 
     setRollover(todayRollover);
     setSpreadDays(todaySpread);
@@ -146,48 +168,6 @@ export function useCalorieBanking(
     Math.round(baseTarget + rollover)
   );
 
-  const toggleSpread = useCallback(async (enabled: boolean) => {
-    if (!user) return;
-    const today = todayKey();
-
-    // Recalculate with/without spread
-    const { data: todayData } = await supabase
-      .from('daily_logs')
-      .select('rollover_calories, spread_days')
-      .eq('user_id', user.id)
-      .eq('date', today)
-      .maybeSingle();
-
-    if (!todayData) return;
-
-    // Get original full rollover (before spread)
-    const currentRollover = (todayData as any).rollover_calories;
-    const currentSpread = (todayData as any).spread_days || 0;
-
-    let newRollover: number;
-    let newSpread: number;
-
-    if (enabled && currentSpread === 0 && currentRollover < -300) {
-      // Enable spread: divide across 3 days
-      newSpread = 3;
-      newRollover = Math.round(currentRollover * (currentSpread || 1) / 3);
-    } else if (!enabled && currentSpread > 0) {
-      // Disable spread: take full hit today
-      newRollover = currentRollover * currentSpread;
-      newSpread = 0;
-    } else {
-      return;
-    }
-
-    await supabase.from('daily_logs')
-      .update({ rollover_calories: newRollover, spread_days: newSpread })
-      .eq('user_id', user.id)
-      .eq('date', today);
-
-    setRollover(newRollover);
-    setSpreadDays(newSpread);
-  }, [user]);
-
   // Determine status
   const status: CalorieBankingResult['status'] =
     rollover > 20 ? 'saved' : rollover < -20 ? 'overage' : 'neutral';
@@ -198,8 +178,9 @@ export function useCalorieBanking(
     explanation = `יעד היום: ${dynamicTarget} קק"ל (בסיס: ${baseTarget} + ${Math.round(rollover)} חסכון מאתמול)`;
   } else if (status === 'overage') {
     const absRollover = Math.abs(Math.round(rollover));
-    if (spreadDays > 0) {
-      explanation = `יעד היום: ${dynamicTarget} קק"ל (בסיס: ${baseTarget} - ${absRollover} חריגה מפוזרת על ${spreadDays} ימים)`;
+    const totalDebt = Math.abs(Math.round(rollover * spreadDays));
+    if (spreadDays > 1) {
+      explanation = `יעד היום: ${dynamicTarget} קק"ל (בסיס: ${baseTarget} - ${absRollover} תשלום על חריגה). יתרת חריגה: ${totalDebt} ל-${spreadDays} ימים.`;
     } else {
       explanation = `יעד היום: ${dynamicTarget} קק"ל (בסיס: ${baseTarget} - ${absRollover} חריגה מאתמול)`;
     }
@@ -212,10 +193,58 @@ export function useCalorieBanking(
   if (status === 'saved') {
     coachMessage = `כל הכבוד על אתמול! 🎉 יש לך ${Math.round(rollover)} קק"ל בונוס היום. תהנה!`;
   } else if (status === 'overage') {
-    coachMessage = `אל דאגה לגבי אתמול! 💪 בואו נאזן את זה היום עם ארוחות קלות יותר.`;
+    coachMessage = `אל דאגה לגבי החריגה! 💪 זה בטיפול אוטומטי. רק תקפיד על היעד החדש ונתאזן.`;
   } else {
     coachMessage = `יום חדש, התחלה חדשה! 🌟 ממשיכים חזק.`;
   }
+
+  // Calculate prediction for tomorrow using the exact same Smart Spread algorithm
+  const tomorrowProjectedTarget = useMemo(() => {
+    if (!profile) return baseTarget;
+
+    const todayNet = baseTarget - consumed; // Positive = savings, Negative = overate
+    const prefSpreadDays = profile.calorieSpreadDays || 1;
+    
+    // Today's true starting state
+    const todayTotalStartingBalance = rollover * (spreadDays === 0 ? 1 : spreadDays);
+    const futureTotalBalance = todayTotalStartingBalance + todayNet;
+
+    let futureRollover = futureTotalBalance;
+    let futureSpread = 1;
+
+    if (futureTotalBalance < 0 && prefSpreadDays > 1) {
+       if (spreadDays > 1) {
+          const expectedPayment = Math.abs(rollover);
+          const stayedOnTrack = todayNet >= (expectedPayment - 15);
+          
+          if (stayedOnTrack) {
+             const remainingDays = spreadDays - 1;
+             if (remainingDays >= 1) {
+                futureSpread = remainingDays;
+                futureRollover = futureTotalBalance / futureSpread;
+             } else {
+                futureSpread = prefSpreadDays;
+                futureRollover = futureTotalBalance / futureSpread;
+             }
+             if (prefSpreadDays < futureSpread) {
+                futureSpread = prefSpreadDays;
+                futureRollover = futureTotalBalance / futureSpread;
+             }
+          } else {
+             futureSpread = prefSpreadDays;
+             futureRollover = futureTotalBalance / futureSpread;
+          }
+       } else {
+          futureSpread = prefSpreadDays;
+          futureRollover = futureTotalBalance / futureSpread;
+       }
+    }
+
+    return Math.max(
+      profile.gender === 'female' ? 800 : 1000,
+      Math.round(baseTarget + futureRollover)
+    );
+  }, [profile, baseTarget, rollover, consumed, spreadDays]);
 
   return {
     dynamicTarget,
@@ -225,7 +254,7 @@ export function useCalorieBanking(
     explanation,
     coachMessage,
     status,
+    tomorrowProjectedTarget,
     loading,
-    toggleSpread,
   };
 }

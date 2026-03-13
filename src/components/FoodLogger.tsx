@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { searchFoods } from '@/lib/food-database';
 import { FoodItem, MealEntry } from '@/lib/types';
 import PortionEstimator from './PortionEstimator';
+import { toast } from 'sonner';
 
 interface FoodLoggerProps {
   onAddMeal: (entry: MealEntry) => void;
@@ -32,6 +33,8 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
   const handlePortionConfirm = (entry: MealEntry) => {
     onAddMeal(entry);
     setPortionFood(null);
+    setQuery('');
+    toast.success('המאכל נרשם בהצלחה!');
   };
 
   if (portionFood) {

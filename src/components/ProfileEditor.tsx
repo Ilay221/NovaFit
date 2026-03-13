@@ -9,6 +9,8 @@ import { ActivityLevel, Gender, Goal, UserProfile, WeightEntry } from '@/lib/typ
 import { calculateBMR, calculateTDEE, calculateCalorieTarget, calculateMacros } from '@/lib/calculations';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProfileEditorProps {
   profile: UserProfile;
@@ -39,6 +41,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
     heightCm: profile.heightCm,
     activityLevel: profile.activityLevel,
     goal: profile.goal,
+    calorieSpreadDays: profile.calorieSpreadDays || 1,
   });
   const [weightForm, setWeightForm] = useState({
     weightKg: profile.weightKg,
@@ -54,6 +57,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
       heightCm: profile.heightCm,
       activityLevel: profile.activityLevel,
       goal: profile.goal,
+      calorieSpreadDays: profile.calorieSpreadDays || 1,
     });
     setEditing(true);
   };
@@ -88,9 +92,23 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
     toast.success('הפרופיל עודכן!');
   };
 
-  const handleSaveWeight = () => {
+  const handleSaveWeight = async () => {
     if (weightForm.weightKg < 30 || weightForm.weightKg > 300) { toast.error('המשקל חייב להיות בין 30 ל-300 ק"ג'); return; }
     if (weightForm.targetWeightKg < 30 || weightForm.targetWeightKg > 300) { toast.error('משקל היעד חייב להיות בין 30 ל-300 ק"ג'); return; }
+    
+    // Auto-sync to weight history if current weight changed directly through the profile
+    if (weightForm.weightKg !== profile.weightKg) {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        await supabase.from('weight_entries').upsert({
+          user_id: userData.user.id,
+          date: todayStr,
+          weight_kg: weightForm.weightKg,
+        }, { onConflict: 'user_id,date' });
+      }
+    }
+
     recalcAndSave(weightForm);
     setEditingWeight(false);
     toast.success('המשקלים עודכנו!');
@@ -234,6 +252,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
               { label: 'גובה', value: `${profile.heightCm} ס"מ` },
               { label: 'פעילות', value: ACTIVITIES.find(a => a.value === profile.activityLevel)?.label || profile.activityLevel },
               { label: 'מטרה', value: GOALS.find(g => g.value === profile.goal)?.label || profile.goal },
+              { label: 'פיזור חריגות', value: profile.calorieSpreadDays && profile.calorieSpreadDays > 1 ? `על פני ${profile.calorieSpreadDays} ימים` : 'ללא פיזור (יום אחד)' },
               { label: 'יעד יומי', value: `${profile.dailyCalorieTarget} קק"ל` },
               { label: 'BMR / TDEE', value: `${profile.bmr} / ${profile.tdee}` },
             ].map((item, i) => (
@@ -339,6 +358,21 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
                   {GOALS.map(g => (
                     <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">פיזור חריגות (בנק קלוריות)</Label>
+              <Select value={String(form.calorieSpreadDays)} onValueChange={(v: string) => setForm(f => ({ ...f, calorieSpreadDays: Number(v) }))}>
+                <SelectTrigger className="h-10 rounded-xl bg-muted/30 border-muted">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">ללא פיזור (רק מחר)</SelectItem>
+                  <SelectItem value="3">פזר על 3 ימים</SelectItem>
+                  <SelectItem value="5">פזר על 5 ימים</SelectItem>
+                  <SelectItem value="7">פזר על שבוע (7 ימים)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -25,10 +25,20 @@ interface FoodAction {
 
 type Msg = { role: 'user' | 'assistant'; content: string; error?: boolean; foodAction?: FoodAction; foodActionHandled?: boolean };
 
+interface BankingContext {
+  dynamicTarget: number;
+  baseTarget: number;
+  rollover: number;
+  spreadDays: number;
+  status: 'saved' | 'overage' | 'neutral';
+  explanation: string;
+}
+
 interface NutritionCoachProps {
   onClose: () => void;
   userName: string;
   onAddMeal?: (entry: MealEntry) => void;
+  bankingContext?: BankingContext;
 }
 
 const FOOD_TAG_REGEX = /<!--FOOD_ADD:([\s\S]*?)-->/;
@@ -69,7 +79,7 @@ function classifyError(e: any): string {
   return 'FETCH_FAILED';
 }
 
-export default function NutritionCoach({ onClose, userName, onAddMeal }: NutritionCoachProps) {
+export default function NutritionCoach({ onClose, userName, onAddMeal, bankingContext }: NutritionCoachProps) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -228,6 +238,20 @@ export default function NutritionCoach({ onClose, userName, onAddMeal }: Nutriti
         const token = session.data.session?.access_token;
         const cleanMessages = prevMessages.filter(m => !m.error).map(m => ({ role: m.role, content: m.content }));
 
+        // Inject banking context as first message so AI knows the real daily target
+        const bankingNote = bankingContext
+          ? `[CONTEXT UPDATE - IMPORTANT]: The user's calorie target for TODAY has been dynamically adjusted by the Smart Balance (Calorie Banking) system. 
+- Base target (from profile): ${bankingContext.baseTarget} kcal
+- TODAY's ACTUAL target: ${bankingContext.dynamicTarget} kcal
+- Rollover adjustment: ${bankingContext.rollover > 0 ? '+' : ''}${Math.round(bankingContext.rollover)} kcal (${bankingContext.status === 'saved' ? 'bonus from savings yesterday' : bankingContext.status === 'overage' ? `debt from overage${bankingContext.spreadDays > 0 ? ` spread over ${bankingContext.spreadDays} days` : ' yesterday'}` : 'neutral'})
+- Summary: ${bankingContext.explanation}
+Always use ${bankingContext.dynamicTarget} kcal as the calorie target when answering questions about today. NEVER use ${bankingContext.baseTarget} as today's target.`
+          : null;
+
+        const messagesWithContext = bankingNote
+          ? [{ role: 'user' as const, content: `[SYSTEM CONTEXT - DO NOT REPLY TO THIS DIRECTLY]: ${bankingNote}` }, { role: 'assistant' as const, content: 'מובן, אני מודע לעדכון.' }, ...cleanMessages]
+          : cleanMessages;
+
         const timeoutId = setTimeout(() => { if (!succeeded) controller.abort(); }, CLIENT_TIMEOUT_MS);
 
         const resp = await fetch(CHAT_URL, {
@@ -236,7 +260,7 @@ export default function NutritionCoach({ onClose, userName, onAddMeal }: Nutriti
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ messages: cleanMessages }),
+          body: JSON.stringify({ messages: messagesWithContext }),
           signal: controller.signal,
         });
 
@@ -322,7 +346,7 @@ export default function NutritionCoach({ onClose, userName, onAddMeal }: Nutriti
     }
 
     setIsLoading(false);
-  }, [input, isLoading, messages, activeSessionId, titleGenerated]);
+  }, [input, isLoading, messages, activeSessionId, titleGenerated, bankingContext]);
 
   const retry = useCallback(() => {
     if (lastFailedInput) {

@@ -24,6 +24,7 @@ export interface UserProfile {
   carbsTarget: number;
   fatsTarget: number;
   isPremium?: boolean;
+  calorieSpreadDays?: number; // 1, 3, 5, or 7 days
   targetDate?: string | null; // ISO date string e.g. '2026-06-15'
   favoriteFood?: string;
   dietaryWeakness?: string;

@@ -71,6 +71,7 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
   const handlePortionConfirm = (entry: MealEntry) => {
     onAddMeal(entry);
     setPortionFood(null);
+    setResults(prev => prev.filter(f => f.name !== entry.foodItem.name));
     toast.success('הארוחה נרשמה עם מנה מותאמת!');
   };
 

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { ArrowLeft } from 'lucide-react'; // use Left arrow for RTL
 
 interface CalorieRingProps {
   consumed: number;
@@ -7,9 +8,11 @@ interface CalorieRingProps {
   size?: number;
   /** 'saved' = green glow, 'overage' = orange/red, 'neutral' = default */
   bankingStatus?: 'saved' | 'overage' | 'neutral';
+  /** The predicted layout for tomorrow based on today's consumption */
+  tomorrowTarget?: number;
 }
 
-export default function CalorieRing({ consumed, target, size = 180, bankingStatus = 'neutral' }: CalorieRingProps) {
+export default function CalorieRing({ consumed, target, size = 180, bankingStatus = 'neutral', tomorrowTarget }: CalorieRingProps) {
   const strokeWidth = 10;
   const radius = (size - strokeWidth * 2) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -115,6 +118,21 @@ export default function CalorieRing({ consumed, target, size = 180, bankingStatu
         >
           {percentage}%
         </motion.div>
+        
+        {/* Tomorrow's Projection Display */}
+        {tomorrowTarget !== undefined && tomorrowTarget > 0 && (
+          <motion.div
+            className="absolute bottom-4 flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-lg"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0, type: 'spring', stiffness: 300, damping: 20 }}
+          >
+            <ArrowLeft className="w-3 h-3 text-white" />
+            <span className="text-[10px] font-semibold text-white tracking-wide">
+              מחר: {tomorrowTarget}
+            </span>
+          </motion.div>
+        )}
       </div>
     </div>
   );

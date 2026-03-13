@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AccentColor, ThemeMode, UserProfile, DailyLog, MealEntry, WeightEntry } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
 
 function loadJSON<T>(key: string, fallback: T): T {
   try {
@@ -47,6 +48,10 @@ export function useProfile() {
         .maybeSingle();
       
       if (data) {
+        // Read local storage fallback for calorieSpreadDays
+        const storedSpread = localStorage.getItem(`nova_spread_days_${user.id}`);
+        const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 1;
+
         setProfileState({
           name: data.name,
           age: data.age,
@@ -63,6 +68,7 @@ export function useProfile() {
           carbsTarget: data.carbs_target,
           fatsTarget: data.fats_target,
           isPremium: (data as any).is_premium ?? false,
+          calorieSpreadDays: parsedSpread,
           targetDate: (data as any).target_date ?? null,
           favoriteFood: (data as any).favorite_food ?? '',
           dietaryWeakness: (data as any).dietary_weakness ?? '',
@@ -107,14 +113,21 @@ export function useProfile() {
       updated_at: new Date().toISOString(),
     };
     
-    await supabase.from('profiles').upsert(row);
+    const { error } = await supabase.from('profiles').upsert(row);
+    if (error) console.error("Error saving profile to Supabase:", error);
+    
+    // Save calorieSpreadDays locally since DB column is missing
+    if (p.calorieSpreadDays !== undefined) {
+      localStorage.setItem(`nova_spread_days_${user.id}`, p.calorieSpreadDays.toString());
+    }
+
     setProfileState(p);
   }, [user]);
 
   return { profile, setProfile, loading };
 }
 
-const todayKey = () => new Date().toISOString().slice(0, 10);
+const todayKey = () => format(new Date(), 'yyyy-MM-dd');
 
 export function useDailyLog() {
   const { user } = useAuth();
@@ -134,12 +147,24 @@ export function useDailyLog() {
       .maybeSingle();
     
     if (!log) {
-      const { data: newLog } = await supabase
+      const { data: newLog, error } = await supabase
         .from('daily_logs')
         .insert({ user_id: user.id, date, water_ml: 0 })
         .select()
-        .single();
+        .maybeSingle();
+      
       log = newLog;
+      
+      // Handle potential race condition (Unique Constraint Violation)
+      if (error || !log) {
+        const { data: fallbackLog } = await supabase
+          .from('daily_logs')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('date', date)
+          .single();
+        log = fallbackLog;
+      }
     }
     
     if (!log) return;

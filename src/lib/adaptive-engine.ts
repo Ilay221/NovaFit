@@ -1,6 +1,6 @@
 import { UserProfile, Gender, Goal, WeightEntry } from './types';
 import { calculateBMR, calculateTDEE, calculateMacros } from './calculations';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, format } from 'date-fns';
 
 // 1 kg of body fat ≈ 7,700 kcal
 const KCAL_PER_KG = 7700;
@@ -107,7 +107,7 @@ export function calculateAdaptiveTargets(
       const safeDays = Math.ceil(totalKcalNeeded / safeDeficit);
       const safeDate = new Date();
       safeDate.setDate(safeDate.getDate() + safeDays);
-      safestDate = safeDate.toISOString().slice(0, 10);
+      safestDate = format(safeDate, 'yyyy-MM-dd');
     }
     
     // Cap to safe minimum
@@ -119,6 +119,17 @@ export function calculateAdaptiveTargets(
   if (goal === 'gain' && dailyCalorieTarget > maxCal) {
     isSafe = false;
     unsafeReason = `Reaching your goal by this date requires eating ${dailyCalorieTarget} kcal/day, which is an excessive surplus.`;
+    
+    // Calculate the nearest safe date for gaining
+    const safeSurplus = maxCal - tdee;
+    if (safeSurplus > 0) {
+      // Need negative totalKcalNeeded for gaining (since weightDiff is negative)
+      const safeDays = Math.ceil(Math.abs(totalKcalNeeded) / safeSurplus);
+      const safeDate = new Date();
+      safeDate.setDate(safeDate.getDate() + safeDays);
+      safestDate = format(safeDate, 'yyyy-MM-dd');
+    }
+    
     dailyCalorieTarget = maxCal;
   }
 

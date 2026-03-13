@@ -47,15 +47,15 @@ export default function WeeklyAnalytics({ profile, onClose }: WeeklyAnalyticsPro
     setLoading(true);
     const today = new Date();
     const days: DayData[] = [];
-    const startDate = subDays(today, 6).toISOString().slice(0, 10);
-    const endDate = today.toISOString().slice(0, 10);
+    const startDate = format(subDays(today, 6), 'yyyy-MM-dd');
+    const endDate = format(today, 'yyyy-MM-dd');
 
     const { data: logs } = await supabase.from('daily_logs').select('id, date').eq('user_id', user.id).gte('date', startDate).lte('date', endDate);
     const logIds = (logs || []).map(l => l.id);
-    let meals: any[] = [];
+    let meals: { daily_log_id: string; calories: number; protein: number; carbs: number; fats: number; quantity: number | null }[] = [];
     if (logIds.length > 0) {
-      const { data } = await supabase.from('meal_entries').select('daily_log_id, calories, protein, carbs, fats').in('daily_log_id', logIds);
-      meals = data || [];
+      const { data } = await supabase.from('meal_entries').select('daily_log_id, calories, protein, carbs, fats, quantity').in('daily_log_id', logIds);
+      if (data) meals = data;
     }
     const logDateMap: Record<string, string> = {};
     (logs || []).forEach(l => { logDateMap[l.id] = l.date; });
@@ -64,15 +64,16 @@ export default function WeeklyAnalytics({ profile, onClose }: WeeklyAnalyticsPro
       const date = logDateMap[m.daily_log_id];
       if (!date) return;
       if (!dateAgg[date]) dateAgg[date] = { calories: 0, protein: 0, carbs: 0, fats: 0 };
-      dateAgg[date].calories += m.calories;
-      dateAgg[date].protein += m.protein;
-      dateAgg[date].carbs += m.carbs;
-      dateAgg[date].fats += m.fats;
+      const qty = m.quantity || 1;
+      dateAgg[date].calories += (m.calories * qty);
+      dateAgg[date].protein += (m.protein * qty);
+      dateAgg[date].carbs += (m.carbs * qty);
+      dateAgg[date].fats += (m.fats * qty);
     });
 
     for (let i = 6; i >= 0; i--) {
       const d = subDays(today, i);
-      const dateStr = d.toISOString().slice(0, 10);
+      const dateStr = format(d, 'yyyy-MM-dd');
       const agg = dateAgg[dateStr] || { calories: 0, protein: 0, carbs: 0, fats: 0 };
       const adherence = profile.dailyCalorieTarget > 0 ? Math.round((agg.calories / profile.dailyCalorieTarget) * 100) : 0;
       days.push({
@@ -86,10 +87,10 @@ export default function WeeklyAnalytics({ profile, onClose }: WeeklyAnalyticsPro
 
     const { data: allLogs } = await supabase.from('daily_logs').select('id, date').eq('user_id', user.id).lte('date', endDate).order('date', { ascending: false }).limit(60);
     const allLogIds = (allLogs || []).map(l => l.id);
-    let allMeals: any[] = [];
+    let allMeals: { daily_log_id: string; calories: number; quantity: number | null }[] = [];
     if (allLogIds.length > 0) {
-      const { data } = await supabase.from('meal_entries').select('daily_log_id, calories').in('daily_log_id', allLogIds);
-      allMeals = data || [];
+      const { data } = await supabase.from('meal_entries').select('daily_log_id, calories, quantity').in('daily_log_id', allLogIds);
+      if (data) allMeals = data;
     }
     const allLogDateMap: Record<string, string> = {};
     (allLogs || []).forEach(l => { allLogDateMap[l.id] = l.date; });
@@ -97,16 +98,23 @@ export default function WeeklyAnalytics({ profile, onClose }: WeeklyAnalyticsPro
     allMeals.forEach(m => {
       const date = allLogDateMap[m.daily_log_id];
       if (!date) return;
-      allDateCals[date] = (allDateCals[date] || 0) + m.calories;
+      const qty = m.quantity || 1;
+      allDateCals[date] = (allDateCals[date] || 0) + (m.calories * qty);
     });
     let currentStreak = 0;
     for (let i = 0; i < 60; i++) {
-      const d = subDays(today, i).toISOString().slice(0, 10);
+      const d = format(subDays(today, i), 'yyyy-MM-dd');
       const cals = allDateCals[d] || 0;
-      if (cals <= 0) break;
-      const ratio = cals / profile.dailyCalorieTarget;
-      if (ratio >= 0.5 && ratio <= 1.5) currentStreak++;
-      else break;
+      const ratio = profile.dailyCalorieTarget > 0 ? cals / profile.dailyCalorieTarget : 0;
+      
+      if (ratio >= 0.5 && ratio <= 1.5) {
+        currentStreak++;
+      } else if (i === 0) {
+        // Skip today if it indicates an incomplete day, avoiding premature streak breaks
+        continue;
+      } else {
+        break; // break the streak if a prior day was failed
+      }
     }
     setStreak(currentStreak);
     setLoading(false);
