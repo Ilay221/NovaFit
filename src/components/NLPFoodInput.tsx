@@ -7,6 +7,7 @@ import { MealEntry, FoodItem } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import PortionEstimator from './PortionEstimator';
+import { haptics } from '@/lib/haptics';
 
 interface NLPFoodInputProps {
   onAddMeal: (entry: MealEntry) => void;
@@ -41,14 +42,21 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
     if (!trimmed) return;
     setParsing(true);
     setResults([]);
+    haptics.medium();
     try {
       const { data, error } = await supabase.functions.invoke('parse-food-text', { body: { text: trimmed } });
       if (error) throw error;
-      if (data?.foods && Array.isArray(data.foods)) setResults(data.foods);
-      else toast.error('לא ניתן לנתח את תיאור המזון');
+      if (data?.foods && Array.isArray(data.foods)) {
+        setResults(data.foods);
+        haptics.success();
+      } else {
+        toast.error('לא ניתן לנתח את תיאור המזון');
+        haptics.error();
+      }
     } catch (err: any) {
       console.error('NLP parse error:', err);
       toast.error('הניתוח נכשל. נסה שוב.');
+      haptics.error();
     } finally {
       setParsing(false);
     }

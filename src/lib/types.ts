@@ -64,3 +64,10 @@ export interface WeightEntry {
   date: string;
   weightKg: number;
 }
+
+export interface MealTemplate {
+  id: string;
+  name: string;
+  items: { foodItem: FoodItem; quantity: number }[];
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+}

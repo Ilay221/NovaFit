@@ -129,27 +129,30 @@ export function useProfile() {
 
 const todayKey = () => format(new Date(), 'yyyy-MM-dd');
 
-export function useDailyLog() {
+export function useDailyLog(selectedDate?: Date) {
   const { user } = useAuth();
-  const [todayLog, setTodayLog] = useState<DailyLog>({ date: todayKey(), meals: [], waterMl: 0 });
+  
+  // Compute the string key for the currently requested date
+  const targetDateKey = format(selectedDate || new Date(), 'yyyy-MM-dd');
+  
+  const [todayLog, setTodayLog] = useState<DailyLog>({ date: targetDateKey, meals: [], waterMl: 0 });
   const [todayLogId, setTodayLogId] = useState<string | null>(null);
 
   const fetchLog = useCallback(async () => {
     if (!user) return;
-    const date = todayKey();
     
-    // Get or create daily log
+    // Get or create daily log for the target date
     let { data: log } = await supabase
       .from('daily_logs')
       .select('*')
       .eq('user_id', user.id)
-      .eq('date', date)
+      .eq('date', targetDateKey)
       .maybeSingle();
     
     if (!log) {
       const { data: newLog, error } = await supabase
         .from('daily_logs')
-        .insert({ user_id: user.id, date, water_ml: 0 })
+        .insert({ user_id: user.id, date: targetDateKey, water_ml: 0 })
         .select()
         .maybeSingle();
       
@@ -161,7 +164,7 @@ export function useDailyLog() {
           .from('daily_logs')
           .select('*')
           .eq('user_id', user.id)
-          .eq('date', date)
+          .eq('date', targetDateKey)
           .single();
         log = fallbackLog;
       }
@@ -194,8 +197,8 @@ export function useDailyLog() {
       timestamp: m.logged_at,
     }));
 
-    setTodayLog({ date, meals: mealEntries, waterMl: log.water_ml });
-  }, [user]);
+    setTodayLog({ date: targetDateKey, meals: mealEntries, waterMl: log.water_ml });
+  }, [user, targetDateKey]);
 
   useEffect(() => { fetchLog(); }, [fetchLog]);
 
