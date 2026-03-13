@@ -21,6 +21,7 @@ import { useCalorieBanking } from '@/hooks/useCalorieBanking';
 import { format, parseISO, differenceInDays, isSameDay } from 'date-fns';
 import { haptics } from '@/lib/haptics';
 import DateStrip from './DateStrip';
+import ConfirmDialog from './ConfirmDialog';
 import { useMealTemplates } from '@/hooks/useMealTemplates';
 import { toast } from 'sonner';
 
@@ -74,6 +75,14 @@ export default function Dashboard() {
   const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [moveMenuMealId, setMoveMenuMealId] = useState<string | null>(null);
   const [waterAnimation, setWaterAnimation] = useState<number | null>(null);
+  
+  // Confirmation Dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
 
   const totals = dailyLog.meals.reduce(
     (acc, m) => ({
@@ -146,8 +155,17 @@ export default function Dashboard() {
 
   const handleRemoveMeal = (id: string) => {
      if (!isSameDay(selectedDate, new Date())) {
-       const userConfirmed = window.confirm('האם אתה בטוח שברצונך למחוק ארוחה מיום קודם?');
-       if (!userConfirmed) return;
+       setConfirmDialog({
+         isOpen: true,
+         title: 'מחיקת ארוחה מיום קודם',
+         message: 'האם אתה בטוח שברצונך למחוק ארוחה זו? השינוי ישפיע על הנתונים של אותו יום.',
+         onConfirm: () => {
+           haptics.medium();
+           onRemoveMeal(id);
+           setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+         }
+       });
+       return;
      }
      haptics.medium();
      onRemoveMeal(id);
@@ -787,8 +805,16 @@ export default function Dashboard() {
               <Button
                 onClick={() => {
                   if (!isSameDay(selectedDate, new Date())) {
-                    const userConfirmed = window.confirm('האם אתה בטוח שברצונך להוסיף ארוחה ליום קודם?');
-                    if (!userConfirmed) return;
+                    setConfirmDialog({
+                      isOpen: true,
+                      title: 'הוספת ארוחה ליום קודם',
+                      message: 'האם אתה בטוח שברצונך להוסיף ארוחה ליום שעבר?',
+                      onConfirm: () => {
+                        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                        setView('food');
+                      }
+                    });
+                    return;
                   }
                   setView('food');
                 }}
@@ -800,6 +826,15 @@ export default function Dashboard() {
           </motion.div>
         </div>
       )}
+
+      {/* Custom Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }
