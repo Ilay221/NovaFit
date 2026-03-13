@@ -76,6 +76,9 @@ export default function Dashboard({
     { calories: 0, protein: 0, carbs: 0, fats: 0 }
   );
 
+  // Calorie Banking System
+  const banking = useCalorieBanking(profile, dailyLog);
+
   const hasTimeline = !!profile.targetDate && profile.goal !== 'maintain';
 
   const adaptive = useMemo(
@@ -83,7 +86,10 @@ export default function Dashboard({
     [hasTimeline, profile, weightHistory]
   );
 
-  const ringCalorieTarget = sanitizeKcalTarget(profile.dailyCalorieTarget, 0);
+  // Use the dynamic banking target instead of static profile target
+  const ringCalorieTarget = banking.loading
+    ? sanitizeKcalTarget(profile.dailyCalorieTarget, 0)
+    : sanitizeKcalTarget(banking.dynamicTarget, 0);
   const effectiveProteinTarget = profile.proteinTarget;
   const effectiveCarbsTarget = profile.carbsTarget;
   const effectiveFatsTarget = profile.fatsTarget;
