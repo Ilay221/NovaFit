@@ -144,6 +144,12 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
     await supabase.from('chat_sessions').update({ updated_at: new Date().toISOString() }).eq('id', sessionId);
   };
 
+  const truncateToWords = (text: string, count: number) => {
+    const words = text.trim().split(/\s+/);
+    if (words.length <= count) return text;
+    return words.slice(0, count).join(' ') + '...';
+  };
+
   const autoGenerateTitle = async (sessionId: string, msgs: Msg[]) => {
     if (titleGenerated) return;
     const userMsg = msgs.find(m => m.role === 'user' && !m.error);
@@ -151,11 +157,10 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
 
     setTitleGenerated(true);
 
-    // Immediate fallback: first 30 chars of the message
-    const fallbackTitle = userMsg.content.slice(0, 30).trim() + (userMsg.content.length > 30 ? '...' : '');
+    // Initial fallback: First 4 words of the user's message
+    const fallbackTitle = truncateToWords(userMsg.content, 4);
     const currentSession = sessions.find(s => s.id === sessionId);
     
-    // Only update if it's still the default title
     if (currentSession && (currentSession.title === 'שיחה חדשה' || !currentSession.title)) {
       await supabase.from('chat_sessions').update({ title: fallbackTitle }).eq('id', sessionId);
       setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title: fallbackTitle } : s));
@@ -172,17 +177,20 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
         },
         body: JSON.stringify({
           action: 'generate-title',
-          messages: msgs.filter(m => !m.error).slice(0, 4).map(m => ({ role: m.role, content: m.content })),
+          // Only send the user's first message to ensure the title is user-centric
+          messages: [{ role: 'user', content: userMsg.content }],
         }),
       });
       if (resp.ok) {
-        const { title } = await resp.json();
-        if (title && title !== 'שיחה חדשה' && title !== fallbackTitle) {
+        let { title } = await resp.json();
+        if (title && title !== 'שיחה חדשה') {
+          // Strictly enforce 4 word limit on AI response too
+          title = truncateToWords(title, 4);
           await supabase.from('chat_sessions').update({ title }).eq('id', sessionId);
           setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title } : s));
         }
       }
-    } catch { /* non-critical fallback stays */ }
+    } catch { /* non-critical */ }
   };
 
   const handleNewChat = () => {
