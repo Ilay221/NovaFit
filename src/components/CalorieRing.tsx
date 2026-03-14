@@ -122,13 +122,13 @@ export default function CalorieRing({ consumed, target, size = 180, bankingStatu
         {/* Tomorrow's Projection Display */}
         {tomorrowTarget !== undefined && tomorrowTarget > 0 && (
           <motion.div
-            className="absolute bottom-4 flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-lg"
+            className="absolute bottom-4 flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 backdrop-blur-md border border-black/10 dark:border-white/20 shadow-lg"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.0, type: 'spring', stiffness: 300, damping: 20 }}
           >
-            <ArrowLeft className="w-3 h-3 text-white" />
-            <span className="text-[10px] font-semibold text-white tracking-wide">
+            <ArrowLeft className="w-3 h-3 text-black dark:text-white" />
+            <span className="text-[10px] font-semibold text-black dark:text-white tracking-wide">
               מחר: {tomorrowTarget}
             </span>
           </motion.div>
