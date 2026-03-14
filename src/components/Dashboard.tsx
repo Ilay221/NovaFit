@@ -633,27 +633,20 @@ export default function Dashboard() {
           <WeeklyAnalytics key="analytics" profile={profile} onClose={() => setView('dashboard')} />
         )}
         {view === 'ai-coach' && (
-          <motion.div
+          <NutritionCoach 
             key="coach"
-            initial={{ opacity: 0, y: 30, scale: 0.95, filter: 'blur(10px)' }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, scale: 0.95, filter: 'blur(10px)', transition: { duration: 0.3 } }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          >
-            <NutritionCoach 
-              onClose={() => setView('dashboard')} 
-              userName={profile.name} 
-              onAddMeal={onAddMeal}
-              bankingContext={!banking.loading ? {
-                dynamicTarget: banking.dynamicTarget,
-                baseTarget: banking.baseTarget,
-                rollover: banking.rollover,
-                spreadDays: banking.spreadDays,
-                status: banking.status,
-                explanation: banking.explanation,
-              } : undefined}
-            />
-          </motion.div>
+            onClose={() => setView('dashboard')} 
+            userName={profile.name} 
+            onAddMeal={onAddMeal}
+            bankingContext={!banking.loading ? {
+              dynamicTarget: banking.dynamicTarget,
+              baseTarget: banking.baseTarget,
+              rollover: banking.rollover,
+              spreadDays: banking.spreadDays,
+              status: banking.status,
+              explanation: banking.explanation,
+            } : undefined}
+          />
         )}
       </AnimatePresence>
 
