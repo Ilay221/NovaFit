@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X } from 'lucide-react';
+import { ArrowRight, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import ProfileEditor from '@/components/ProfileEditor';
 import NFPEditor from '@/components/NFPEditor';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface SettingsPanelProps {
   theme: {
@@ -198,6 +199,38 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
               </motion.button>
             ))}
           </div>
+        </motion.div>
+        
+        {/* Push Notifications */}
+        <motion.div variants={itemVariants} className="nova-card p-5">
+          <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4 flex items-center gap-2">
+            <Bell className="w-3.5 h-3.5 text-primary" /> התראות
+          </h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[13px] font-medium font-display">התראות דחיפה</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">תזכורות לשתיית מים, ארוחות וסיכום יומי</p>
+            </div>
+            <button
+              onClick={() => {
+                const { requestPermission } = useNotifications();
+                requestPermission();
+              }}
+              className={cn(
+                "px-4 py-2 rounded-xl text-[12px] font-bold transition-all btn-premium",
+                Notification.permission === 'granted'
+                  ? "bg-primary/10 text-primary border border-primary/20 pointer-events-none"
+                  : "bg-primary text-primary-foreground shadow-[0_0_15px_hsla(var(--primary)/0.3)]"
+              )}
+            >
+              {Notification.permission === 'granted' ? 'מופעל ✓' : 'הפעל'}
+            </button>
+          </div>
+          {Notification.permission === 'denied' && (
+            <p className="text-[10px] text-destructive mt-3 bg-destructive/10 p-2 rounded-lg border border-destructive/20">
+              ההתראות חסומות בדפדפן. כדי להפעיל אותן, עליך לשנות את ההגדרות בדפדפן שלך.
+            </p>
+          )}
         </motion.div>
 
 

@@ -9,6 +9,7 @@ import ResetPassword from "./pages/ResetPassword";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import NotFound from "./pages/NotFound";
 import DynamicBackground from "./components/DynamicBackground";
+import { NotificationManager } from "./components/NotificationManager";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <DynamicBackground />
+        <NotificationManager />
         <Toaster />
         <Sonner />
         <BrowserRouter>
