@@ -42,6 +42,12 @@ export function useCalorieBanking(
 
   const baseTarget = profile?.dailyCalorieTarget ?? 2000;
 
+  // Create a fingerprint of the current log's meals to detect changes
+  // This ensures banking recalculates whenever any day's meals are modified
+  const mealFingerprint = useMemo(() => {
+    return todayLog.meals.map(m => `${m.id}:${m.foodItem.calories * m.quantity}`).join(',');
+  }, [todayLog.meals]);
+
   // Calculate today's consumed calories
   const consumed = useMemo(() =>
     todayLog.meals.reduce((sum, m) => sum + m.foodItem.calories * m.quantity, 0),
@@ -159,7 +165,7 @@ export function useCalorieBanking(
     setRollover(todayRollover);
     setSpreadDays(todaySpread);
     setLoading(false);
-  }, [user, profile, baseTarget]);
+  }, [user, profile, baseTarget, mealFingerprint, todayLog.date]);
 
   useEffect(() => { calculateRollover(); }, [calculateRollover]);
 
