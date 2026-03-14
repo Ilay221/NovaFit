@@ -20,6 +20,7 @@ interface Props {
   onRename: (id: string, title: string) => void;
   onPin: (id: string, pinned: boolean) => void;
   onDelete: (id: string) => void;
+  onDeleteAll: () => void;
   onClose: () => void;
 }
 
@@ -28,6 +29,7 @@ export default function ChatSessionSidebar({
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   const pinned = sessions.filter(s => s.is_pinned).sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   const unpinned = sessions.filter(s => !s.is_pinned).sort((a, b) => b.updated_at.localeCompare(a.updated_at));
@@ -118,11 +120,31 @@ export default function ChatSessionSidebar({
       className="absolute inset-y-0 start-0 w-[280px] z-50 bg-card border-e border-border/50 flex flex-col shadow-xl"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-safe pb-3 border-b border-border/50">
-        <h3 className="font-bold font-display text-sm">היסטוריית שיחות</h3>
-        <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted">
-          <X className="w-4 h-4" />
-        </button>
+      <div className="flex items-center justify-between px-4 pt-safe pb-3 border-b border-border/50 bg-muted/20">
+        <div className="flex items-center gap-2">
+          <h3 className="font-bold font-display text-sm">היסטוריית שיחות</h3>
+          {sessions.length > 0 && !confirmDeleteAll && (
+            <button 
+              onClick={() => setConfirmDeleteAll(true)}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              title="מחק הכל"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        
+        {confirmDeleteAll ? (
+          <div className="flex items-center gap-2 bg-destructive/10 px-2 py-1 rounded-lg border border-destructive/20 animate-in fade-in zoom-in duration-200">
+            <span className="text-[10px] font-bold text-destructive">בטוח?</span>
+            <button onClick={() => { onDeleteAll(); setConfirmDeleteAll(false); }} className="text-[10px] bg-destructive text-white px-2 py-0.5 rounded font-bold shadow-sm">כן</button>
+            <button onClick={() => setConfirmDeleteAll(false)} className="text-[10px] bg-muted px-2 py-0.5 rounded font-bold">לא</button>
+          </div>
+        ) : (
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted">
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* New Chat Button */}

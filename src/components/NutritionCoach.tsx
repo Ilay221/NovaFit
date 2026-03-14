@@ -224,6 +224,16 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
     if (activeSessionId === id) handleNewChat();
   };
 
+  const handleDeleteAll = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    await supabase.from('chat_sessions').delete().eq('user_id', user.id);
+    setSessions([]);
+    handleNewChat();
+    toast.success('כל השיחות נמחקו');
+  };
+
   const send = useCallback(async (overrideInput?: string) => {
     const text = (overrideInput ?? input).trim();
     if (!text || isLoading) return;
@@ -469,6 +479,7 @@ ${bankingNote || ''}`
               onRename={handleRename}
               onPin={handlePin}
               onDelete={handleDelete}
+              onDeleteAll={handleDeleteAll}
               onClose={() => setSidebarOpen(false)}
             />
           </>
