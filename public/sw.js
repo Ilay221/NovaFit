@@ -1,10 +1,18 @@
-/* eslint-disable no-restricted-globals */
 self.addEventListener('push', function(event) {
-  const data = event.data ? event.data.json() : {
+  let data = {
     title: 'NovaFit',
-    body: 'התראה חדשה מ-NovaFit',
+    body: 'תזכורת חדשה עבורך',
     icon: '/placeholder.svg'
   };
+
+  try {
+    if (event.data) {
+      data = event.data.json();
+    }
+  } catch (e) {
+    console.error('Error parsing push data:', e);
+    if (event.data) data.body = event.data.text();
+  }
 
   const options = {
     body: data.body,

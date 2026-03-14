@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { ArrowRight, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import ProfileEditor from '@/components/ProfileEditor';
 import NFPEditor from '@/components/NFPEditor';
 import { useNotifications } from '@/hooks/useNotifications';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SettingsPanelProps {
   theme: {
@@ -55,8 +57,8 @@ const itemVariants = {
 };
 
 export default function SettingsPanel({ theme, profile, weightHistory, onUpdateProfile, onClose }: SettingsPanelProps) {
-  const { signOut } = useAuth();
-  const { requestPermission, sendLocalNotification } = useNotifications();
+  const { signOut, user } = useAuth();
+  const { requestPermission, subscribeToPush, sendLocalNotification } = useNotifications();
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [testPending, setTestPending] = useState(false);
 
@@ -214,7 +216,12 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
               <p className="text-[11px] text-muted-foreground mt-0.5">תזכורות לשתיית מים, ארוחות וסיכום יומי</p>
             </div>
             <button
-              onClick={() => requestPermission()}
+              onClick={async () => {
+                const granted = await requestPermission();
+                if (granted) {
+                  await subscribeToPush();
+                }
+              }}
               className={cn(
                 "px-4 py-2 rounded-xl text-[12px] font-bold transition-all btn-premium",
                 Notification.permission === 'granted'
@@ -236,15 +243,34 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
                 variant="outline"
                 size="sm"
                 disabled={testPending}
-                onClick={() => {
+                onClick={async () => {
                   setTestPending(true);
-                  import('sonner').then(({ toast }) => toast.info('התראה תישלח בעוד 15 שניות... תוכל לצאת מהתפריט'));
-                  setTimeout(() => {
-                    sendLocalNotification('בדיקת NovaFit! 🚀', {
-                      body: 'זהו מבחן מוצלח של מערכת ההתראות. האפליקציה עובדת!',
-                    });
+                  if (!user) return;
+                  
+                  toast.info('שולח בקשה לשרת... ההתראה תישלח בעוד 15 שניות');
+                  
+                  // Call the Edge Function
+                  const { data, error } = await supabase.functions.invoke('send-push', {
+                    body: {
+                      user_id: user.id,
+                      title: 'בדיקת NovaFit מהשרת! 🚀',
+                      body: 'זהו מבחן מוצלח - ההתראה נשלחה מהשרת ועובדת גם כשהאפליקציה סגורה!',
+                      delay_ms: 15000
+                    }
+                  });
+
+                  if (error) {
+                    console.error('Edge Function error:', error);
+                    // Fallback to local if server fails (e.g. no keys)
+                    setTimeout(() => {
+                      sendLocalNotification('בדיקת NovaFit (מקומי)! 🚀', {
+                        body: 'השרת לא הגיב, אבל ההתראות המקומיות עובדות.',
+                      });
+                      setTestPending(false);
+                    }, 15000);
+                  } else {
                     setTestPending(false);
-                  }, 15000);
+                  }
                 }}
                 className="rounded-xl px-4 h-9 text-[11px]"
               >
