@@ -295,7 +295,7 @@ export default function Dashboard() {
                 consumed={totals.calories} 
                 target={ringCalorieTarget} 
                 bankingStatus={banking.isViewingToday ? banking.status : 'neutral'} 
-                tomorrowTarget={banking.isViewingToday ? banking.tomorrowProjectedTarget : ringCalorieTarget}
+                tomorrowTarget={banking.isViewingToday ? banking.tomorrowProjectedTarget : undefined}
               />
 
               {/* Transparent Math Explanation — only show on Today */}
