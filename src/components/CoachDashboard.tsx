@@ -35,31 +35,52 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
     if (!user) return;
     setLoading(true);
     
-    const { data: relationships, error } = await (supabase
-      .from('coaching_relationships' as any)
-      .select(`
-        id,
-        status,
-        client_id,
-        profiles:client_id (
-          id,
-          name
-        )
-      `) as any)
-      .eq('coach_id', user.id);
+    try {
+      // Step 1: Fetch relationships
+      const { data: relationships, error: relError } = await supabase
+        .from('coaching_relationships' as any)
+        .select('id, status, client_id')
+        .eq('coach_id', user.id);
 
-    if (error) {
-      console.error('Error fetching clients:', error);
-      toast.error('שגיאה בטעינת רשימת המתאמנים');
-    } else {
-      const formattedClients = (relationships || []).map((r: any) => ({
+      if (relError) throw relError;
+
+      if (!relationships || relationships.length === 0) {
+        setClients([]);
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Fetch profiles for these clients
+      const clientIds = relationships.map((r: any) => r.client_id);
+      const { data: profiles, error: profError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', clientIds);
+
+      if (profError) throw profError;
+
+      // Step 3: Map them together
+      const profileMap = (profiles || []).reduce((acc: any, p: any) => {
+        acc[p.id] = p.name;
+        return acc;
+      }, {});
+
+      const formattedClients = relationships.map((r: any) => ({
         id: r.client_id,
-        name: r.profiles?.name || 'מתאמן',
+        name: profileMap[r.client_id] || 'מתאמן',
         status: r.status,
       }));
+
       setClients(formattedClients);
+    } catch (error: any) {
+      console.error('Error fetching clients:', error);
+      // Only show toast if it's a real error (not table missing)
+      if (error.code !== 'PGRST116' && error.code !== '42P01') {
+        toast.error('שגיאה בטעינת רשימת המתאמנים');
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleAddClient = async () => {
@@ -70,18 +91,18 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
       // 1. Find profile with that share code (id prefix)
       const cleanCode = clientCode.trim().toUpperCase().replace('NOVA-', '').toLowerCase();
       
+      // We search using the first 8 characters of the UUID
+      // This is more robust than ilike on some systems
       const { data: clientProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id, name')
-        .filter('id', 'ilike', `${cleanCode}%`)
+        .filter('id', 'gte', cleanCode)
+        .filter('id', 'lt', cleanCode + 'z')
+        .limit(1)
         .maybeSingle() as any;
 
       if (profileError || !clientProfile) {
-        if (profileError?.code === 'PGRST204' || profileError?.message?.includes('share_code')) {
-          toast.error('שגיאה בגישה לנתונים - נא לוודא שה-SQL בוצע');
-        } else {
-          toast.error('קוד לא תקין או משתמש לא נמצא');
-        }
+        toast.error('קוד לא תקין או משתמש לא נמצא');
         setSubmitting(false);
         return;
       }

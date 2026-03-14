@@ -69,24 +69,51 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
     fetchRequests();
   }, [profile]);
 
-  const fetchRequests = async () => {
-    if (!user) return;
-    setFetchingRequests(true);
-    const { data } = await supabase
-      .from('coaching_relationships' as any)
-      .select(`
-        id,
-        status,
-        coach_id,
-        profiles:coach_id (
-          name
-        )
-      ` as any)
-      .eq('client_id', user.id)
-      .eq('status', 'pending');
-    setRequests(data || []);
-    setFetchingRequests(false);
-  };
+   const fetchRequests = async () => {
+     if (!user) return;
+     setFetchingRequests(true);
+     try {
+       const { data: relationships, error: relError } = await supabase
+         .from('coaching_relationships' as any)
+         .select('id, status, coach_id')
+         .eq('client_id', user.id)
+         .eq('status', 'pending');
+
+       if (relError) throw relError;
+
+       if (!relationships || relationships.length === 0) {
+         setRequests([]);
+         setFetchingRequests(false);
+         return;
+       }
+
+       const coachIds = relationships.map((r: any) => r.coach_id);
+       const { data: profiles, error: profError } = await supabase
+         .from('profiles')
+         .select('id, name')
+         .in('id', coachIds);
+
+       if (profError) throw profError;
+
+       const profileMap = (profiles || []).reduce((acc: any, p: any) => {
+         acc[p.id] = p.name;
+         return acc;
+       }, {});
+
+       const formattedRequests = relationships.map((r: any) => ({
+         id: r.id,
+         status: r.status,
+         coach_id: r.coach_id,
+         profiles: { name: profileMap[r.coach_id] || 'מאמן' }
+       }));
+
+       setRequests(formattedRequests);
+     } catch (err) {
+       console.error('Error fetching requests:', err);
+     } finally {
+       setFetchingRequests(false);
+     }
+   };
 
   const handleRequestStatus = async (id: string, status: 'approved' | 'rejected') => {
     const { error } = await supabase
