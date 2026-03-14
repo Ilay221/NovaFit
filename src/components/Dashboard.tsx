@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, Zap, TrendingUp, Info, BookmarkPlus, ShieldCheck } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, Zap, TrendingUp, Info, BookmarkPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog, MealType, MEAL_LABELS } from '@/lib/types';
@@ -17,7 +16,6 @@ import AIFoodScanner from './AIFoodScanner';
 import NLPFoodInput from './NLPFoodInput';
 import WeeklyAnalytics from './WeeklyAnalytics';
 import NutritionCoach from './NutritionCoach';
-import CoachDashboard from './CoachDashboard';
 import { useTheme } from '@/lib/store';
 import { useCalorieBanking } from '@/hooks/useCalorieBanking';
 import { format, parseISO, differenceInDays, isSameDay } from 'date-fns';
@@ -29,7 +27,7 @@ import { toast } from 'sonner';
 
 import { useAppState } from '@/contexts/AppStateContext';
 
-type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach' | 'admin';
+type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -58,9 +56,7 @@ export default function Dashboard() {
     onAddWeight, 
     onUpdateProfile, 
     selectedDate, 
-    onDateChange,
-    viewingClientId,
-    setViewingClientId
+    onDateChange 
   } = useAppState();
   
   if (!profile) return null;
@@ -624,33 +620,6 @@ export default function Dashboard() {
         {view === 'food' && (
           <FoodLogger key="food" onAddMeal={(entry) => { onAddMeal(entry); }} onClose={() => setView('dashboard')} />
         )}
-        {view === 'admin' && (
-          <CoachDashboard 
-            key="admin" 
-            onClose={() => setView('dashboard')} 
-            onViewClient={(id) => {
-              setViewingClientId(id);
-              setView('dashboard');
-              toast.info('מעבר לתצוגת מתאמן (קריאה בלבד)');
-            }}
-          />
-        )}
-        {view === 'dashboard' && viewingClientId && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-auto"
-          >
-            <Button 
-              size="sm"
-              variant="secondary"
-              onClick={() => setViewingClientId(null)}
-              className="rounded-full shadow-lg gap-2 px-4 border border-primary/20 bg-background/80 backdrop-blur-md"
-            >
-              <ChevronLeft className="w-4 h-4" /> חזרה להתקדמות שלי
-            </Button>
-          </motion.div>
-        )}
         {view === 'settings' && (
           <SettingsPanel key="settings" theme={theme} profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} onClose={() => setView('dashboard')} />
         )}
@@ -685,21 +654,6 @@ export default function Dashboard() {
       {/* FAB Group */}
       {view === 'dashboard' && (
         <div className="fixed bottom-6 start-5 z-40 flex flex-col gap-2.5 items-start">
-          <motion.div
-            initial={{ scale: 0, opacity: 0, rotate: -90 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            transition={{ delay: 0.8, type: 'spring', stiffness: 400, damping: 20 }}
-          >
-            <motion.div whileHover={{ scale: 1.12, rotate: 10 }} whileTap={{ scale: 0.88 }}>
-              <Button
-                onClick={() => setView('admin')}
-                variant="outline"
-                className="h-11 w-11 rounded-full shadow-md p-0 bg-primary/10 border-primary/20 hover:bg-primary/20 transition-all duration-200"
-              >
-                <ShieldCheck className="w-[18px] h-[18px] text-primary" />
-              </Button>
-            </motion.div>
-          </motion.div>
           <motion.div
             initial={{ scale: 0, opacity: 0, rotate: -90 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}

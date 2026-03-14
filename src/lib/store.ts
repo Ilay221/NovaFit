@@ -42,53 +42,42 @@ export function useProfile() {
     if (!user) { setProfileState(null); setLoading(false); return; }
     
     const fetchProfile = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        if (error) throw error;
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        // Read local storage fallback for calorieSpreadDays
+        const storedSpread = localStorage.getItem(`nova_spread_days_${user.id}`);
+        const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 1;
 
-        if (data) {
-          // Read local storage fallback for calorieSpreadDays
-          const storedSpread = localStorage.getItem(`nova_spread_days_${user.id}`);
-          const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 1;
-
-          const profileData: UserProfile = {
-            name: data.name,
-            age: data.age,
-            gender: data.gender as any,
-            heightCm: data.height_cm,
-            weightKg: data.weight_kg,
-            targetWeightKg: data.target_weight_kg,
-            activityLevel: data.activity_level as any,
-            goal: data.goal as any,
-            bmr: data.bmr,
-            tdee: data.tdee,
-            dailyCalorieTarget: data.daily_calorie_target,
-            proteinTarget: data.protein_target,
-            carbsTarget: data.carbs_target,
-            fatsTarget: data.fats_target,
-            isPremium: (data as any).is_premium ?? false,
-            calorieSpreadDays: parsedSpread,
-            targetDate: (data as any).target_date ?? null,
-            favoriteFood: (data as any).favorite_food ?? '',
-            dietaryWeakness: (data as any).dietary_weakness ?? '',
-            dailyHabits: (data as any).daily_habits ?? '',
-            medicalConditions: (data as any).medical_conditions ?? '',
-            shareCode: data.id ? `NOVA-${data.id.substring(0, 8).toUpperCase()}` : null,
-          };
-
-          setProfileState(profileData);
-
-        }
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-      } finally {
-        setLoading(false);
+        setProfileState({
+          name: data.name,
+          age: data.age,
+          gender: data.gender as any,
+          heightCm: data.height_cm,
+          weightKg: data.weight_kg,
+          targetWeightKg: data.target_weight_kg,
+          activityLevel: data.activity_level as any,
+          goal: data.goal as any,
+          bmr: data.bmr,
+          tdee: data.tdee,
+          dailyCalorieTarget: data.daily_calorie_target,
+          proteinTarget: data.protein_target,
+          carbsTarget: data.carbs_target,
+          fatsTarget: data.fats_target,
+          isPremium: (data as any).is_premium ?? false,
+          calorieSpreadDays: parsedSpread,
+          targetDate: (data as any).target_date ?? null,
+          favoriteFood: (data as any).favorite_food ?? '',
+          dietaryWeakness: (data as any).dietary_weakness ?? '',
+          dailyHabits: (data as any).daily_habits ?? '',
+          medicalConditions: (data as any).medical_conditions ?? '',
+        });
       }
+      setLoading(false);
     };
     fetchProfile();
   }, [user]);
@@ -141,9 +130,8 @@ export function useProfile() {
 
 const todayKey = () => format(new Date(), 'yyyy-MM-dd');
 
-export function useDailyLog(selectedDate?: Date, overrideUserId?: string) {
+export function useDailyLog(selectedDate?: Date) {
   const { user } = useAuth();
-  const activeUserId = overrideUserId || user?.id;
   
   // Compute the string key for the currently requested date
   const targetDateKey = format(selectedDate || new Date(), 'yyyy-MM-dd');
@@ -152,20 +140,20 @@ export function useDailyLog(selectedDate?: Date, overrideUserId?: string) {
   const [todayLogId, setTodayLogId] = useState<string | null>(null);
 
   const fetchLog = useCallback(async () => {
-    if (!activeUserId) return;
+    if (!user) return;
     
     // Get or create daily log for the target date
     let { data: log } = await supabase
       .from('daily_logs')
       .select('*')
-      .eq('user_id', activeUserId)
+      .eq('user_id', user.id)
       .eq('date', targetDateKey)
       .maybeSingle();
     
-    if (!log && !overrideUserId) {
+    if (!log) {
       const { data: newLog, error } = await supabase
         .from('daily_logs')
-        .insert({ user_id: activeUserId, date: targetDateKey, water_ml: 0 })
+        .insert({ user_id: user.id, date: targetDateKey, water_ml: 0 })
         .select()
         .maybeSingle();
       
@@ -211,7 +199,7 @@ export function useDailyLog(selectedDate?: Date, overrideUserId?: string) {
     }));
 
     setTodayLog({ date: targetDateKey, meals: mealEntries, waterMl: log.water_ml });
-  }, [activeUserId, targetDateKey]);
+  }, [user, targetDateKey]);
 
   useEffect(() => { fetchLog(); }, [fetchLog]);
 
@@ -301,24 +289,23 @@ export function useDailyLog(selectedDate?: Date, overrideUserId?: string) {
   return { logs: {}, getLog, addMeal, removeMeal, moveMeal, addWater };
 }
 
-export function useWeightHistory(overrideUserId?: string) {
+export function useWeightHistory() {
   const { user } = useAuth();
-  const activeUserId = overrideUserId || user?.id;
   const [entries, setEntries] = useState<WeightEntry[]>([]);
 
   useEffect(() => {
-    if (!activeUserId) return;
+    if (!user) return;
     const fetch = async () => {
       const { data } = await supabase
         .from('weight_entries')
         .select('*')
-        .eq('user_id', activeUserId)
+        .eq('user_id', user.id)
         .order('date', { ascending: true });
       
       setEntries((data || []).map(e => ({ date: e.date, weightKg: e.weight_kg })));
     };
     fetch();
-  }, [activeUserId]);
+  }, [user]);
 
   const addEntry = useCallback(async (entry: WeightEntry) => {
     if (!user) return;

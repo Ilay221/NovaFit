@@ -60,21 +60,6 @@ export interface UserProfile {
   dietaryWeakness?: string;
   dailyHabits?: string;
   medicalConditions?: string;
-  shareCode?: string;
-}
-
-export type CoachingStatus = 'pending' | 'approved' | 'rejected';
-
-export interface CoachingRelationship {
-  id: string;
-  coachId: string;
-  clientId: string;
-  status: CoachingStatus;
-  createdAt: string;
-}
-
-export interface ClientProfile extends UserProfile {
-  userId: string;
 }
 
 export interface FoodItem {

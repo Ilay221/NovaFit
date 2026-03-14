@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { ArrowRight, Moon, Sun, Monitor, RotateCcw, Sparkles, Calendar, Trash2, User, Bell, ChevronLeft, CreditCard, Shield, LogOut, Check, X, ShieldCheck, Users, Copy, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -61,83 +61,6 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
   const { requestPermission, subscribeToPush, sendLocalNotification } = useNotifications();
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [testPending, setTestPending] = useState(false);
-  const [requests, setRequests] = useState<any[]>([]);
-  const [fetchingRequests, setFetchingRequests] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    fetchRequests();
-  }, [profile]);
-
-   const fetchRequests = async () => {
-     if (!user) return;
-     setFetchingRequests(true);
-     try {
-       const { data: relationships, error: relError } = await supabase
-         .from('coaching_relationships' as any)
-         .select('id, status, coach_id')
-         .eq('client_id', user.id)
-         .eq('status', 'pending');
-
-       if (relError) throw relError;
-
-       if (!relationships || relationships.length === 0) {
-         setRequests([]);
-         setFetchingRequests(false);
-         return;
-       }
-
-       const coachIds = relationships.map((r: any) => r.coach_id);
-       const { data: profiles, error: profError } = await supabase
-         .from('profiles')
-         .select('id, name')
-         .in('id', coachIds);
-
-       if (profError) throw profError;
-
-       const profileMap = (profiles || []).reduce((acc: any, p: any) => {
-         acc[p.id] = p.name;
-         return acc;
-       }, {});
-
-       const formattedRequests = relationships.map((r: any) => ({
-         id: r.id,
-         status: r.status,
-         coach_id: r.coach_id,
-         profiles: { name: profileMap[r.coach_id] || 'מאמן' }
-       }));
-
-       setRequests(formattedRequests);
-     } catch (err) {
-       console.error('SettingsPanel: Error fetching requests:', err);
-       setRequests([]);
-     } finally {
-       setFetchingRequests(false);
-     }
-   };
-
-  const handleRequestStatus = async (id: string, status: 'approved' | 'rejected') => {
-    const { error } = await supabase
-      .from('coaching_relationships' as any)
-      .update({ status } as any)
-      .eq('id', id);
-    
-    if (error) {
-      toast.error('שגיאה בעדכון הסטטוס');
-    } else {
-      toast.success(status === 'approved' ? 'הבקשה אושרה' : 'הבקשה נדחתה');
-      fetchRequests();
-    }
-  };
-
-  const copyShareCode = () => {
-    if (profile?.shareCode) {
-      navigator.clipboard.writeText(profile.shareCode);
-      setCopied(true);
-      toast.success('קוד השיתוף הועתק');
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   const currentTargetDate = profile.targetDate ? parseISO(profile.targetDate) : null;
 
@@ -362,78 +285,6 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
           )}
         </motion.div>
 
-        {/* Coaching Section */}
-        <motion.div variants={itemVariants} className="nova-card p-5 border-t border-border/50">
-          <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4 flex items-center gap-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-primary" /> מאמן וליווי
-          </h3>
-          
-          <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
-                <p className="text-[13px] font-bold">קוד השיתוף שלי</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">תן קוד זה למאמן שלך כדי שיוכל לעקוב אחרייך</p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={copyShareCode}
-                className="h-10 px-4 rounded-xl bg-background/50 border-primary/20 gap-2 font-bold w-full sm:w-auto"
-              >
-                {profile?.shareCode ? (
-                  <>
-                    <span className="text-primary tabular-nums font-mono text-sm tracking-widest">{profile.shareCode}</span>
-                    {copied ? <CheckCircle2 className="w-4 h-4 text-nova-success" /> : <Copy className="w-4 h-4" />}
-                  </>
-                ) : (
-                  'טוען...'
-                )}
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {fetchingRequests ? (
-              <div className="animate-pulse h-12 bg-muted/30 rounded-xl" />
-            ) : requests.length > 0 ? (
-              requests.map((req) => (
-                <motion.div 
-                  key={req.id}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-muted/30 border border-border/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Users className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-[12px] font-bold leading-tight">{req.profiles?.name}</p>
-                      <p className="text-[10px] text-muted-foreground">מבקש להיות המאמן שלך</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <Button 
-                       variant="secondary" 
-                       size="sm" 
-                       onClick={() => handleRequestStatus(req.id, 'rejected')} 
-                       className="h-8 w-8 rounded-lg p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
-                     >
-                      <X className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                       size="sm" 
-                       onClick={() => handleRequestStatus(req.id, 'approved')} 
-                       className="h-8 w-8 rounded-lg p-0"
-                     >
-                      <Check className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </motion.div>
-              ))
-            ) : null}
-          </div>
-        </motion.div>
 
         <motion.div variants={itemVariants}>
           <Button
