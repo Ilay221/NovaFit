@@ -171,7 +171,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   </motion.div>
                   <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">גיל</Label>
-                    <Input type="number" value={age === 0 ? '' : age} onChange={e => { const val = parseInt(e.target.value); setAge(isNaN(val) || val <= 0 ? 0 : val); }} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                    <Input type="number" value={age === 0 ? '' : age} onFocus={(e) => e.target.select()} onChange={e => { const val = parseInt(e.target.value); setAge(isNaN(val) || val <= 0 ? 0 : val); }} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
                   </motion.div>
                   <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">מין</Label>
@@ -211,7 +211,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   ].map((field, i) => (
                     <motion.div key={field.label} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.06 }}>
                       <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">{field.label}</Label>
-                      <Input type="number" value={field.value} onChange={e => { const val = parseFloat(e.target.value); field.set(isNaN(val) || val <= 0 ? 0 : val); }} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                      <Input type="number" value={field.value} onFocus={(e) => e.target.select()} onChange={e => { const val = parseFloat(e.target.value); field.set(isNaN(val) || val <= 0 ? 0 : val); }} className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
                     </motion.div>
                   ))}
                 </div>
