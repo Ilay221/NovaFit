@@ -3,6 +3,7 @@ import { AccentColor, ThemeMode, UserProfile, DailyLog, MealEntry, WeightEntry }
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 function loadJSON<T>(key: string, fallback: T): T {
   try {
@@ -205,39 +206,78 @@ export function useDailyLog(selectedDate?: Date) {
   const getLog = useCallback((): DailyLog => todayLog, [todayLog]);
 
   const addMeal = useCallback(async (entry: MealEntry) => {
-    if (!user || !todayLogId) return;
+    if (!user || !todayLogId) {
+      console.warn("Attempted to add meal without user or log ID");
+      return;
+    }
     
-    await supabase.from('meal_entries').insert({
-      user_id: user.id,
-      daily_log_id: todayLogId,
-      food_name: entry.foodItem.name,
-      calories: entry.foodItem.calories,
-      protein: entry.foodItem.protein,
-      carbs: entry.foodItem.carbs,
-      fats: entry.foodItem.fats,
-      serving_size: entry.foodItem.servingSize,
-      category: entry.foodItem.category,
-      quantity: entry.quantity,
-      meal_type: entry.mealType,
-    });
-    
-    await fetchLog();
+    // Add logic to avoid double-adding if called rapidly
+    try {
+      const { error } = await supabase.from('meal_entries').insert({
+        user_id: user.id,
+        daily_log_id: todayLogId,
+        food_name: entry.foodItem.name,
+        calories: entry.foodItem.calories,
+        protein: entry.foodItem.protein,
+        carbs: entry.foodItem.carbs,
+        fats: entry.foodItem.fats,
+        serving_size: entry.foodItem.servingSize,
+        category: entry.foodItem.category,
+        quantity: entry.quantity,
+        meal_type: entry.mealType,
+      });
+
+      if (error) throw error;
+      
+      // Refresh to get the actual database ID for the new meal
+      await fetchLog();
+    } catch (err) {
+      console.error("Failed to add meal:", err);
+      toast.error("שגיאה ברישום הארוחה. נסה שנית.");
+    }
   }, [user, todayLogId, fetchLog]);
 
   const removeMeal = useCallback(async (mealId: string) => {
     if (!user) return;
-    await supabase.from('meal_entries').delete().eq('id', mealId);
-    await fetchLog();
-  }, [user, fetchLog]);
+    
+    // Optimistic delete
+    const previousMeals = todayLog.meals;
+    setTodayLog(prev => ({
+      ...prev,
+      meals: prev.meals.filter(m => m.id !== mealId)
+    }));
+
+    try {
+      const { error } = await supabase.from('meal_entries').delete().eq('id', mealId);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Failed to remove meal:", err);
+      // Rollback on error
+      setTodayLog(prev => ({ ...prev, meals: previousMeals }));
+      toast.error("שגיאה במחיקת הארוחה.");
+    }
+  }, [user, todayLog.meals]);
 
   const moveMeal = useCallback(async (mealId: string, newMealType: MealEntry['mealType']) => {
     if (!user) return;
-    await supabase.from('meal_entries').update({ meal_type: newMealType }).eq('id', mealId);
+
+    // Optimistic update
+    const previousMeals = todayLog.meals;
     setTodayLog(prev => ({
       ...prev,
       meals: prev.meals.map(m => m.id === mealId ? { ...m, mealType: newMealType } : m),
     }));
-  }, [user]);
+
+    try {
+      const { error } = await supabase.from('meal_entries').update({ meal_type: newMealType }).eq('id', mealId);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Failed to move meal:", err);
+      // Rollback on error
+      setTodayLog(prev => ({ ...prev, meals: previousMeals }));
+      toast.error("שגיאה בהעברת הארוחה.");
+    }
+  }, [user, todayLog.meals]);
 
   const addWater = useCallback(async (ml: number) => {
     if (!user || !todayLogId) return;

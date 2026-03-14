@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, ArrowRight, Utensils } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { searchFoods } from '@/lib/food-database';
-import { FoodItem, MealEntry } from '@/lib/types';
+import { FoodItem, MealEntry, MealType, MEAL_TYPES } from '@/lib/types';
 import PortionEstimator from './PortionEstimator';
 import { toast } from 'sonner';
 import { haptics } from '@/lib/haptics';
@@ -14,17 +14,12 @@ interface FoodLoggerProps {
   onClose: () => void;
 }
 
-const MEAL_TYPES: { value: MealEntry['mealType']; label: string }[] = [
-  { value: 'breakfast', label: 'בוקר' },
-  { value: 'lunch', label: 'צהריים' },
-  { value: 'dinner', label: 'ערב' },
-  { value: 'snack', label: 'חטיף' },
-];
+
 
 export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
   const [activeTab, setActiveTab] = useState<'search' | 'templates'>('search');
   const [query, setQuery] = useState('');
-  const [mealType, setMealType] = useState<MealEntry['mealType']>('breakfast');
+  const [mealType, setMealType] = useState<MealType>('breakfast');
   const [addedId, setAddedId] = useState<string | null>(null);
   const [portionFood, setPortionFood] = useState<FoodItem | null>(null);
   const results = searchFoods(query);

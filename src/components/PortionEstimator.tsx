@@ -3,14 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Camera, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { FoodItem, MealEntry } from '@/lib/types';
+import { FoodItem, MealEntry, MealType, MEAL_TYPES } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { haptics } from '@/lib/haptics';
 
 interface PortionEstimatorProps {
   food: FoodItem;
   mealType: MealEntry['mealType'];
   onConfirm: (entry: MealEntry) => void;
+  onMealTypeChange?: (type: MealType) => void;
   onBack: () => void;
 }
 
@@ -96,6 +98,8 @@ export default function PortionEstimator({ food, mealType, onConfirm, onBack }: 
     reader.readAsDataURL(file);
   };
 
+  const [activeMealType, setActiveMealType] = useState<MealType>(mealType);
+
   const confirmPortion = () => {
     onConfirm({
       id: crypto.randomUUID(),
@@ -108,7 +112,7 @@ export default function PortionEstimator({ food, mealType, onConfirm, onBack }: 
         servingSize: `${closestStop.label} (${multiplier.toFixed(1)}x)`,
       },
       quantity: 1,
-      mealType,
+      mealType: activeMealType,
       timestamp: new Date().toISOString(),
     });
     toast.success(`${food.name} נרשם — ${macros.calories} קק"ל`);
@@ -126,9 +130,27 @@ export default function PortionEstimator({ food, mealType, onConfirm, onBack }: 
         <motion.button onClick={onBack} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9, rotate: 10 }} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center">
           <ArrowRight className="w-4 h-4" />
         </motion.button>
-        <div>
+        <div className="flex-1">
           <h2 className="text-[17px] font-bold font-display tracking-tight">גודל מנה</h2>
           <p className="text-[11px] text-muted-foreground mt-0.5">{food.name}</p>
+        </div>
+        
+        {/* Quick Meal Type Switcher */}
+        <div className="flex bg-muted/40 p-1 rounded-xl gap-0.5 border border-border/10">
+          {MEAL_TYPES.map(mt => (
+            <motion.button
+              key={mt.value}
+              onClick={() => { setActiveMealType(mt.value); haptics.light(); }}
+              whileTap={{ scale: 0.92 }}
+              className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                activeMealType === mt.value 
+                  ? 'bg-foreground text-background shadow-sm' 
+                  : 'text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {mt.label}
+            </motion.button>
+          ))}
         </div>
       </motion.div>
 

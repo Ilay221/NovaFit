@@ -1,5 +1,21 @@
 export type AccentColor = 'green' | 'purple' | 'blue' | 'orange' | 'pink' | 'teal' | 'red' | 'amber' | 'indigo';
 
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export const MEAL_LABELS: Record<MealType, string> = {
+  breakfast: 'בוקר',
+  lunch: 'צהריים',
+  dinner: 'ערב',
+  snack: 'חטיף',
+};
+
+export const MEAL_TYPES = [
+  { value: 'breakfast' as MealType, label: 'בוקר' },
+  { value: 'lunch' as MealType, label: 'צהריים' },
+  { value: 'dinner' as MealType, label: 'ערב' },
+  { value: 'snack' as MealType, label: 'חטיף' },
+];
+
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
@@ -47,7 +63,7 @@ export interface MealEntry {
   id: string;
   foodItem: FoodItem;
   quantity: number;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType: MealType;
   timestamp: string;
 }
 

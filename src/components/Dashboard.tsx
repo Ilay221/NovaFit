@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, GripVertical, ArrowLeftRight, Zap, TrendingUp, Info, BookmarkPlus } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, Zap, TrendingUp, Info, BookmarkPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UserProfile, MealEntry, WeightEntry, DailyLog } from '@/lib/types';
+import { UserProfile, MealEntry, WeightEntry, DailyLog, MealType, MEAL_LABELS } from '@/lib/types';
 import { predictGoalDate } from '@/lib/calculations';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import { sanitizeKcalTarget } from '@/lib/calorie-guardrails';
@@ -42,12 +42,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.55, ease: [0.32, 0.72, 0, 1] as const } }
 };
 
-const MEAL_LABELS: Record<string, string> = {
-  breakfast: 'ארוחת בוקר',
-  lunch: 'ארוחת צהריים',
-  dinner: 'ארוחת ערב',
-  snack: 'חטיף',
-};
+
 
 export default function Dashboard() {
   const { 
@@ -69,11 +64,6 @@ export default function Dashboard() {
   const [view, setView] = useState<View>('dashboard');
   const [weightInput, setWeightInput] = useState('');
   const theme = useTheme();
-  const [draggingMeal, setDraggingMeal] = useState<string | null>(null);
-  const [dragOverType, setDragOverType] = useState<string | null>(null);
-  const dragOverTypeRef = useRef<string | null>(null);
-  const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [moveMenuMealId, setMoveMenuMealId] = useState<string | null>(null);
   const [waterAnimation, setWaterAnimation] = useState<number | null>(null);
   
   // Confirmation Dialog state
@@ -195,45 +185,12 @@ export default function Dashboard() {
      onAddWater(ml);
   };
 
-  const mealGroups = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
+  const moveMeal = (mealId: string, newType: MealType) => {
+    onMoveMeal(mealId, newType);
+    haptics.success();
+  };
 
-  const handleDragEnd = useCallback((mealId: string, originalType: string) => {
-    const target = dragOverTypeRef.current;
-    if (target && target !== originalType) {
-      onMoveMeal(mealId, target as MealEntry['mealType']);
-      haptics.success();
-    }
-    setDraggingMeal(null);
-    setDragOverType(null);
-    dragOverTypeRef.current = null;
-  }, [onMoveMeal]);
-
-  const updateDragOver = useCallback((y: number) => {
-    let found: string | null = null;
-    for (const type of mealGroups) {
-      const el = groupRefs.current[type];
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        if (y >= rect.top - 30 && y <= rect.bottom + 30) {
-          found = type;
-          break;
-        }
-      }
-    }
-    dragOverTypeRef.current = found;
-    if (found !== dragOverType) {
-       if (found) haptics.light();
-       setDragOverType(found);
-    }
-  }, [dragOverType]);
-
-  // Close move menu on outside click
-  useEffect(() => {
-    if (!moveMenuMealId) return;
-    const handler = () => setMoveMenuMealId(null);
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
-  }, [moveMenuMealId]);
+  const mealGroups = ['breakfast', 'lunch', 'dinner', 'snack'] as MealType[];
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -572,27 +529,16 @@ export default function Dashboard() {
               <div className="space-y-5">
                 {mealGroups.map(type => {
                   const meals = dailyLog.meals.filter(m => m.mealType === type);
-                  const isDropTarget = draggingMeal !== null && dragOverType === type;
-                  const hasMealsOrDragging = meals.length > 0 || draggingMeal !== null;
-                  if (!hasMealsOrDragging) return null;
+                  if (meals.length === 0) return null;
                   return (
-                    <div
-                      key={type}
-                      ref={el => { groupRefs.current[type] = el; }}
-                      className={`rounded-xl transition-all duration-200 ${
-                        isDropTarget ? 'bg-primary/10 ring-2 ring-primary/30 p-2 -m-2' : ''
-                      }`}
-                    >
+                    <div key={type}>
                       <motion.div
                         className="flex items-center justify-between mb-2"
                         initial={{ opacity: 0, x: 6 }}
                         animate={{ opacity: 1, x: 0 }}
                       >
-                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
                           {MEAL_LABELS[type]}
-                          {isDropTarget && (
-                            <span className="text-primary me-2">← שחרר כאן</span>
-                          )}
                         </div>
                         <button
                           onClick={() => handleSaveTemplate(type, meals)}
@@ -603,120 +549,77 @@ export default function Dashboard() {
                         </button>
                       </motion.div>
                       <div className="space-y-1.5">
-                        {meals.map((meal, i) => {
-                          const isDragging = draggingMeal === meal.id;
-                          return (
-                            <div key={meal.id} className="relative">
-                              {/* Swipe Delete Action Indicator (Subtle overlay during swipe instead of full background) */}
-                              <div className="absolute inset-y-0 right-0 w-24 flex items-center justify-center opacity-0 z-0 transition-opacity">
-                                <X className="w-5 h-5 text-destructive/50" />
-                              </div>
-                              
-                              <motion.div
-                                layout
-                                drag="x"
-                                dragConstraints={{ left: 0, right: 0 }}
-                                dragElastic={{ left: 0.5, right: 0.1 }}
-                                onDragEnd={(e, info) => {
-                                  // Trigger delete if swiped far enough left
-                                  if (info.offset.x < -100) {
-                                    handleRemoveMeal(meal.id);
-                                  }
-                                }}
-                                initial={{ opacity: 0, x: 12, scale: 0.95 }}
-                                animate={{ opacity: isDragging ? 0.7 : 1, x: 0, scale: isDragging ? 1.03 : 1 }}
-                                exit={{ opacity: 0, x: -100, scale: 0.95 }}
-                                transition={{ delay: i * 0.04, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                                whileHover={{ backgroundColor: 'hsl(var(--muted) / 0.8)' }}
-                                className={`flex items-center justify-between text-sm p-3.5 rounded-xl bg-muted/30 transition-colors group relative z-10 ${
-                                  isDragging ? 'shadow-lg ring-2 ring-primary/30' : ''
-                                }`}
-                                style={{ touchAction: 'pan-y' }}
-                              >
-                                <div className="flex items-center gap-2">
-                                  {/* Drag Handle for Reordering (Desktop/Long Press) */}
-                                  <motion.div 
-                                    drag="y"
-                                    dragConstraints={{ top: 0, bottom: 0 }}
-                                    dragElastic={0}
-                                    onDragStart={() => setDraggingMeal(meal.id)}
-                                    onDrag={(_, info) => updateDragOver(info.point.y)}
-                                    onDragEnd={() => handleDragEnd(meal.id, type)}
-                                    whileTap={{ cursor: 'grabbing' }}
-                                    className="cursor-grab p-1 -m-1"
-                                    style={{ touchAction: 'none' }}
-                                  >
-                                    <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0 hover:text-muted-foreground transition-colors" />
-                                  </motion.div>
-                                  
-                                  <div>
-                                    <span className="font-medium text-[14px]">{meal.foodItem.name}</span>
-                                    <div className="flex gap-2 mt-1 text-[11px] text-muted-foreground">
-                                      <span className="tabular-nums">{meal.foodItem.calories} קק"ל</span>
-                                      <span className="text-border">·</span>
-                                      <span className="text-nova-protein tabular-nums">ח {meal.foodItem.protein} גר׳</span>
-                                      <span className="text-nova-carbs tabular-nums">פ {meal.foodItem.carbs} גר׳</span>
-                                      <span className="text-nova-fats tabular-nums">ש {meal.foodItem.fats} גר׳</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <div className="relative">
-                                    <motion.button
-                                      onClick={(e) => { e.stopPropagation(); setMoveMenuMealId(moveMenuMealId === meal.id ? null : meal.id); }}
-                                      whileTap={{ scale: 0.85 }}
-                                      className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all p-1.5 rounded-lg hover:bg-primary/10"
-                                    >
-                                      <ArrowLeftRight className="w-3.5 h-3.5" />
-                                    </motion.button>
-                                    <AnimatePresence>
-                                      {moveMenuMealId === meal.id && (
-                                        <motion.div
-                                          initial={{ opacity: 0, scale: 0.9, y: -4 }}
-                                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                                          exit={{ opacity: 0, scale: 0.9, y: -4 }}
-                                          transition={{ duration: 0.15 }}
-                                          className="absolute left-0 top-full mt-1 z-50 bg-popover border border-border rounded-xl shadow-lg py-1 min-w-[120px]"
-                                        >
-                                          {mealGroups.filter(t => t !== type).map(t => (
-                                            <button
-                                              key={t}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                onMoveMeal(meal.id, t);
-                                                setMoveMenuMealId(null);
-                                              }}
-                                              className="w-full text-right px-3 py-2 text-xs font-medium hover:bg-muted/60 transition-colors"
-                                            >
-                                              {MEAL_LABELS[t]}
-                                            </button>
-                                          ))}
-                                        </motion.div>
-                                      )}
-                                    </AnimatePresence>
-                                  </div>
-                                  <motion.button
-                                    onClick={() => handleRemoveMeal(meal.id)}
-                                    whileHover={{ scale: 1.15 }}
-                                    whileTap={{ scale: 0.85 }}
-                                    className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </motion.button>
-                                </div>
-                              </motion.div>
+                        {meals.map((meal, i) => (
+                          <div key={meal.id} className="relative">
+                            <div className="absolute inset-y-0 right-0 w-24 flex items-center justify-center opacity-0 z-0 transition-opacity">
+                              <X className="w-5 h-5 text-destructive/50" />
                             </div>
-                          );
-                        })}
-                        {meals.length === 0 && isDropTarget && (
-                          <div className="py-4 text-center text-[12px] text-primary/60 font-medium border-2 border-dashed border-primary/20 rounded-xl">
-                            שחרר כאן להעברה
+
+                            <motion.div
+                              layout
+                              drag="x"
+                              dragConstraints={{ left: 0, right: 0 }}
+                              dragElastic={{ left: 0.5, right: 0.1 }}
+                              onDragEnd={(_, info) => {
+                                if (info.offset.x < -100) handleRemoveMeal(meal.id);
+                              }}
+                              initial={{ opacity: 0, x: 12, scale: 0.95 }}
+                              animate={{ opacity: 1, x: 0, scale: 1 }}
+                              exit={{ opacity: 0, x: -100, scale: 0.95 }}
+                              transition={{ delay: i * 0.04, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+                              whileHover={{ backgroundColor: 'hsl(var(--muted) / 0.8)' }}
+                              className="flex items-center justify-between text-sm p-3.5 rounded-xl bg-muted/30 transition-colors group relative z-10"
+                              style={{ touchAction: 'pan-y' }}
+                            >
+                              <div>
+                                <span className="font-medium text-[14px]">{meal.foodItem.name}</span>
+                                <div className="flex gap-2 mt-1 text-[11px] text-muted-foreground">
+                                  <span className="tabular-nums">{meal.foodItem.calories} קק"ל</span>
+                                  <span className="text-border">·</span>
+                                  <span className="text-nova-protein tabular-nums">ח {meal.foodItem.protein} גר״</span>
+                                  <span className="text-nova-carbs tabular-nums">פ {meal.foodItem.carbs} גר״</span>
+                                  <span className="text-nova-fats tabular-nums">ש {meal.foodItem.fats} גר״</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {/* Quick Meal Switch Buttons */}
+                                <div className="flex items-center bg-background/40 backdrop-blur-sm rounded-lg p-0.5 border border-border/20 opacity-0 group-hover:opacity-100 sm:opacity-0 transition-opacity">
+                                  {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((t) => {
+                                    const isActive = t === type;
+                                    return (
+                                      <motion.button
+                                        key={t}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (!isActive) { onMoveMeal(meal.id, t); haptics.success(); }
+                                        }}
+                                        whileTap={{ scale: 0.9 }}
+                                        className={`w-6 h-6 flex items-center justify-center rounded-md text-[10px] font-bold transition-all ${
+                                          isActive
+                                            ? 'bg-primary text-primary-foreground shadow-sm'
+                                            : 'text-muted-foreground hover:bg-primary/15 hover:text-primary'
+                                        }`}
+                                        title={MEAL_LABELS[t]}
+                                      >
+                                        {MEAL_LABELS[t].charAt(0)}
+                                      </motion.button>
+                                    );
+                                  })}
+                                </div>
+
+                                <motion.button
+                                  onClick={() => handleRemoveMeal(meal.id)}
+                                  whileHover={{ scale: 1.15 }}
+                                  whileTap={{ scale: 0.85 }}
+                                  className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </motion.button>
+                              </div>
+                            </motion.div>
                           </div>
-                        )}
-                        {meals.length === 0 && !isDropTarget && (
-                          <div className="h-6"></div>
-                        )}
+                        ))}
                       </div>
                     </div>
                   );
