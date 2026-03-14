@@ -89,60 +89,27 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
     setSubmitting(true);
     
     try {
-      // 1. Find profile using resilient multi-stage search
+      // 1. Find profile using bulletproof search
       const cleanCode = clientCode.trim().toUpperCase().replace('NOVA-', '').toLowerCase();
-      let clientProfile = null;
-      let profileError = null;
+      
+      // Try searching by ID prefix or exact match
+      // If the user enters a full UUID, it works. If they enter 8 chars, it tries to match the prefix.
+      const { data: clientProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .or(`id.ilike.${cleanCode}%,share_code.eq.${clientCode.trim().toUpperCase()}`)
+        .limit(1)
+        .maybeSingle() as any;
 
-      // Stage A: Try ID prefix search using Range Search (most compatible with UUID type)
-      const prefix = cleanCode;
-      const { data: byId, error: idErr } = await (async () => {
-        if (prefix.length < 4) return { data: null, error: null }; // Require at least 4 chars for safety
-        
-        // Construct UUID range boundaries
-        const pad = '00000000-0000-0000-0000-000000000000';
-        const start = (prefix + pad.substring(prefix.length)).substring(0, 36);
-        
-        // For the end boundary, increment the last character of the prefix
-        const lastPart = prefix.substring(prefix.length - 1);
-        const nextChar = String.fromCharCode(lastPart.charCodeAt(0) + 1);
-        const prefixNext = prefix.substring(0, prefix.length - 1) + nextChar;
-        const end = (prefixNext + pad.substring(prefixNext.length)).substring(0, 36);
-
-        return await supabase
-          .from('profiles')
-          .select('id, name')
-          .gte('id', start)
-          .lt('id', end)
-          .limit(1)
-          .maybeSingle() as any;
-      })();
-
-      if (byId) {
-        clientProfile = byId;
-      } else {
-        // Stage B: Fallback to share_code column search (if it exists)
-        // We cast to any to avoid TS errors if the column is missing in types
-        const { data: byCode, error: codeErr } = await supabase
-          .from('profiles')
-          .select('id, name')
-          .eq('share_code' as any, clientCode.trim().toUpperCase())
-          .maybeSingle();
-        
-        if (byCode) {
-          clientProfile = byCode;
-        } else {
-          profileError = idErr || codeErr;
-        }
+      if (profileError) {
+        console.error('Search error:', profileError);
+        toast.error('שגיאה בחיפוש בבסיס הנתונים');
+        setSubmitting(false);
+        return;
       }
 
       if (!clientProfile) {
-        // If we have a specific error (and it's not "column not found"), show it
-        if (profileError && profileError.code !== 'PGRST204') {
-          toast.error('שגיאה בחיפוש בבסיס הנתונים');
-        } else {
-          toast.error('קוד לא תקין או משתמש לא נמצא');
-        }
+        toast.error('קוד לא תקין או משתמש לא נמצא');
         setSubmitting(false);
         return;
       }
