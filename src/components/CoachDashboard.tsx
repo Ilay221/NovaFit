@@ -73,11 +73,9 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
 
       setClients(formattedClients);
     } catch (error: any) {
-      console.error('Error fetching clients:', error);
-      // Only show toast if it's a real error (not table missing)
-      if (error.code !== 'PGRST116' && error.code !== '42P01') {
-        toast.error('שגיאה בטעינת רשימת המתאמנים');
-      }
+      console.error('CoachDashboard: Error fetching clients:', error);
+      setClients([]);
+      // Silent failure - don't show toast to user for background fetch failures
     } finally {
       setLoading(false);
     }
@@ -91,18 +89,17 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
       // 1. Find profile with that share code (id prefix)
       const cleanCode = clientCode.trim().toUpperCase().replace('NOVA-', '').toLowerCase();
       
-      // We search using the first 8 characters of the UUID
-      // This is more robust than ilike on some systems
-      const { data: clientProfile, error: profileError } = await supabase
+      // We search using the first 8 characters of the UUID.
+      // If the generated column doesn't exist yet, we try a text-based search.
+      const { data: clientProfile, error: profileError } = await (supabase
         .from('profiles')
         .select('id, name')
-        .filter('id', 'gte', cleanCode)
-        .filter('id', 'lt', cleanCode + 'z')
+        .or(`id.ilike.${cleanCode}%,share_code.eq.${clientCode.trim().toUpperCase()}`) as any)
         .limit(1)
-        .maybeSingle() as any;
+        .maybeSingle();
 
       if (profileError || !clientProfile) {
-        toast.error('קוד לא תקין או משתמש לא נמצא');
+        toast.error(profileError ? 'שגיאה בחיפוש משתמש' : 'קוד לא תקין או משתמש לא נמצא');
         setSubmitting(false);
         return;
       }

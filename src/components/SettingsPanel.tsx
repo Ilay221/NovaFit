@@ -109,7 +109,8 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
 
        setRequests(formattedRequests);
      } catch (err) {
-       console.error('Error fetching requests:', err);
+       console.error('SettingsPanel: Error fetching requests:', err);
+       setRequests([]);
      } finally {
        setFetchingRequests(false);
      }
