@@ -56,7 +56,9 @@ const itemVariants = {
 
 export default function SettingsPanel({ theme, profile, weightHistory, onUpdateProfile, onClose }: SettingsPanelProps) {
   const { signOut } = useAuth();
+  const { requestPermission, sendLocalNotification } = useNotifications();
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [testPending, setTestPending] = useState(false);
 
   const currentTargetDate = profile.targetDate ? parseISO(profile.targetDate) : null;
 
@@ -212,10 +214,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
               <p className="text-[11px] text-muted-foreground mt-0.5">תזכורות לשתיית מים, ארוחות וסיכום יומי</p>
             </div>
             <button
-              onClick={() => {
-                const { requestPermission } = useNotifications();
-                requestPermission();
-              }}
+              onClick={() => requestPermission()}
               className={cn(
                 "px-4 py-2 rounded-xl text-[12px] font-bold transition-all btn-premium",
                 Notification.permission === 'granted'
@@ -226,6 +225,33 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
               {Notification.permission === 'granted' ? 'מופעל ✓' : 'הפעל'}
             </button>
           </div>
+
+          {Notification.permission === 'granted' && (
+            <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
+              <div>
+                <p className="text-[12px] font-medium font-display">בדיקת התראה</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">שלח הודעה בעוד 15 שניות</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={testPending}
+                onClick={() => {
+                  setTestPending(true);
+                  import('sonner').then(({ toast }) => toast.info('התראה תישלח בעוד 15 שניות... תוכל לצאת מהתפריט'));
+                  setTimeout(() => {
+                    sendLocalNotification('בדיקת NovaFit! 🚀', {
+                      body: 'זהו מבחן מוצלח של מערכת ההתראות. האפליקציה עובדת!',
+                    });
+                    setTestPending(false);
+                  }, 15000);
+                }}
+                className="rounded-xl px-4 h-9 text-[11px]"
+              >
+                {testPending ? 'ממתין...' : 'בדוק עכשיו'}
+              </Button>
+            </div>
+          )}
           {Notification.permission === 'denied' && (
             <p className="text-[10px] text-destructive mt-3 bg-destructive/10 p-2 rounded-lg border border-destructive/20">
               ההתראות חסומות בדפדפן. כדי להפעיל אותן, עליך לשנות את ההגדרות בדפדפן שלך.
