@@ -16,7 +16,7 @@ interface DetectedFood {
   fats: number;
   serving_size: string;
   quantity: number;
-  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'late_night';
 }
 
 interface FoodAction {
@@ -248,9 +248,17 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
 Always use ${bankingContext.dynamicTarget} kcal as the calorie target when answering questions about today. NEVER use ${bankingContext.baseTarget} as today's target.`
           : null;
 
-        const messagesWithContext = bankingNote
-          ? [{ role: 'user' as const, content: `[SYSTEM CONTEXT - DO NOT REPLY TO THIS DIRECTLY]: ${bankingNote}` }, { role: 'assistant' as const, content: 'מובן, אני מודע לעדכון.' }, ...cleanMessages]
-          : cleanMessages;
+        const messagesWithContext = [
+          { 
+            role: 'user' as const, 
+            content: `[SYSTEM CONTEXT - IMPORTANT]: You are aware of a new meal category: 'late_night' (לילה מאוחרת). 
+This is for foods eaten late at night. The user wants you to monitor this specifically to identify "difficult times" or triggers for late-night eating.
+When analyzing or suggesting, be supportive about late-night habit changes.
+${bankingNote || ''}` 
+          },
+          { role: 'assistant' as const, content: 'מובן, אני מודע לעדכון ולחשיבות של מעקב אחר אכילת לילה.' },
+          ...cleanMessages
+        ];
 
         const timeoutId = setTimeout(() => { if (!succeeded) controller.abort(); }, CLIENT_TIMEOUT_MS);
 
@@ -367,7 +375,13 @@ Always use ${bankingContext.dynamicTarget} kcal as the calorie target when answe
     const msg = messages[msgIndex];
     if (!msg?.foodAction?.foods) return;
 
-    const mealTypeLabels: Record<string, string> = { breakfast: 'בוקר', lunch: 'צהריים', dinner: 'ערב', snack: 'חטיף' };
+    const mealTypeLabels: Record<string, string> = { 
+      breakfast: 'בוקר', 
+      lunch: 'צהריים', 
+      dinner: 'ערב', 
+      snack: 'חטיף',
+      late_night: 'לילה מאוחרת'
+    };
 
     for (const food of msg.foodAction.foods) {
       const entry: MealEntry = {

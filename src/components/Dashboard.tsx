@@ -194,7 +194,7 @@ export default function Dashboard() {
     haptics.success();
   };
 
-  const mealGroups = ['breakfast', 'lunch', 'dinner', 'snack'] as MealType[];
+  const mealGroups: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack', 'late_night'];
 
   return (
     <div className="min-h-screen pb-28 relative z-10">
@@ -589,7 +589,7 @@ export default function Dashboard() {
                               <div className="flex items-center gap-1.5 shrink-0">
                                 {/* Quick Meal Switch Buttons */}
                                 <div className="flex items-center bg-background/40 backdrop-blur-sm rounded-lg p-0.5 border border-border/20 opacity-0 group-hover:opacity-100 sm:opacity-0 transition-opacity">
-                                  {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((t) => {
+                                  {(['breakfast', 'lunch', 'dinner', 'snack', 'late_night'] as const).map((t) => {
                                     const isActive = t === type;
                                     return (
                                       <motion.button

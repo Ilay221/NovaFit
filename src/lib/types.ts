@@ -1,12 +1,13 @@
 export type AccentColor = 'green' | 'purple' | 'blue' | 'orange' | 'pink' | 'teal' | 'red' | 'amber' | 'indigo';
 
-export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'late_night';
 
 export const MEAL_LABELS: Record<MealType, string> = {
   breakfast: 'בוקר',
   lunch: 'צהריים',
   dinner: 'ערב',
   snack: 'חטיף',
+  late_night: 'לילה',
 };
 
 export const MEAL_TYPES = [
@@ -14,6 +15,7 @@ export const MEAL_TYPES = [
   { value: 'lunch' as MealType, label: 'צהריים' },
   { value: 'dinner' as MealType, label: 'ערב' },
   { value: 'snack' as MealType, label: 'חטיף' },
+  { value: 'late_night' as MealType, label: 'לילה' },
 ];
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -85,5 +87,5 @@ export interface MealTemplate {
   id: string;
   name: string;
   items: { foodItem: FoodItem; quantity: number }[];
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType: MealType;
 }

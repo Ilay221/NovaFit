@@ -26,6 +26,7 @@ const MEAL_TYPES: { value: MealEntry['mealType']; label: string }[] = [
   { value: 'lunch', label: 'צהריים' },
   { value: 'dinner', label: 'ערב' },
   { value: 'snack', label: 'חטיף' },
+  { value: 'late_night', label: 'לילה' },
 ];
 
 export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps) {
