@@ -124,7 +124,7 @@ export default function PortionEstimator({ food, mealType, onConfirm, onBack }: 
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: '-100%', opacity: 0 }}
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-      className="fixed inset-0 z-50 bg-background flex flex-col"
+      className="fixed inset-0 z-50 bg-background/90 backdrop-blur-xl flex flex-col"
     >
       <motion.div className="flex items-center gap-3 px-5 pt-6 pb-4" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
         <motion.button onClick={onBack} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9, rotate: 10 }} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center">

@@ -143,7 +143,8 @@ export default function Dashboard() {
   const handleLogWeight = () => {
     const w = parseFloat(weightInput);
     if (!isNaN(w) && w > 0) {
-      onAddWeight({ date: new Date().toISOString().slice(0, 10), weightKg: w });
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      onAddWeight({ date: dateStr, weightKg: w });
       setWeightInput('');
       haptics.success();
     }
@@ -187,11 +188,6 @@ export default function Dashboard() {
      setWaterAnimation(ml);
      setTimeout(() => setWaterAnimation(null), 800);
      onAddWater(ml);
-  };
-
-  const moveMeal = (mealId: string, newType: MealType) => {
-    onMoveMeal(mealId, newType);
-    haptics.success();
   };
 
   const mealGroups: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack', 'late_night'];
@@ -563,9 +559,9 @@ export default function Dashboard() {
                               layout
                               drag="x"
                               dragConstraints={{ left: 0, right: 0 }}
-                              dragElastic={{ left: 0.5, right: 0.1 }}
+                              dragElastic={{ left: 0.1, right: 0.5 }}
                               onDragEnd={(_, info) => {
-                                if (info.offset.x < -100) handleRemoveMeal(meal.id);
+                                if (info.offset.x > 100) handleRemoveMeal(meal.id);
                               }}
                               initial={{ opacity: 0, x: 12, scale: 0.95 }}
                               animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -588,7 +584,7 @@ export default function Dashboard() {
 
                               <div className="flex items-center gap-1.5 shrink-0">
                                 {/* Quick Meal Switch Buttons */}
-                                <div className="flex items-center bg-background/40 backdrop-blur-sm rounded-lg p-0.5 border border-border/20 opacity-0 group-hover:opacity-100 sm:opacity-0 transition-opacity">
+                                <div className="flex items-center bg-background/40 backdrop-blur-sm rounded-lg p-0.5 border border-border/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                   {(['breakfast', 'lunch', 'dinner', 'snack', 'late_night'] as const).map((t) => {
                                     const isActive = t === type;
                                     return (
