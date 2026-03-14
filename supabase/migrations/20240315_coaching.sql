@@ -32,6 +32,17 @@ ON profiles FOR SELECT
 TO authenticated 
 USING (true);
 
+-- Add generated share_code to profiles
+-- This takes the first 8 chars of the ID and prefixes it with 'NOVA-'
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='share_code') THEN
+        ALTER TABLE profiles ADD COLUMN share_code TEXT GENERATED ALWAYS AS ('NOVA-' || UPPER(LEFT(id::text, 8))) STORED;
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_profiles_share_code ON profiles(share_code);
+
 -- Coaches can view client data (Must be approved)
 DROP POLICY IF EXISTS "Coaches can view client daily logs" ON daily_logs;
 CREATE POLICY "Coaches can view client daily logs" ON daily_logs FOR SELECT USING (EXISTS (SELECT 1 FROM coaching_relationships WHERE coach_id = auth.uid() AND client_id = daily_logs.user_id AND status = 'approved'));
