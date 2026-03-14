@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import ResetPassword from "./pages/ResetPassword";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import NotFound from "./pages/NotFound";
+import DynamicBackground from "./components/DynamicBackground";
 
 const queryClient = new QueryClient();
 
@@ -15,6 +16,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
+        <DynamicBackground />
         <Toaster />
         <Sonner />
         <BrowserRouter>

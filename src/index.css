@@ -28,6 +28,11 @@
     --ring: 157 72% 40%;
     --radius: 0.75rem;
 
+    /* Dynamic Background Orbs */
+    --orb-primary: hsla(157, 72%, 60%, 0.12);
+    --orb-secondary: hsla(217, 91%, 65%, 0.10);
+    --orb-accent: hsla(270, 60%, 65%, 0.08);
+
     --nova-glow: 157 72% 40%;
     --nova-surface: 220 14% 96%;
     --nova-surface-elevated: 0 0% 100%;
@@ -69,6 +74,11 @@
     --border: 0 0% 14%;
     --input: 0 0% 14%;
     --ring: 157 72% 45%;
+
+    /* Dynamic Background Orbs */
+    --orb-primary: hsla(157, 72%, 45%, 0.15);
+    --orb-secondary: hsla(217, 91%, 55%, 0.12);
+    --orb-accent: hsla(270, 60%, 55%, 0.10);
 
     --nova-glow: 157 72% 45%;
     --nova-surface: 0 0% 7%;
@@ -205,35 +215,70 @@
   .nova-gradient {
     background: linear-gradient(145deg, hsl(var(--primary)) 0%, hsl(var(--nova-glow) / 0.8) 100%);
   }
+
+  /* === Liquid Glass === */
   .nova-glass {
-    background: hsl(var(--card) / 0.7);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid hsl(var(--border) / 0.5);
+    background: hsl(var(--card) / 0.55);
+    backdrop-filter: blur(24px) saturate(190%);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    border: 1px solid hsl(var(--border) / 0.35);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.12),
+      0 1px 3px hsl(0 0% 0% / 0.04),
+      0 8px 24px hsl(0 0% 0% / 0.03);
   }
+  .dark .nova-glass {
+    background: hsl(var(--card) / 0.45);
+    border: 1px solid hsl(0 0% 100% / 0.08);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.06),
+      0 1px 3px hsl(0 0% 0% / 0.2),
+      0 8px 24px hsl(0 0% 0% / 0.15);
+  }
+
   .nova-text-gradient {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--nova-glow) / 0.75));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* === Liquid Glass Cards === */
   .nova-card {
-    @apply rounded-2xl border bg-card;
-    box-shadow: 0 1px 2px hsl(0 0% 0% / 0.03), 0 4px 16px hsl(0 0% 0% / 0.02);
+    @apply rounded-2xl;
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.4);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.15),
+      0 1px 2px hsl(0 0% 0% / 0.03),
+      0 4px 16px hsl(0 0% 0% / 0.02);
     transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   }
   .dark .nova-card {
-    box-shadow: 0 1px 2px hsl(0 0% 0% / 0.2), 0 4px 16px hsl(0 0% 0% / 0.1);
+    background: hsl(var(--card) / 0.5);
+    border: 1px solid hsl(0 0% 100% / 0.07);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.06),
+      0 1px 2px hsl(0 0% 0% / 0.2),
+      0 4px 16px hsl(0 0% 0% / 0.1);
   }
   .nova-card-hover {
     @apply nova-card;
   }
   .nova-card-hover:hover {
-    box-shadow: 0 2px 4px hsl(0 0% 0% / 0.04), 0 8px 28px hsl(0 0% 0% / 0.04);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.2),
+      0 2px 4px hsl(0 0% 0% / 0.04),
+      0 8px 28px hsl(0 0% 0% / 0.04);
     transform: translateY(-2px);
   }
   .dark .nova-card-hover:hover {
-    box-shadow: 0 2px 4px hsl(0 0% 0% / 0.2), 0 8px 28px hsl(0 0% 0% / 0.15);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.08),
+      0 2px 4px hsl(0 0% 0% / 0.2),
+      0 8px 28px hsl(0 0% 0% / 0.15);
   }
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
@@ -278,3 +323,26 @@
     animation: breathe 3s ease-in-out infinite;
   }
 }
+
+/* === Dynamic Background === */
+.dynamic-bg-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dynamic-bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 1;
+  will-change: transform;
+}
+
+.dark .dynamic-bg-orb {
+  filter: blur(80px);
+  opacity: 0.9;
+}
+
