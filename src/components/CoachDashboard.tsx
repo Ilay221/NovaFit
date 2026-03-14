@@ -75,7 +75,10 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
     } catch (error: any) {
       console.error('CoachDashboard: Error fetching clients:', error);
       setClients([]);
-      // Silent failure - don't show toast to user for background fetch failures
+      // Silent failure if table doesn't exist (PGRST116, 42P01)
+      if (error.code !== 'PGRST116' && error.code !== '42P01' && error.code !== 'PGRST204') {
+        // If it's a real error, we could toast, but user requested silence
+      }
     } finally {
       setLoading(false);
     }
@@ -86,20 +89,45 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
     setSubmitting(true);
     
     try {
-      // 1. Find profile with that share code (id prefix)
+      // 1. Find profile using resilient multi-stage search
       const cleanCode = clientCode.trim().toUpperCase().replace('NOVA-', '').toLowerCase();
-      
-      // We search using the first 8 characters of the UUID.
-      // If the generated column doesn't exist yet, we try a text-based search.
-      const { data: clientProfile, error: profileError } = await (supabase
+      let clientProfile = null;
+      let profileError = null;
+
+      // Stage A: Try ID prefix search (handles "Generated on the fly" logic)
+      // Note: PostgREST ilike on UUID might fail depending on PG version/config.
+      const { data: byId, error: idErr } = await supabase
         .from('profiles')
         .select('id, name')
-        .or(`id.ilike.${cleanCode}%,share_code.eq.${clientCode.trim().toUpperCase()}`) as any)
+        .filter('id', 'ilike', `${cleanCode}%`)
         .limit(1)
-        .maybeSingle();
+        .maybeSingle() as any;
 
-      if (profileError || !clientProfile) {
-        toast.error(profileError ? 'שגיאה בחיפוש משתמש' : 'קוד לא תקין או משתמש לא נמצא');
+      if (byId) {
+        clientProfile = byId;
+      } else {
+        // Stage B: Fallback to share_code column search (if it exists)
+        // We cast to any to avoid TS errors if the column is missing in types
+        const { data: byCode, error: codeErr } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .eq('share_code' as any, clientCode.trim().toUpperCase())
+          .maybeSingle();
+        
+        if (byCode) {
+          clientProfile = byCode;
+        } else {
+          profileError = idErr || codeErr;
+        }
+      }
+
+      if (!clientProfile) {
+        // If we have a specific error (and it's not "column not found"), show it
+        if (profileError && profileError.code !== 'PGRST204') {
+          toast.error('שגיאה בחיפוש בבסיס הנתונים');
+        } else {
+          toast.error('קוד לא תקין או משתמש לא נמצא');
+        }
         setSubmitting(false);
         return;
       }
