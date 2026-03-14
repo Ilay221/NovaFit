@@ -28,10 +28,10 @@
     --ring: 157 72% 40%;
     --radius: 0.75rem;
 
-    /* Dynamic Background Orbs */
-    --orb-primary: hsla(157, 72%, 60%, 0.12);
-    --orb-secondary: hsla(217, 91%, 65%, 0.10);
-    --orb-accent: hsla(270, 60%, 65%, 0.08);
+    /* Dynamic Background Orbs - Light Mode */
+    --orb-primary: hsla(157, 80%, 55%, 0.35);
+    --orb-secondary: hsla(217, 91%, 60%, 0.30);
+    --orb-accent: hsla(270, 70%, 60%, 0.25);
 
     --nova-glow: 157 72% 40%;
     --nova-surface: 220 14% 96%;
@@ -75,10 +75,10 @@
     --input: 0 0% 14%;
     --ring: 157 72% 45%;
 
-    /* Dynamic Background Orbs */
-    --orb-primary: hsla(157, 72%, 45%, 0.15);
-    --orb-secondary: hsla(217, 91%, 55%, 0.12);
-    --orb-accent: hsla(270, 60%, 55%, 0.10);
+    /* Dynamic Background Orbs - Dark Mode */
+    --orb-primary: hsla(157, 72%, 40%, 0.30);
+    --orb-secondary: hsla(217, 91%, 50%, 0.25);
+    --orb-accent: hsla(270, 60%, 45%, 0.22);
 
     --nova-glow: 157 72% 45%;
     --nova-surface: 0 0% 7%;
@@ -218,22 +218,24 @@
 
   /* === Liquid Glass === */
   .nova-glass {
-    background: hsl(var(--card) / 0.55);
-    backdrop-filter: blur(24px) saturate(190%);
-    -webkit-backdrop-filter: blur(24px) saturate(190%);
-    border: 1px solid hsl(var(--border) / 0.35);
+    background: hsl(var(--card) / 0.45);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border: 1px solid hsl(0 0% 100% / 0.25);
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.12),
-      0 1px 3px hsl(0 0% 0% / 0.04),
-      0 8px 24px hsl(0 0% 0% / 0.03);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.20),
+      inset 0 -1px 0 0 hsl(0 0% 0% / 0.05),
+      0 1px 3px hsl(0 0% 0% / 0.06),
+      0 12px 36px hsl(0 0% 0% / 0.04);
   }
   .dark .nova-glass {
-    background: hsl(var(--card) / 0.45);
-    border: 1px solid hsl(0 0% 100% / 0.08);
+    background: hsl(var(--card) / 0.35);
+    border: 1px solid hsl(0 0% 100% / 0.12);
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.06),
-      0 1px 3px hsl(0 0% 0% / 0.2),
-      0 8px 24px hsl(0 0% 0% / 0.15);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.10),
+      inset 0 -1px 0 0 hsl(0 0% 0% / 0.2),
+      0 1px 3px hsl(0 0% 0% / 0.3),
+      0 12px 36px hsl(0 0% 0% / 0.2);
   }
 
   .nova-text-gradient {
@@ -246,39 +248,43 @@
   /* === Liquid Glass Cards === */
   .nova-card {
     @apply rounded-2xl;
-    background: hsl(var(--card) / 0.6);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid hsl(var(--border) / 0.4);
+    background: hsl(var(--card) / 0.50);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    border: 1px solid hsl(0 0% 100% / 0.22);
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.15),
-      0 1px 2px hsl(0 0% 0% / 0.03),
-      0 4px 16px hsl(0 0% 0% / 0.02);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.20),
+      inset 0 -1px 0 0 hsl(0 0% 0% / 0.04),
+      0 1px 2px hsl(0 0% 0% / 0.04),
+      0 8px 32px hsl(0 0% 0% / 0.03);
     transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   }
   .dark .nova-card {
-    background: hsl(var(--card) / 0.5);
-    border: 1px solid hsl(0 0% 100% / 0.07);
+    background: hsl(var(--card) / 0.40);
+    border: 1px solid hsl(0 0% 100% / 0.10);
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.06),
-      0 1px 2px hsl(0 0% 0% / 0.2),
-      0 4px 16px hsl(0 0% 0% / 0.1);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.08),
+      inset 0 -1px 0 0 hsl(0 0% 0% / 0.15),
+      0 1px 2px hsl(0 0% 0% / 0.25),
+      0 8px 32px hsl(0 0% 0% / 0.15);
   }
   .nova-card-hover {
     @apply nova-card;
   }
   .nova-card-hover:hover {
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.2),
-      0 2px 4px hsl(0 0% 0% / 0.04),
-      0 8px 28px hsl(0 0% 0% / 0.04);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.28),
+      inset 0 -1px 0 0 hsl(0 0% 0% / 0.04),
+      0 2px 4px hsl(0 0% 0% / 0.06),
+      0 12px 40px hsl(0 0% 0% / 0.06);
     transform: translateY(-2px);
   }
   .dark .nova-card-hover:hover {
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.08),
-      0 2px 4px hsl(0 0% 0% / 0.2),
-      0 8px 28px hsl(0 0% 0% / 0.15);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.12),
+      inset 0 -1px 0 0 hsl(0 0% 0% / 0.2),
+      0 2px 4px hsl(0 0% 0% / 0.3),
+      0 12px 40px hsl(0 0% 0% / 0.2);
   }
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
@@ -336,13 +342,25 @@
 .dynamic-bg-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(60px);
-  opacity: 1;
+  filter: blur(80px);
   will-change: transform;
+  background: radial-gradient(circle at 30% 30%, var(--orb-primary), transparent 70%);
 }
 
+/* Apply per-orb colors via nth-child */
+.dynamic-bg-orb:nth-child(1) { background: radial-gradient(circle at 30% 30%, var(--orb-primary), transparent 70%); }
+.dynamic-bg-orb:nth-child(2) { background: radial-gradient(circle at 40% 25%, var(--orb-secondary), transparent 70%); }
+.dynamic-bg-orb:nth-child(3) { background: radial-gradient(circle at 35% 35%, var(--orb-accent), transparent 65%); }
+.dynamic-bg-orb:nth-child(4) { background: radial-gradient(circle at 50% 30%, hsla(340, 80%, 60%, 0.18), transparent 70%); }
+.dynamic-bg-orb:nth-child(5) { background: radial-gradient(circle at 30% 40%, var(--orb-primary), transparent 70%); }
+.dynamic-bg-orb:nth-child(6) { background: radial-gradient(circle at 40% 30%, hsla(38, 90%, 55%, 0.20), transparent 70%); }
+.dynamic-bg-orb:nth-child(7) { background: radial-gradient(circle at 35% 35%, var(--orb-secondary), transparent 70%); }
+
 .dark .dynamic-bg-orb {
-  filter: blur(80px);
-  opacity: 0.9;
+  filter: blur(100px);
 }
+
+.dark .dynamic-bg-orb:nth-child(4) { background: radial-gradient(circle at 50% 30%, hsla(340, 70%, 45%, 0.15), transparent 70%); }
+.dark .dynamic-bg-orb:nth-child(6) { background: radial-gradient(circle at 40% 30%, hsla(38, 80%, 45%, 0.16), transparent 70%); }
+
 

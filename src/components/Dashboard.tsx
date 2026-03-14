@@ -193,7 +193,7 @@ export default function Dashboard() {
   const mealGroups = ['breakfast', 'lunch', 'dinner', 'snack'] as MealType[];
 
   return (
-    <div className="min-h-screen bg-background/80 pb-28 relative z-10">
+    <div className="min-h-screen pb-28 relative z-10">
       <AnimatePresence mode="wait">
         {view === 'food' && (
           <FoodLogger onAddMeal={(entry) => { onAddMeal(entry); }} onClose={() => setView('dashboard')} />
