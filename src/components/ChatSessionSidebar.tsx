@@ -25,7 +25,7 @@ interface Props {
 }
 
 export default function ChatSessionSidebar({
-  sessions, activeSessionId, onSelect, onNew, onRename, onPin, onDelete, onClose,
+  sessions, activeSessionId, onSelect, onNew, onRename, onPin, onDelete, onDeleteAll, onClose,
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
