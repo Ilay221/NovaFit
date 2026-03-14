@@ -29,9 +29,9 @@
     --radius: 0.75rem;
 
     /* Dynamic Background Orbs - Light Mode */
-    --orb-primary: hsla(157, 80%, 55%, 0.35);
-    --orb-secondary: hsla(217, 91%, 60%, 0.30);
-    --orb-accent: hsla(270, 70%, 60%, 0.25);
+    --orb-primary: hsla(157, 85%, 55%, 0.45);
+    --orb-secondary: hsla(217, 91%, 60%, 0.35);
+    --orb-accent: hsla(270, 85%, 60%, 0.35);
 
     --nova-glow: 157 72% 40%;
     --nova-surface: 220 14% 96%;
@@ -76,9 +76,9 @@
     --ring: 157 72% 45%;
 
     /* Dynamic Background Orbs - Dark Mode */
-    --orb-primary: hsla(157, 72%, 40%, 0.30);
-    --orb-secondary: hsla(217, 91%, 50%, 0.25);
-    --orb-accent: hsla(270, 60%, 45%, 0.22);
+    --orb-primary: hsla(157, 80%, 45%, 0.40);
+    --orb-secondary: hsla(217, 91%, 50%, 0.30);
+    --orb-accent: hsla(270, 75%, 50%, 0.30);
 
     --nova-glow: 157 72% 45%;
     --nova-surface: 0 0% 7%;
@@ -353,14 +353,16 @@
 .dynamic-bg-orb:nth-child(3) { background: radial-gradient(circle at 35% 35%, var(--orb-accent), transparent 65%); }
 .dynamic-bg-orb:nth-child(4) { background: radial-gradient(circle at 50% 30%, hsla(340, 80%, 60%, 0.18), transparent 70%); }
 .dynamic-bg-orb:nth-child(5) { background: radial-gradient(circle at 30% 40%, var(--orb-primary), transparent 70%); }
-.dynamic-bg-orb:nth-child(6) { background: radial-gradient(circle at 40% 30%, hsla(38, 90%, 55%, 0.20), transparent 70%); }
+.dynamic-bg-orb:nth-child(6) { background: radial-gradient(circle at 40% 30%, hsla(38, 90%, 55%, 0.25), transparent 70%); }
 .dynamic-bg-orb:nth-child(7) { background: radial-gradient(circle at 35% 35%, var(--orb-secondary), transparent 70%); }
+.dynamic-bg-orb:nth-child(8) { background: radial-gradient(circle at 30% 30%, var(--orb-accent), transparent 70%); }
 
 .dark .dynamic-bg-orb {
   filter: blur(100px);
 }
 
-.dark .dynamic-bg-orb:nth-child(4) { background: radial-gradient(circle at 50% 30%, hsla(340, 70%, 45%, 0.15), transparent 70%); }
-.dark .dynamic-bg-orb:nth-child(6) { background: radial-gradient(circle at 40% 30%, hsla(38, 80%, 45%, 0.16), transparent 70%); }
+.dark .dynamic-bg-orb:nth-child(4) { background: radial-gradient(circle at 50% 30%, hsla(340, 70%, 45%, 0.20), transparent 70%); }
+.dark .dynamic-bg-orb:nth-child(6) { background: radial-gradient(circle at 40% 30%, hsla(38, 80%, 45%, 0.20), transparent 70%); }
+.dark .dynamic-bg-orb:nth-child(8) { background: radial-gradient(circle at 30% 30%, var(--orb-accent), transparent 70%); }
 
 

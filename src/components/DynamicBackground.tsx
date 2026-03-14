@@ -18,6 +18,7 @@ const orbs = [
   // Smaller complementary orbs
   { size: 180, x: '40%', y: '25%',  dur: 20, delay: 5,   lightColor: 'hsla(38, 90%, 55%, 0.18)',  darkColor: 'hsla(38, 80%, 45%, 0.14)' },
   { size: 150, x: '0%',  y: '40%',  dur: 18, delay: 6,   lightColor: 'hsla(217, 91%, 65%, 0.20)', darkColor: 'hsla(217, 91%, 45%, 0.15)' },
+  { size: 320, x: '25%', y: '35%',  dur: 28, delay: 1.5, lightColor: 'hsla(270, 80%, 60%, 0.25)', darkColor: 'hsla(270, 70%, 50%, 0.22)' },
 ];
 
 function DynamicBackground() {
