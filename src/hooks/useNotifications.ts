@@ -15,8 +15,8 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-// Public VAPID key (Ideally should come from env)
-const PUBLIC_VAPID_KEY = 'BJ4K_x8r6f9F2L_R_yN3o8Z_Y_qO8P_L_xO8O_r_L_xO8O_r_L_xO8O_r_L_xO'; // This is a placeholder
+// Public VAPID key
+const PUBLIC_VAPID_KEY = 'BJe8CCJOnAVwmTHMFeqwHsaOc2AdS4KCieEna4ohb0P6DjO_UA1timqJQrG9ImwibxYg3a9ehfo0rxTi_ZjJHzc';
 
 export const useNotifications = () => {
   const { user } = useAuth();
