@@ -78,19 +78,11 @@ export function useProfile() {
             dietaryWeakness: (data as any).dietary_weakness ?? '',
             dailyHabits: (data as any).daily_habits ?? '',
             medicalConditions: (data as any).medical_conditions ?? '',
-            shareCode: (data as any).share_code ?? null,
+            shareCode: data.id ? `NOVA-${data.id.substring(0, 8).toUpperCase()}` : null,
           };
 
           setProfileState(profileData);
 
-          // Auto-generate share code if missing
-          if (!(data as any).share_code) {
-            const newCode = `NOVA-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-            // Optimistically update locally
-            setProfileState(prev => prev ? { ...prev, shareCode: newCode } : null);
-            // Try updating remote
-            await supabase.from('profiles').update({ share_code: newCode } as any).eq('id', user.id);
-          }
         }
       } catch (err) {
         console.error("Error fetching profile:", err);
@@ -130,7 +122,6 @@ export function useProfile() {
       dietary_weakness: p.dietaryWeakness || '',
       daily_habits: p.dailyHabits || '',
       medical_conditions: p.medicalConditions || '',
-      share_code: p.shareCode || null,
       updated_at: new Date().toISOString(),
     };
     

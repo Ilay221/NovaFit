@@ -1,5 +1,4 @@
--- Add share_code to profiles
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS share_code TEXT UNIQUE;
+-- Add essential coaching_relationships table
 
 -- Create coaching_relationships table
 CREATE TABLE IF NOT EXISTS coaching_relationships (

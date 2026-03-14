@@ -67,11 +67,13 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
     setSubmitting(true);
     
     try {
-      // 1. Find profile with that share code
+      // 1. Find profile with that share code (id prefix)
+      const cleanCode = clientCode.trim().toUpperCase().replace('NOVA-', '').toLowerCase();
+      
       const { data: clientProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id, name')
-        .eq('share_code', clientCode.trim().toUpperCase())
+        .filter('id', 'ilike', `${cleanCode}%`)
         .maybeSingle() as any;
 
       if (profileError || !clientProfile) {
