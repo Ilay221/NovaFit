@@ -89,17 +89,19 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
     setSubmitting(true);
     
     try {
-      // 1. Find profile using bulletproof search
-      const cleanCode = clientCode.trim().toUpperCase().replace('NOVA-', '').toLowerCase();
+      // 1. Find profile using bulletproof search against the TEXT column
+      let formattedCode = clientCode.trim().toUpperCase();
+      if (!formattedCode.startsWith('NOVA-')) {
+        formattedCode = `NOVA-${formattedCode}`;
+      }
       
-      // Try searching by ID prefix or exact match
-      // If the user enters a full UUID, it works. If they enter 8 chars, it tries to match the prefix.
-      const { data: clientProfile, error: profileError } = await supabase
+      const response: any = await supabase
         .from('profiles')
         .select('id, name')
-        .or(`id.ilike.${cleanCode}%,share_code.eq.${clientCode.trim().toUpperCase()}`)
-        .limit(1)
-        .maybeSingle() as any;
+        .eq('share_code', formattedCode)
+        .maybeSingle();
+        
+      const { data: clientProfile, error: profileError } = response;
 
       if (profileError) {
         console.error('Search error:', profileError);
