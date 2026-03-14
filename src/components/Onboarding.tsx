@@ -90,7 +90,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6 overflow-hidden relative">
+    <div className="min-h-screen glass-screen flex items-center justify-center p-6 overflow-hidden relative">
       <motion.div
         className="absolute w-[500px] h-[500px] rounded-full opacity-[0.03] top-[-200px] right-[-100px]"
         style={{ background: 'radial-gradient(circle, hsl(var(--primary)), transparent)' }}

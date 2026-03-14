@@ -458,7 +458,7 @@ ${bankingNote || ''}`
       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
       exit={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
       transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-      className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden"
+      className="fixed inset-0 z-50 glass-screen flex flex-col overflow-hidden"
     >
       {/* Sidebar */}
       <AnimatePresence>

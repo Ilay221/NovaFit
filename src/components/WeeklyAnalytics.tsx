@@ -155,7 +155,7 @@ export default function WeeklyAnalytics({ profile, onClose }: WeeklyAnalyticsPro
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-      className="min-h-screen bg-background pb-28"
+      className="fixed inset-0 z-50 glass-screen overflow-auto flex flex-col"
     >
       <motion.div variants={containerVariants} initial="hidden" animate="show" className="max-w-lg mx-auto px-5 pt-safe">
         {/* Header */}

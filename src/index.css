@@ -297,6 +297,22 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* === Universal Glass Screens === */
+  .glass-screen {
+    @apply bg-background/80 backdrop-blur-xl;
+  }
+  .dark .glass-screen {
+    @apply bg-background/60 backdrop-blur-2xl;
+  }
+
+  .glass-overlay {
+    @apply bg-background/40 backdrop-blur-lg;
+  }
+  .dark .glass-overlay {
+    @apply bg-background/25 backdrop-blur-xl;
+  }
+
   /* Shimmer loading effect */
   @keyframes shimmer {
     0% { background-position: -200% 0; }

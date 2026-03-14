@@ -105,7 +105,7 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
       animate={{ y: 0 }}
       exit={{ y: '100%' }}
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-      className="fixed inset-0 z-50 bg-background flex flex-col"
+      className="fixed inset-0 z-50 glass-screen flex flex-col"
     >
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
         <button onClick={onClose} className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors active:scale-95">
