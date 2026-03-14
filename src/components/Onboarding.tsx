@@ -150,9 +150,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
                   בנה תוכנית מותאמת אישית על בסיס הרכב הגוף והמטרות שלך.
                 </motion.p>
-                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                  <Button onClick={next} className="w-full gap-2.5 h-[52px] text-[15px] rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl">
-                    בואו נתחיל <ArrowLeft className="w-4 h-4" />
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+                  <Button shimmer onClick={next} className="w-full gap-3 h-[56px] text-[16px] rounded-2xl font-bold shadow-xl">
+                    بואו נתחיל <ArrowLeft className="w-5 h-5" />
                   </Button>
                 </motion.div>
               </div>
@@ -177,21 +177,17 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">מין</Label>
                     <div className="grid grid-cols-2 gap-3">
                       {(['male', 'female'] as Gender[]).map(g => (
-                        <motion.button key={g} onClick={() => setGender(g)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }}
-                          className={`h-[48px] rounded-xl text-[14px] font-semibold transition-all duration-300 ${gender === g ? 'bg-foreground text-background shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}>
+                         <motion.button key={g} onClick={() => setGender(g)} whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
+                          className={`h-[52px] rounded-xl text-[14px] font-bold transition-all duration-300 btn-premium ${gender === g ? 'bg-primary text-primary-foreground shadow-[0_0_20px_hsla(var(--primary)/0.25)]' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}>
                           {g === 'male' ? 'זכר' : 'נקבה'}
                         </motion.button>
                       ))}
                     </div>
                   </motion.div>
                 </div>
-                <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}>
-                    <Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button>
-                  </motion.div>
-                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg" disabled={!name.trim() || age < 10 || age > 120}>המשך <ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                 <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]" disabled={!name.trim() || age < 10 || age > 120}>המשך <ArrowLeft className="w-5 h-5" /></Button>
                 </div>
               </div>
             )}
@@ -219,11 +215,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     </motion.div>
                   ))}
                 </div>
-                <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
-                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg" disabled={heightCm < 50 || heightCm > 300 || weightKg < 20 || weightKg > 400 || targetWeightKg < 20 || targetWeightKg > 400}>המשך <ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                 <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]" disabled={heightCm < 50 || heightCm > 300 || weightKg < 20 || weightKg > 400 || targetWeightKg < 20 || targetWeightKg > 400}>המשך <ArrowLeft className="w-5 h-5" /></Button>
                 </div>
               </div>
             )}
@@ -252,9 +246,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   ))}
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
+                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button></motion.div>
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">המשך <ArrowLeft className="w-4 h-4" /></Button>
+                    <Button onClick={next} className="w-full h-[52px] gap-2 rounded-xl font-bold text-[15px] shadow-lg">המשך <ArrowLeft className="w-5 h-5" /></Button>
                   </motion.div>
                 </div>
               </div>
@@ -287,11 +281,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     </motion.button>
                   ))}
                 </div>
-                <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
-                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">ראה את התוכנית <ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                 <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]">ראה את התוכנית <ArrowLeft className="w-5 h-5" /></Button>
                 </div>
               </div>
             )}
@@ -331,11 +323,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     מאמן התזונה ישתמש בהעדפות אלו כדי לתת לך <span className="text-foreground font-medium">המלצות ארוחות מותאמות אישית</span> ולעזור לך לנהל תשוקות בצורה חכמה.
                   </p>
                 </motion.div>
-                <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
-                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">המשך <ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                 <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]">המשך <ArrowLeft className="w-5 h-5" /></Button>
                 </div>
               </div>
             )}
@@ -365,11 +355,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     מידע זה עוזר למאמן ה-AI לתת <span className="text-foreground font-medium">ייעוץ בטוח ומותאם אישית</span>. הוא לעולם לא ימליץ על מזונות שמתנגשים עם הצרכים הרפואיים שלך. ניתן לעדכן בכל עת בהגדרות.
                   </p>
                 </motion.div>
-                <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
-                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">המשך <ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                 <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]">המשך <ArrowLeft className="w-5 h-5" /></Button>
                 </div>
               </div>
             )}
@@ -458,11 +446,9 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 {(goal === 'maintain' || weightKg === targetWeightKg) && (
                   <div className="text-center py-8"><p className="text-sm text-muted-foreground">יעדי ציר זמן זמינים רק למטרות ירידה או עלייה במשקל השונות מהמשקל הנוכחי.</p></div>
                 )}
-                <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
-                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={next} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg" disabled={useTimeline && !adaptive.isSafe}>ראה את התוכנית <ArrowLeft className="w-4 h-4" /></Button>
-                  </motion.div>
+                 <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]" disabled={useTimeline && !adaptive.isSafe}>ראה את התוכנית <ArrowLeft className="w-5 h-5" /></Button>
                 </div>
               </div>
             )}
@@ -509,13 +495,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     </motion.div>
                   ))}
                 </div>
-                <div className="flex gap-3 pt-2">
-                  <motion.div whileTap={{ scale: 0.9 }}><Button variant="outline" onClick={prev} className="h-[48px] w-[48px] rounded-xl p-0"><ArrowRight className="w-4 h-4" /></Button></motion.div>
-                  <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Button onClick={finish} className="w-full h-[48px] gap-2 rounded-xl font-semibold text-[14px] shadow-lg">
-                      התחל מעקב <ArrowLeft className="w-4 h-4" />
-                    </Button>
-                  </motion.div>
+                 <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={finish} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px] shadow-xl">
+                    התחל מעקב <ArrowLeft className="w-5 h-5" />
+                  </Button>
                 </div>
               </div>
             )}

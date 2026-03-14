@@ -141,10 +141,11 @@ export default function PortionEstimator({ food, mealType, onConfirm, onBack }: 
             <motion.button
               key={mt.value}
               onClick={() => { setActiveMealType(mt.value); haptics.light(); }}
-              whileTap={{ scale: 0.92 }}
-              className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.95 }}
+              className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all btn-premium ${
                 activeMealType === mt.value 
-                  ? 'bg-foreground text-background shadow-sm' 
+                  ? 'bg-primary text-primary-foreground shadow-[0_0_12px_hsla(var(--primary)/0.3)]' 
                   : 'text-muted-foreground hover:bg-muted'
               }`}
             >
@@ -242,9 +243,13 @@ export default function PortionEstimator({ food, mealType, onConfirm, onBack }: 
 
         {/* Confirm */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-          <Button className="w-full h-14 rounded-2xl text-[15px] font-bold relative overflow-hidden group active:scale-[0.97] transition-transform" onClick={confirmPortion}>
-            <motion.div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary-foreground/10 to-primary/0" animate={{ x: ['-100%', '200%'] }} transition={{ repeat: Infinity, duration: 3, ease: 'linear' }} />
-            <span className="relative z-10">רשום {macros.calories} קק"ל — {closestStop.label}</span>
+          <Button 
+            shimmer
+            size="lg"
+            className="w-full text-[15px] font-bold" 
+            onClick={confirmPortion}
+          >
+            רשום {macros.calories} קק"ל — {closestStop.label}
           </Button>
         </motion.div>
       </div>

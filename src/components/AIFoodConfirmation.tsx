@@ -108,10 +108,10 @@ export default function AIFoodConfirmation({ foods, onConfirm, onCancel }: AIFoo
         </AnimatePresence>
 
         <div className="flex gap-3">
-          <Button variant="outline" className="flex-1 h-12 rounded-xl text-[13px] font-medium gap-2" onClick={onCancel}>
+          <Button variant="outline" className="flex-1 h-12 rounded-xl text-[13px] font-bold gap-2" onClick={onCancel}>
             <X className="w-4 h-4" /> ביטול
           </Button>
-          <Button className="flex-1 h-12 rounded-xl text-[13px] font-semibold gap-2" disabled={activeFoods.length === 0} onClick={() => onConfirm(activeFoods)}>
+          <Button shimmer className="flex-1 h-12 rounded-xl text-[13px] font-bold gap-2" disabled={activeFoods.length === 0} onClick={() => onConfirm(activeFoods)}>
             <Check className="w-4 h-4" /> אישור
           </Button>
         </div>

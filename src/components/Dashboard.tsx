@@ -708,6 +708,7 @@ export default function Dashboard() {
               className="relative"
             >
               <Button
+                shimmer
                 onClick={() => {
                   if (!isSameDay(selectedDate, new Date())) {
                     setConfirmDialog({

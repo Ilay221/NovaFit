@@ -573,8 +573,9 @@ ${bankingNote || ''}`
                         <div className="flex gap-2">
                           <Button
                             size="sm"
+                            shimmer
                             onClick={() => handleFoodAction(i, true)}
-                            className="flex-1 h-8 text-xs gap-1.5"
+                            className="flex-1 h-8 text-xs font-bold gap-1.5"
                           >
                             <Check className="w-3.5 h-3.5" />
                             כן, הוסף
@@ -583,7 +584,7 @@ ${bankingNote || ''}`
                             size="sm"
                             variant="outline"
                             onClick={() => handleFoodAction(i, false)}
-                            className="h-8 text-xs gap-1.5 px-3"
+                            className="h-8 text-xs font-bold gap-1.5 px-3"
                           >
                             <X className="w-3.5 h-3.5" />
                             לא
@@ -644,15 +645,14 @@ ${bankingNote || ''}`
             className="flex-1 resize-none rounded-xl bg-muted/50 border border-border/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all min-h-[42px] max-h-[120px]"
             style={{ height: 'auto', overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}
           />
-          <motion.div whileTap={{ scale: 0.9 }}>
-            <Button
-              onClick={() => send()}
-              disabled={!input.trim() || isLoading}
-              className="h-[42px] w-[42px] rounded-xl p-0 shadow-md"
-            >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            </Button>
-          </motion.div>
+          <Button
+            shimmer
+            onClick={() => send()}
+            disabled={!input.trim() || isLoading}
+            className="h-[42px] w-[42px] rounded-xl p-0 shadow-md"
+          >
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </Button>
         </div>
       </div>
     </motion.div>

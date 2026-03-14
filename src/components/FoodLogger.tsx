@@ -107,14 +107,14 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
             <motion.button
               key={mt.value}
               onClick={() => setMealType(mt.value)}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.94 }}
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.95 }}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 + i * 0.04 }}
-              className={`flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-300 ${
+              className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold transition-all duration-300 btn-premium ${
                 mealType === mt.value
-                  ? 'bg-foreground text-background shadow-md'
+                  ? 'bg-primary text-primary-foreground shadow-[0_0_15px_hsla(var(--primary)/0.3)]'
                   : 'bg-muted/50 text-muted-foreground hover:bg-muted'
               }`}
             >
@@ -125,18 +125,20 @@ export default function FoodLogger({ onAddMeal, onClose }: FoodLoggerProps) {
 
         {/* Search vs Templates Toggle */}
         <div className="flex bg-muted/50 p-1 rounded-xl">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.98 }}
             onClick={() => setActiveTab('search')}
-            className={`flex-1 py-1.5 text-[13px] font-semibold rounded-lg transition-colors ${activeTab === 'search' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+            className={`flex-1 py-1.5 text-[13px] font-bold rounded-lg transition-all ${activeTab === 'search' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
           >
             חיפוש
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
             onClick={() => setActiveTab('templates')}
-            className={`flex-1 py-1.5 text-[13px] font-semibold rounded-lg transition-colors ${activeTab === 'templates' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+            className={`flex-1 py-1.5 text-[13px] font-bold rounded-lg transition-all ${activeTab === 'templates' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
           >
             תבניות שלי ({templates.length})
-          </button>
+          </motion.button>
         </div>
 
         {activeTab === 'search' ? (

@@ -122,13 +122,19 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
       <div className="px-5 space-y-5 flex-1 overflow-auto hide-scrollbar pb-8">
         <div className="flex gap-1.5">
           {MEAL_TYPES.map(mt => (
-            <button key={mt.value} onClick={() => setMealType(mt.value)}
-              className={`flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-200 active:scale-[0.97] ${
-                mealType === mt.value ? 'bg-foreground text-background' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+            <motion.button 
+              key={mt.value} 
+              onClick={() => setMealType(mt.value)}
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.95 }}
+              className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold transition-all duration-200 btn-premium ${
+                mealType === mt.value 
+                  ? 'bg-primary text-primary-foreground shadow-[0_0_15px_hsla(var(--primary)/0.3)]' 
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
               }`}
             >
               {mt.label}
-            </button>
+            </motion.button>
           ))}
         </div>
 
@@ -142,7 +148,12 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
           />
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-muted-foreground tabular-nums">{text.length}/500</span>
-            <Button onClick={handleParse} disabled={!text.trim() || parsing} className="rounded-xl h-10 px-6 gap-2 font-medium active:scale-[0.97] transition-transform text-[13px]">
+            <Button 
+              shimmer
+              onClick={handleParse} 
+              disabled={!text.trim() || parsing} 
+              className="rounded-xl h-10 px-8 gap-2 font-bold transition-all text-[13px]"
+            >
               {parsing ? <><Loader2 className="w-4 h-4 animate-spin" /> מנתח</> : 'נתח'}
             </Button>
           </div>
