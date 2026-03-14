@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Camera, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MealEntry } from '@/lib/types';
+import { MealEntry, getCurrentMealType } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import AIFoodConfirmation from './AIFoodConfirmation';
@@ -34,7 +34,7 @@ export default function AIFoodScanner({ onAddMeal, onClose }: AIFoodScannerProps
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalyzedFood[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [mealType, setMealType] = useState<MealEntry['mealType']>('lunch');
+  const [mealType, setMealType] = useState<MealEntry['mealType']>(getCurrentMealType());
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);

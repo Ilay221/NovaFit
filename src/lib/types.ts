@@ -18,6 +18,18 @@ export const MEAL_TYPES = [
   { value: 'late_night' as MealType, label: 'לילה' },
 ];
 
+export function getCurrentMealType(): MealType {
+  const hour = new Date().getHours();
+  const minutes = new Date().getMinutes();
+  const time = hour + minutes / 60;
+
+  if (time >= 6 && time < 11) return 'breakfast';
+  if (time >= 11 && time < 16.5) return 'lunch';
+  if (time >= 16.5 && time < 19) return 'snack';
+  if (time >= 19 && time < 23.5) return 'dinner';
+  return 'late_night';
+}
+
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';

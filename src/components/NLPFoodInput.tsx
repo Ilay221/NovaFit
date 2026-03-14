@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Loader2, MessageSquare, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { MealEntry, FoodItem } from '@/lib/types';
+import { MealEntry, FoodItem, getCurrentMealType } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import PortionEstimator from './PortionEstimator';
@@ -35,7 +35,7 @@ export default function NLPFoodInput({ onAddMeal, onClose }: NLPFoodInputProps) 
   const [text, setText] = useState('');
   const [parsing, setParsing] = useState(false);
   const [results, setResults] = useState<ParsedFood[]>([]);
-  const [mealType, setMealType] = useState<MealEntry['mealType']>('lunch');
+  const [mealType, setMealType] = useState<MealEntry['mealType']>(getCurrentMealType());
   const [portionFood, setPortionFood] = useState<FoodItem | null>(null);
 
   const handleParse = async () => {

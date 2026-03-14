@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
 import ChatSessionSidebar, { type ChatSession } from './ChatSessionSidebar';
-import type { MealEntry } from '@/lib/types';
+import { MealEntry, getCurrentMealType } from '@/lib/types';
 import { toast } from 'sonner';
 
 interface DetectedFood {
@@ -51,7 +51,7 @@ function parseFoodAction(content: string): { cleanContent: string; foodAction?: 
     if (parsed?.foods?.length > 0) {
       return { cleanContent: content.replace(FOOD_TAG_REGEX, '').trim(), foodAction: parsed as FoodAction };
     }
-  } catch {}
+  } catch { }
   return { cleanContent: content.replace(FOOD_TAG_REGEX, '').trim() };
 }
 
@@ -248,15 +248,23 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
 Always use ${bankingContext.dynamicTarget} kcal as the calorie target when answering questions about today. NEVER use ${bankingContext.baseTarget} as today's target.`
           : null;
 
+        const currentHour = new Date().getHours();
+        const currentMinutes = new Date().getMinutes();
+        const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
+        const suggestedMeal = getCurrentMealType();
+
         const messagesWithContext = [
           { 
             role: 'user' as const, 
-            content: `[SYSTEM CONTEXT - IMPORTANT]: You are aware of a new meal category: 'late_night' (לילה מאוחרת). 
-This is for foods eaten late at night. The user wants you to monitor this specifically to identify "difficult times" or triggers for late-night eating.
+            content: `[SYSTEM CONTEXT - IMPORTANT]: 
+Current time is ${currentTimeStr}.
+Based on the time, the default meal category should be: '${suggestedMeal}'.
+You are aware of the 'late_night' (לילה מאוחרת) category for foods eaten late at night.
+The user wants you to monitor this specifically to identify "difficult times" or triggers for late-night eating.
 When analyzing or suggesting, be supportive about late-night habit changes.
 ${bankingNote || ''}` 
           },
-          { role: 'assistant' as const, content: 'מובן, אני מודע לעדכון ולחשיבות של מעקב אחר אכילת לילה.' },
+          { role: 'assistant' as const, content: 'מובן, אני מודע לשעה (' + currentTimeStr + ') ולעדכונים לגבי סוגי הארוחות.' },
           ...cleanMessages
         ];
 
@@ -276,7 +284,7 @@ ${bankingNote || ''}`
 
         if (!resp.ok) {
           let errData: any = {};
-          try { errData = await resp.json(); } catch { try { await resp.text(); } catch {} }
+          try { errData = await resp.json(); } catch { try { await resp.text(); } catch { } }
           if (resp.status === 402 || resp.status === 400) {
             throw { code: errData.code || 'CREDITS_EXHAUSTED', noRetry: true };
           }
@@ -369,16 +377,16 @@ ${bankingNote || ''}`
 
   const handleFoodAction = useCallback(async (msgIndex: number, accepted: boolean) => {
     setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, foodActionHandled: true } : m));
-    
+
     if (!accepted || !onAddMeal) return;
-    
+
     const msg = messages[msgIndex];
     if (!msg?.foodAction?.foods) return;
 
-    const mealTypeLabels: Record<string, string> = { 
-      breakfast: 'בוקר', 
-      lunch: 'צהריים', 
-      dinner: 'ערב', 
+    const mealTypeLabels: Record<string, string> = {
+      breakfast: 'בוקר',
+      lunch: 'צהריים',
+      dinner: 'ערב',
       snack: 'חטיף',
       late_night: 'לילה מאוחרת'
     };
@@ -521,13 +529,12 @@ ${bankingNote || ''}`
                   <User className="w-3.5 h-3.5 text-muted-foreground" />
                 </div>
               )}
-              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                msg.role === 'user'
+              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === 'user'
                   ? 'bg-primary text-primary-foreground rounded-br-md'
                   : msg.error
                     ? 'bg-destructive/5 border border-destructive/20 rounded-bl-md'
                     : 'bg-muted/60 border border-border/40 rounded-bl-md'
-              }`}>
+                }`}>
                 {msg.role === 'assistant' ? (
                   <>
                     <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:mb-2 [&>ol]:mb-2">
