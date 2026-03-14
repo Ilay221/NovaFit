@@ -42,50 +42,61 @@ export function useProfile() {
     if (!user) { setProfileState(null); setLoading(false); return; }
     
     const fetchProfile = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      if (data) {
-        // Read local storage fallback for calorieSpreadDays
-        const storedSpread = localStorage.getItem(`nova_spread_days_${user.id}`);
-        const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 1;
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (error) throw error;
 
-        setProfileState({
-          name: data.name,
-          age: data.age,
-          gender: data.gender as any,
-          heightCm: data.height_cm,
-          weightKg: data.weight_kg,
-          targetWeightKg: data.target_weight_kg,
-          activityLevel: data.activity_level as any,
-          goal: data.goal as any,
-          bmr: data.bmr,
-          tdee: data.tdee,
-          dailyCalorieTarget: data.daily_calorie_target,
-          proteinTarget: data.protein_target,
-          carbsTarget: data.carbs_target,
-          fatsTarget: data.fats_target,
-          isPremium: (data as any).is_premium ?? false,
-          calorieSpreadDays: parsedSpread,
-          targetDate: (data as any).target_date ?? null,
-          favoriteFood: (data as any).favorite_food ?? '',
-          dietaryWeakness: (data as any).dietary_weakness ?? '',
-          dailyHabits: (data as any).daily_habits ?? '',
-          medicalConditions: (data as any).medical_conditions ?? '',
-          shareCode: (data as any).share_code ?? null,
-        });
+        if (data) {
+          // Read local storage fallback for calorieSpreadDays
+          const storedSpread = localStorage.getItem(`nova_spread_days_${user.id}`);
+          const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 1;
 
-        // Auto-generate share code if missing
-        if (!(data as any).share_code) {
-          const newCode = `NOVA-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-          await supabase.from('profiles').update({ share_code: newCode } as any).eq('id', user.id);
-          setProfileState(prev => prev ? { ...prev, shareCode: newCode } : null);
+          const profileData: UserProfile = {
+            name: data.name,
+            age: data.age,
+            gender: data.gender as any,
+            heightCm: data.height_cm,
+            weightKg: data.weight_kg,
+            targetWeightKg: data.target_weight_kg,
+            activityLevel: data.activity_level as any,
+            goal: data.goal as any,
+            bmr: data.bmr,
+            tdee: data.tdee,
+            dailyCalorieTarget: data.daily_calorie_target,
+            proteinTarget: data.protein_target,
+            carbsTarget: data.carbs_target,
+            fatsTarget: data.fats_target,
+            isPremium: (data as any).is_premium ?? false,
+            calorieSpreadDays: parsedSpread,
+            targetDate: (data as any).target_date ?? null,
+            favoriteFood: (data as any).favorite_food ?? '',
+            dietaryWeakness: (data as any).dietary_weakness ?? '',
+            dailyHabits: (data as any).daily_habits ?? '',
+            medicalConditions: (data as any).medical_conditions ?? '',
+            shareCode: (data as any).share_code ?? null,
+          };
+
+          setProfileState(profileData);
+
+          // Auto-generate share code if missing
+          if (!(data as any).share_code) {
+            const newCode = `NOVA-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            // Optimistically update locally
+            setProfileState(prev => prev ? { ...prev, shareCode: newCode } : null);
+            // Try updating remote
+            await supabase.from('profiles').update({ share_code: newCode } as any).eq('id', user.id);
+          }
         }
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchProfile();
   }, [user]);
@@ -209,7 +220,7 @@ export function useDailyLog(selectedDate?: Date, overrideUserId?: string) {
     }));
 
     setTodayLog({ date: targetDateKey, meals: mealEntries, waterMl: log.water_ml });
-  }, [user, targetDateKey]);
+  }, [activeUserId, targetDateKey]);
 
   useEffect(() => { fetchLog(); }, [fetchLog]);
 
