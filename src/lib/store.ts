@@ -75,7 +75,15 @@ export function useProfile() {
           dietaryWeakness: (data as any).dietary_weakness ?? '',
           dailyHabits: (data as any).daily_habits ?? '',
           medicalConditions: (data as any).medical_conditions ?? '',
+          shareCode: (data as any).share_code ?? null,
         });
+
+        // Auto-generate share code if missing
+        if (!(data as any).share_code) {
+          const newCode = `NOVA-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+          await supabase.from('profiles').update({ share_code: newCode } as any).eq('id', user.id);
+          setProfileState(prev => prev ? { ...prev, shareCode: newCode } : null);
+        }
       }
       setLoading(false);
     };
@@ -111,6 +119,7 @@ export function useProfile() {
       dietary_weakness: p.dietaryWeakness || '',
       daily_habits: p.dailyHabits || '',
       medical_conditions: p.medicalConditions || '',
+      share_code: p.shareCode || null,
       updated_at: new Date().toISOString(),
     };
     
@@ -130,8 +139,9 @@ export function useProfile() {
 
 const todayKey = () => format(new Date(), 'yyyy-MM-dd');
 
-export function useDailyLog(selectedDate?: Date) {
+export function useDailyLog(selectedDate?: Date, overrideUserId?: string) {
   const { user } = useAuth();
+  const activeUserId = overrideUserId || user?.id;
   
   // Compute the string key for the currently requested date
   const targetDateKey = format(selectedDate || new Date(), 'yyyy-MM-dd');
@@ -140,20 +150,20 @@ export function useDailyLog(selectedDate?: Date) {
   const [todayLogId, setTodayLogId] = useState<string | null>(null);
 
   const fetchLog = useCallback(async () => {
-    if (!user) return;
+    if (!activeUserId) return;
     
     // Get or create daily log for the target date
     let { data: log } = await supabase
       .from('daily_logs')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', activeUserId)
       .eq('date', targetDateKey)
       .maybeSingle();
     
-    if (!log) {
+    if (!log && !overrideUserId) {
       const { data: newLog, error } = await supabase
         .from('daily_logs')
-        .insert({ user_id: user.id, date: targetDateKey, water_ml: 0 })
+        .insert({ user_id: activeUserId, date: targetDateKey, water_ml: 0 })
         .select()
         .maybeSingle();
       
@@ -289,23 +299,24 @@ export function useDailyLog(selectedDate?: Date) {
   return { logs: {}, getLog, addMeal, removeMeal, moveMeal, addWater };
 }
 
-export function useWeightHistory() {
+export function useWeightHistory(overrideUserId?: string) {
   const { user } = useAuth();
+  const activeUserId = overrideUserId || user?.id;
   const [entries, setEntries] = useState<WeightEntry[]>([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!activeUserId) return;
     const fetch = async () => {
       const { data } = await supabase
         .from('weight_entries')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', activeUserId)
         .order('date', { ascending: true });
       
       setEntries((data || []).map(e => ({ date: e.date, weightKg: e.weight_kg })));
     };
     fetch();
-  }, [user]);
+  }, [activeUserId]);
 
   const addEntry = useCallback(async (entry: WeightEntry) => {
     if (!user) return;

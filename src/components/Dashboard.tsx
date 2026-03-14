@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, Zap, TrendingUp, Info, BookmarkPlus } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, Zap, TrendingUp, Info, BookmarkPlus, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog, MealType, MEAL_LABELS } from '@/lib/types';
@@ -16,6 +17,7 @@ import AIFoodScanner from './AIFoodScanner';
 import NLPFoodInput from './NLPFoodInput';
 import WeeklyAnalytics from './WeeklyAnalytics';
 import NutritionCoach from './NutritionCoach';
+import CoachDashboard from './CoachDashboard';
 import { useTheme } from '@/lib/store';
 import { useCalorieBanking } from '@/hooks/useCalorieBanking';
 import { format, parseISO, differenceInDays, isSameDay } from 'date-fns';
@@ -27,7 +29,7 @@ import { toast } from 'sonner';
 
 import { useAppState } from '@/contexts/AppStateContext';
 
-type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach';
+type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach' | 'admin';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -56,7 +58,9 @@ export default function Dashboard() {
     onAddWeight, 
     onUpdateProfile, 
     selectedDate, 
-    onDateChange 
+    onDateChange,
+    viewingClientId,
+    setViewingClientId
   } = useAppState();
   
   if (!profile) return null;
@@ -230,6 +234,14 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <motion.button
+                  onClick={() => setView('admin')}
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary/20 transition-colors"
+                >
+                  <ShieldCheck className="w-[18px] h-[18px] text-primary" />
+                </motion.button>
                 <motion.button
                   onClick={() => setView('analytics')}
                   whileHover={{ scale: 1.1, rotate: 5 }}
@@ -619,6 +631,33 @@ export default function Dashboard() {
         )}
         {view === 'food' && (
           <FoodLogger key="food" onAddMeal={(entry) => { onAddMeal(entry); }} onClose={() => setView('dashboard')} />
+        )}
+        {view === 'admin' && (
+          <CoachDashboard 
+            key="admin" 
+            onClose={() => setView('dashboard')} 
+            onViewClient={(id) => {
+              setViewingClientId(id);
+              setView('dashboard');
+              toast.info('מעבר לתצוגת מתאמן (קריאה בלבד)');
+            }}
+          />
+        )}
+        {view === 'dashboard' && viewingClientId && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-auto"
+          >
+            <Button 
+              size="sm"
+              variant="secondary"
+              onClick={() => setViewingClientId(null)}
+              className="rounded-full shadow-lg gap-2 px-4 border border-primary/20 bg-background/80 backdrop-blur-md"
+            >
+              <ChevronLeft className="w-4 h-4" /> חזרה להתקדמות שלי
+            </Button>
+          </motion.div>
         )}
         {view === 'settings' && (
           <SettingsPanel key="settings" theme={theme} profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} onClose={() => setView('dashboard')} />
