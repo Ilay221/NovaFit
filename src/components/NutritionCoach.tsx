@@ -146,9 +146,21 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
 
   const autoGenerateTitle = async (sessionId: string, msgs: Msg[]) => {
     if (titleGenerated) return;
-    const realMsgs = msgs.filter(m => !m.error);
-    if (realMsgs.length < 2) return;
+    const userMsg = msgs.find(m => m.role === 'user' && !m.error);
+    if (!userMsg) return;
+
     setTitleGenerated(true);
+
+    // Immediate fallback: first 30 chars of the message
+    const fallbackTitle = userMsg.content.slice(0, 30).trim() + (userMsg.content.length > 30 ? '...' : '');
+    const currentSession = sessions.find(s => s.id === sessionId);
+    
+    // Only update if it's still the default title
+    if (currentSession && (currentSession.title === 'שיחה חדשה' || !currentSession.title)) {
+      await supabase.from('chat_sessions').update({ title: fallbackTitle }).eq('id', sessionId);
+      setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title: fallbackTitle } : s));
+    }
+
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
@@ -160,17 +172,17 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
         },
         body: JSON.stringify({
           action: 'generate-title',
-          messages: realMsgs.slice(0, 4).map(m => ({ role: m.role, content: m.content })),
+          messages: msgs.filter(m => !m.error).slice(0, 4).map(m => ({ role: m.role, content: m.content })),
         }),
       });
       if (resp.ok) {
         const { title } = await resp.json();
-        if (title && title !== 'שיחה חדשה') {
+        if (title && title !== 'שיחה חדשה' && title !== fallbackTitle) {
           await supabase.from('chat_sessions').update({ title }).eq('id', sessionId);
           setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title } : s));
         }
       }
-    } catch { /* non-critical */ }
+    } catch { /* non-critical fallback stays */ }
   };
 
   const handleNewChat = () => {

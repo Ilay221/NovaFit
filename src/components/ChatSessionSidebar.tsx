@@ -111,11 +111,11 @@ export default function ChatSessionSidebar({
 
   return (
     <motion.div
-      initial={{ x: 280, opacity: 0 }}
+      initial={{ x: -280, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 280, opacity: 0 }}
+      exit={{ x: -280, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="absolute inset-y-0 end-0 w-[280px] z-10 bg-card border-s border-border/50 flex flex-col shadow-xl"
+      className="absolute inset-y-0 start-0 w-[280px] z-50 bg-card border-e border-border/50 flex flex-col shadow-xl"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-safe pb-3 border-b border-border/50">
