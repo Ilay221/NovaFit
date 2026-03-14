@@ -235,14 +235,6 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <motion.button
-                  onClick={() => setView('admin')}
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary/20 transition-colors"
-                >
-                  <ShieldCheck className="w-[18px] h-[18px] text-primary" />
-                </motion.button>
-                <motion.button
                   onClick={() => setView('analytics')}
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   whileTap={{ scale: 0.9 }}
@@ -693,6 +685,21 @@ export default function Dashboard() {
       {/* FAB Group */}
       {view === 'dashboard' && (
         <div className="fixed bottom-6 start-5 z-40 flex flex-col gap-2.5 items-start">
+          <motion.div
+            initial={{ scale: 0, opacity: 0, rotate: -90 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ delay: 0.8, type: 'spring', stiffness: 400, damping: 20 }}
+          >
+            <motion.div whileHover={{ scale: 1.12, rotate: 10 }} whileTap={{ scale: 0.88 }}>
+              <Button
+                onClick={() => setView('admin')}
+                variant="outline"
+                className="h-11 w-11 rounded-full shadow-md p-0 bg-primary/10 border-primary/20 hover:bg-primary/20 transition-all duration-200"
+              >
+                <ShieldCheck className="w-[18px] h-[18px] text-primary" />
+              </Button>
+            </motion.div>
+          </motion.div>
           <motion.div
             initial={{ scale: 0, opacity: 0, rotate: -90 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
