@@ -83,6 +83,10 @@ export default function Dashboard() {
     }),
     { calories: 0, protein: 0, carbs: 0, fats: 0 }
   );
+  totals.calories = Math.round(totals.calories);
+  totals.protein = Math.round(totals.protein);
+  totals.carbs = Math.round(totals.carbs);
+  totals.fats = Math.round(totals.fats);
 
   // Calorie Banking System
   const banking = useCalorieBanking(profile, dailyLog, selectedDate);
