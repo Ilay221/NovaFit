@@ -78,7 +78,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
         id,
         status,
         coach_id,
-        profiles!coaching_relationships_coach_id_fkey (
+        profiles:coach_id (
           name
         )
       ` as any)

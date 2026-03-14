@@ -41,7 +41,7 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
         id,
         status,
         client_id,
-        profiles!coaching_relationships_client_id_fkey (
+        profiles:client_id (
           id,
           name
         )
@@ -54,7 +54,7 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
     } else {
       const formattedClients = (relationships || []).map((r: any) => ({
         id: r.client_id,
-        name: r.profiles?.name || 'מתאמן ללא שם',
+        name: r.profiles?.name || 'מתאמן',
         status: r.status,
       }));
       setClients(formattedClients);
@@ -71,11 +71,15 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
       const { data: clientProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id, name')
-        .eq('share_code' as any, clientCode.trim().toUpperCase())
-        .maybeSingle();
+        .eq('share_code', clientCode.trim().toUpperCase())
+        .maybeSingle() as any;
 
       if (profileError || !clientProfile) {
-        toast.error('קוד לא תקין או משתמש לא נמצא');
+        if (profileError?.code === 'PGRST204' || profileError?.message?.includes('share_code')) {
+          toast.error('שגיאה בגישה לנתונים - נא לוודא שה-SQL בוצע');
+        } else {
+          toast.error('קוד לא תקין או משתמש לא נמצא');
+        }
         setSubmitting(false);
         return;
       }

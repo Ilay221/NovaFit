@@ -4,8 +4,8 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS share_code TEXT UNIQUE;
 -- Create coaching_relationships table
 CREATE TABLE IF NOT EXISTS coaching_relationships (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    coach_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    client_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    coach_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    client_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
