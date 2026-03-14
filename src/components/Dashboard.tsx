@@ -95,7 +95,7 @@ export default function Dashboard() {
   );
 
   // Calorie Banking System
-  const banking = useCalorieBanking(profile, dailyLog);
+  const banking = useCalorieBanking(profile, dailyLog, selectedDate);
 
   const hasTimeline = !!profile.targetDate && profile.goal !== 'maintain';
 
@@ -104,10 +104,12 @@ export default function Dashboard() {
     [hasTimeline, profile, weightHistory]
   );
 
-  // Use the dynamic banking target instead of static profile target
-  const ringCalorieTarget = banking.loading
-    ? sanitizeKcalTarget(profile.dailyCalorieTarget, 0)
-    : sanitizeKcalTarget(banking.dynamicTarget, 0);
+  // Use the dynamic banking target for today, base target for past days
+  const ringCalorieTarget = banking.isViewingToday
+    ? (banking.loading
+        ? sanitizeKcalTarget(profile.dailyCalorieTarget, 0)
+        : sanitizeKcalTarget(banking.dynamicTarget, 0))
+    : sanitizeKcalTarget(profile.dailyCalorieTarget, 0);
   const effectiveProteinTarget = profile.proteinTarget;
   const effectiveCarbsTarget = profile.carbsTarget;
   const effectiveFatsTarget = profile.fatsTarget;
@@ -335,12 +337,12 @@ export default function Dashboard() {
               <CalorieRing 
                 consumed={totals.calories} 
                 target={ringCalorieTarget} 
-                bankingStatus={banking.status} 
-                tomorrowTarget={banking.tomorrowProjectedTarget}
+                bankingStatus={banking.isViewingToday ? banking.status : 'neutral'} 
+                tomorrowTarget={banking.isViewingToday ? banking.tomorrowProjectedTarget : ringCalorieTarget}
               />
 
-              {/* Transparent Math Explanation */}
-              {!banking.loading && banking.status !== 'neutral' && (
+              {/* Transparent Math Explanation — only show on Today */}
+              {!banking.loading && banking.status !== 'neutral' && banking.isViewingToday && (
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -406,8 +408,8 @@ export default function Dashboard() {
             </div>
           </motion.div>
 
-          {/* Smart Coach Insight */}
-          {!banking.loading && banking.status !== 'neutral' && (
+          {/* Smart Coach Insight — only show on Today */}
+          {!banking.loading && banking.status !== 'neutral' && banking.isViewingToday && (
             <motion.div
               variants={itemVariants}
               initial={{ opacity: 0, y: 10, scale: 0.97 }}
