@@ -94,14 +94,29 @@ export default function CoachDashboard({ onClose, onViewClient }: CoachDashboard
       let clientProfile = null;
       let profileError = null;
 
-      // Stage A: Try ID prefix search (handles "Generated on the fly" logic)
-      // Note: PostgREST ilike on UUID might fail depending on PG version/config.
-      const { data: byId, error: idErr } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .filter('id', 'ilike', `${cleanCode}%`)
-        .limit(1)
-        .maybeSingle() as any;
+      // Stage A: Try ID prefix search using Range Search (most compatible with UUID type)
+      const prefix = cleanCode;
+      const { data: byId, error: idErr } = await (async () => {
+        if (prefix.length < 4) return { data: null, error: null }; // Require at least 4 chars for safety
+        
+        // Construct UUID range boundaries
+        const pad = '00000000-0000-0000-0000-000000000000';
+        const start = (prefix + pad.substring(prefix.length)).substring(0, 36);
+        
+        // For the end boundary, increment the last character of the prefix
+        const lastPart = prefix.substring(prefix.length - 1);
+        const nextChar = String.fromCharCode(lastPart.charCodeAt(0) + 1);
+        const prefixNext = prefix.substring(0, prefix.length - 1) + nextChar;
+        const end = (prefixNext + pad.substring(prefixNext.length)).substring(0, 36);
+
+        return await supabase
+          .from('profiles')
+          .select('id, name')
+          .gte('id', start)
+          .lt('id', end)
+          .limit(1)
+          .maybeSingle() as any;
+      })();
 
       if (byId) {
         clientProfile = byId;
