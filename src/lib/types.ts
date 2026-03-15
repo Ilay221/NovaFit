@@ -101,3 +101,16 @@ export interface MealTemplate {
   items: { foodItem: FoodItem; quantity: number }[];
   mealType: MealType;
 }
+export interface DailyMenuMeal {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  servingSize: string;
+}
+
+export interface DailyMenuPlan {
+  date: string;
+  meals: Record<MealType, DailyMenuMeal[]>;
+}
