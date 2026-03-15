@@ -31,14 +31,15 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-1.5-flash",
         messages: [
           {
             role: "system",
             content: `You are a professional nutritionist AI. Analyze food images and return nutritional information.
-You MUST respond using the provided tool function. Identify each distinct food item visible in the image.
-For each item, estimate realistic calories, protein, carbs, and fats based on typical serving sizes.
-Be specific with food names (e.g., "Grilled Chicken Breast" not just "chicken").`,
+CRITICAL: FIRST verify if the image actually contains food.
+- If the image is a LOGO, text, icon, or any non-food object, do NOT identify it as food. Return an empty array of foods.
+- Be extremely precise. Identify specific foods (e.g. "Sardines in Oil" vs "Pizza"). Look for packaging labels or specific visual markers.
+- If unsure, do not guess. Estimate macros only for items you are confident about.`,
           },
           {
             role: "user",

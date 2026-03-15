@@ -49,14 +49,23 @@ async function fetchWithRetry(url: string, options: RequestInit): Promise<Respon
   throw lastError ?? new Error("All retry attempts failed");
 }
 
-function sanitizeMessages(messages: unknown): Array<{ role: string; content: string }> {
+function sanitizeMessages(messages: unknown): Array<{ role: string; content: any }> {
   if (!Array.isArray(messages)) return [];
   return messages
-    .filter((m: any) => m && typeof m === "object" && typeof m.content === "string" && typeof m.role === "string")
-    .map((m: any) => ({
-      role: m.role === "user" ? "user" : m.role === "assistant" ? "assistant" : "user",
-      content: m.content.slice(0, 10000),
-    }))
+    .filter((m: any) => m && typeof m === "object" && (typeof m.content === "string" || Array.isArray(m.content)) && typeof m.role === "string")
+    .map((m: any) => {
+      let content = m.content;
+      if (m.image_url) {
+        content = [
+          { type: "text", text: m.content || "Analyze this image." },
+          { type: "image_url", image_url: { url: m.image_url } }
+        ];
+      }
+      return {
+        role: m.role === "user" ? "user" : m.role === "assistant" ? "assistant" : "user",
+        content: content,
+      };
+    })
     .slice(-30);
 }
 
@@ -194,26 +203,13 @@ async function buildSystemPrompt(supabase: any, user: any): Promise<string> {
     const carbsPct = Math.round((totalCarbs / profile.carbs_target) * 100);
     const fatsPct = Math.round((totalFats / profile.fats_target) * 100);
 
-    return `You are NovaFit AI, a warm, expert, and hyper-personalized nutrition coach. You know everything about this user:
-
-## User Profile
-- Name: ${profile.name}
-- Age: ${profile.age}, Gender: ${profile.gender}
-- Height: ${profile.height_cm}cm
-- Current weight: ${currentWeight}kg
-- Target weight: ${profile.target_weight_kg}kg
-- Goal: ${profile.goal === 'lose' ? 'Lose weight' : profile.goal === 'gain' ? 'Build muscle' : 'Maintain weight'}
-- Activity level: ${profile.activity_level}
-${profile.target_date ? `- Target date: ${profile.target_date}` : ''}
-
-## Medical Conditions & Allergies
-${profile.medical_conditions ? profile.medical_conditions : 'None specified.'}
-⚠️ CRITICAL: If the user has medical conditions or allergies listed above, NEVER suggest foods that could be harmful. Always consider these when giving advice.
-
-## Nutrition Targets
-- OVERALL Base daily calorie target: ${Math.round(baseTarget)} kcal
-- TODAY'S Dynamic calorie target: ${effectiveTarget} kcal ${bankingContext}
-- Protein: ${Math.round(profile.protein_target)}g | Carbs: ${Math.round(profile.carbs_target)}g | Fats: ${Math.round(profile.fats_target)}g
+    return `## Visual Analysis Instructions
+- When the user provides an image, act as a "Critical Visual Nutritionist".
+- FIRST, identify if the image contains actual food.
+- If the image is a logo, text, a person, or any non-food object, STATE THIS CLEARLY and do NOT provide nutritional data or a FOOD_ADD tag for it.
+- If it is food, identify it with high precision. Look for textures, shapes, and colors.
+- Be honest: if an image is blurry or ambiguous (like the sardines/pizza case), ask for clarification rather than guessing wildly.
+- Do NOT hallucinate popular foods (like pizza) if they aren't clearly visible.
 
 ## Today's Progress (${today})
 - ${mealsBreakdown}
@@ -276,7 +272,7 @@ async function generateTitle(messages: Array<{ role: string; content: string }>,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "google/gemini-1.5-flash",
         messages: [
           { role: "system", content: "Generate a very short title (max 5 words, in the language of the conversation) for this chat conversation. Return ONLY the title text, nothing else." },
           ...messages.slice(0, 4),
@@ -342,7 +338,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-1.5-flash",
         messages: [{ role: "system", content: systemPrompt }, ...messages],
         stream: true,
       }),

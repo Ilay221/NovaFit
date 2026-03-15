@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu, Check, X, UtensilsCrossed } from 'lucide-react';
+import { ArrowRight, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu, Check, X, UtensilsCrossed, Camera, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
@@ -23,7 +23,14 @@ interface FoodAction {
   foods: DetectedFood[];
 }
 
-type Msg = { role: 'user' | 'assistant'; content: string; error?: boolean; foodAction?: FoodAction; foodActionHandled?: boolean };
+type Msg = { 
+  role: 'user' | 'assistant'; 
+  content: string; 
+  imageUrl?: string;
+  error?: boolean; 
+  foodAction?: FoodAction; 
+  foodActionHandled?: boolean 
+};
 
 interface BankingContext {
   dynamicTarget: number;
@@ -88,7 +95,9 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [titleGenerated, setTitleGenerated] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -234,9 +243,26 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
     toast.success('כל השיחות נמחקו');
   };
 
-  const send = useCallback(async (overrideInput?: string) => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('התמונה גדולה מדי (מקסימום 5MB)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const send = useCallback(async (overrideInput?: string, overrideImage?: string) => {
     const text = (overrideInput ?? input).trim();
-    if (!text || isLoading) return;
+    const image = overrideImage ?? selectedImage;
+    if ((!text && !image) || isLoading) return;
 
     let sessionId = activeSessionId;
     if (!sessionId) {
@@ -245,14 +271,16 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
       setActiveSessionId(sessionId);
     }
 
-    const userMsg: Msg = { role: 'user', content: text };
+    const userMsg: Msg = { role: 'user', content: text, imageUrl: image || undefined };
     const prevMessages = overrideInput ? messages : [...messages, userMsg];
     if (!overrideInput) setMessages(prev => [...prev, userMsg]);
+    
     setInput('');
+    setSelectedImage(null);
     setIsLoading(true);
     setLastFailedInput(null);
 
-    await saveMessage(sessionId, 'user', text);
+    await saveMessage(sessionId, 'user', text + (image ? ' [תמונה מצורפת]' : ''));
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -306,7 +334,13 @@ ${bankingNote || ''}`
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ messages: messagesWithContext }),
+          body: JSON.stringify({ 
+            messages: messagesWithContext.map(m => ({
+              role: m.role,
+              content: m.content,
+              ...(m.role === 'user' && (m as any).imageUrl ? { image_url: (m as any).imageUrl } : {})
+            }))
+          }),
           signal: controller.signal,
         });
 
@@ -566,6 +600,11 @@ ${bankingNote || ''}`
                     ? 'bg-destructive/5 border border-destructive/20 rounded-bl-md'
                     : 'bg-muted/60 border border-border/40 rounded-bl-md'
                 }`}>
+                {msg.imageUrl && (
+                  <div className="mb-2 relative rounded-lg overflow-hidden border border-border/20">
+                    <img src={msg.imageUrl} alt="User upload" className="max-w-full h-auto object-cover max-h-48" />
+                  </div>
+                )}
                 {msg.role === 'assistant' ? (
                   <>
                     <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:mb-2 [&>ol]:mb-2">
@@ -666,24 +705,60 @@ ${bankingNote || ''}`
 
       {/* Input */}
       <div className="border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 pb-safe">
-        <div className="flex gap-2 items-end max-w-lg mx-auto">
-          <textarea
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="שאל אותי כל דבר על התזונה שלך..."
-            rows={1}
-            className="flex-1 resize-none rounded-xl bg-muted/50 border border-border/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all min-h-[42px] max-h-[120px]"
-            style={{ height: 'auto', overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}
-          />
-          <Button
-            shimmer
-            onClick={() => send()}
-            disabled={!input.trim() || isLoading}
-            className="h-[42px] w-[42px] rounded-xl p-0 shadow-md"
-          >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </Button>
+        <div className="max-w-lg mx-auto flex flex-col gap-2">
+          {selectedImage && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative self-start"
+            >
+              <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-primary shadow-lg">
+                <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
+              </div>
+              <button 
+                onClick={() => setSelectedImage(null)}
+                className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-md scale-90 hover:scale-110 transition-transform"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </motion.div>
+          )}
+
+          <div className="flex gap-2 items-end">
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleImageSelect}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              className="h-[42px] w-[42px] rounded-xl shrink-0 bg-muted/50 border-border/50"
+            >
+              <Camera className="w-4 h-4 text-muted-foreground" />
+            </Button>
+            
+            <textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+              placeholder="שאל אותי או צרף תמונה..."
+              rows={1}
+              className="flex-1 resize-none rounded-xl bg-muted/50 border border-border/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all min-h-[42px] max-h-[120px]"
+              style={{ height: 'auto', overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}
+            />
+            <Button
+              shimmer
+              onClick={() => send()}
+              disabled={(!input.trim() && !selectedImage) || isLoading}
+              className="h-[42px] w-[42px] rounded-xl p-0 shadow-md shrink-0"
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </Button>
+          </div>
         </div>
       </div>
     </motion.div>
