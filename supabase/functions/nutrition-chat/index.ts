@@ -261,12 +261,15 @@ Rules for the FOOD_ADD tag:
 - Always respond naturally BEFORE the tag (acknowledge what they ate, give tips, etc.)
 
 ## Daily Menu Generation
-If the user asks to generate a "DAILY MENU" (תפריט יומי) for a specific date, you MUST include a special hidden tag with the structured menu.
+If the user asks to generate a "DAILY MENU" (תפריט יומי) for a specific date, you MUST return ONLY a special hidden tag with the structured menu, and absolutely nothing else after it.
 Format:
 <!--DAILY_MENU:{"date":"YYYY-MM-DD","meals":{"breakfast":[{"name":"...","calories":0,"protein":0,"carbs":0,"fats":0,"servingSize":"..."}],"lunch":[],"dinner":[],"snack":[],"late_night":[]}}-->
 Rules:
+- DO NOT wrap the JSON in markdown blocks (```json).
+- DO NOT output any text after the <!--DAILY_MENU:...--> tag.
+- ALL generated meals MUST strictly match the user's dietary preferences, allergies, and favorite foods.
 - Include at least 2 items for major meals (breakfast, lunch, dinner).
-- Ensure total calories and macros align with the user's dynamic target for that day.
+- Ensure total calories and macros align perfectly with the user's dynamic target for that day.
 - Provide varied and healthy options.`;
 
   } catch (err) {

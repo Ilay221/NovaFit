@@ -71,12 +71,39 @@ export default function DailyMenu({ onClose, onAddMeal, selectedDate }: DailyMen
         }
       }
       
-      const match = assistantSoFar.match(/<!--DAILY_MENU:([\s\S]*?)-->/);
-      if (match) {
-        const parsed = JSON.parse(match[1]);
+      // Fallback robust parsing: try to find the tag, or just find any JSON object containing "meals"
+      let parsed = null;
+      
+      try {
+        const match = assistantSoFar.match(/<!--DAILY_MENU:([\s\S]*?)-->/);
+        if (match) {
+          parsed = JSON.parse(match[1]);
+        } else {
+          // If the AI forgot the tag but provided JSON (e.g., inside ```json block)
+          const jsonMatch = assistantSoFar.match(/```(?:json)?\s*(\{[\s\S]*"meals"[\s\S]*\})\s*```/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[1]);
+          } else {
+            // Desperate fallback: find the first { that looks like it has "meals"
+            const startIndex = assistantSoFar.indexOf('{');
+            const endIndex = assistantSoFar.lastIndexOf('}');
+            if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+               const possibleJson = assistantSoFar.substring(startIndex, endIndex + 1);
+               if (possibleJson.includes('"meals"')) {
+                 parsed = JSON.parse(possibleJson);
+               }
+            }
+          }
+        }
+      } catch (parseError) {
+        console.error('Failed to parse AI output as JSON:', parseError, assistantSoFar);
+      }
+
+      if (parsed && parsed.meals) {
         saveMenu(parsed);
         toast.success('התפריט נוצר ונשמר בהצלחה!');
       } else {
+        console.error('Invalid structure parsed:', parsed);
         toast.error('ה-AI לא הצליח לייצר את התפריט בפורמט הנדרש. נסה שוב.');
       }
     } catch (error) {
