@@ -202,8 +202,12 @@ export default function Dashboard() {
             initial="hidden"
             animate="show"
             exit={{ opacity: 0, scale: 0.96, filter: 'blur(8px)', transition: { duration: 0.4, ease: [0.32, 0.72, 0, 1] } }}
-            className="max-w-lg mx-auto px-5 pt-safe"
+            className="max-w-lg mx-auto px-5 pt-safe relative"
           >
+            {/* Test Text */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+              <span className="text-4xl font-bold opacity-20">test</span>
+            </div>
             {/* Header */}
             <motion.div variants={itemVariants} className="flex items-center justify-between pt-8 pb-4">
               <div>
