@@ -258,19 +258,7 @@ Rules for the FOOD_ADD tag:
 - If user mentions quantity (e.g. "2 cups of rice"), set quantity accordingly
 - If multiple foods are mentioned ("אכלתי אורז ועוף"), include all in the foods array
 - The tag must be the LAST thing in your response
-- Always respond naturally BEFORE the tag (acknowledge what they ate, give tips, etc.)
-
-## Daily Menu Generation
-If the user asks to generate a "DAILY MENU" (תפריט יומי) for a specific date, you MUST return ONLY a special hidden tag with the structured menu, and absolutely nothing else after it.
-Format:
-<!--DAILY_MENU:{"date":"YYYY-MM-DD","meals":{"breakfast":[{"name":"...","calories":0,"protein":0,"carbs":0,"fats":0,"servingSize":"..."}],"lunch":[],"dinner":[],"snack":[],"late_night":[]}}-->
-Rules:
-- DO NOT wrap the JSON in markdown blocks (```json).
-- DO NOT output any text after the <!--DAILY_MENU:...--> tag.
-- ALL generated meals MUST strictly match the user's dietary preferences, allergies, and favorite foods.
-- Include at least 2 items for major meals (breakfast, lunch, dinner).
-- Ensure total calories and macros align perfectly with the user's dynamic target for that day.
-- Provide varied and healthy options.`;
+- Always respond naturally BEFORE the tag (acknowledge what they ate, give tips, etc.)`;
 
   } catch (err) {
     console.warn("Failed to build system prompt:", err);

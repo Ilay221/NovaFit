@@ -22,13 +22,12 @@ import { format, parseISO, differenceInDays, isSameDay } from 'date-fns';
 import { haptics } from '@/lib/haptics';
 import DateStrip from './DateStrip';
 import ConfirmDialog from './ConfirmDialog';
-import DailyMenu from './DailyMenu';
 import { useMealTemplates } from '@/hooks/useMealTemplates';
 import { toast } from 'sonner';
 
 import { useAppState } from '@/contexts/AppStateContext';
 
-type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach' | 'daily-menu';
+type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -231,15 +230,6 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <motion.button
-                  onClick={() => setView('daily-menu')}
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
-                  title="תפריט יומי"
-                >
-                  <Utensils className="w-[18px] h-[18px] text-muted-foreground" />
-                </motion.button>
                 <motion.button
                   onClick={() => setView('analytics')}
                   whileHover={{ scale: 1.1, rotate: 5 }}
@@ -658,14 +648,6 @@ export default function Dashboard() {
             } : undefined}
           />
         )}
-          {view === 'daily-menu' && (
-            <DailyMenu 
-              key="daily-menu" 
-              selectedDate={selectedDate} 
-              onAddMeal={onAddMeal} 
-              onClose={() => setView('dashboard')} 
-            />
-          )}
       </AnimatePresence>
 
 
