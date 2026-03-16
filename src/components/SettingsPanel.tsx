@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AccentColor, ThemeMode, UserProfile, WeightEntry } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,6 +62,8 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
   const { requestPermission, subscribeToPush, sendLocalNotification } = useNotifications();
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [testPending, setTestPending] = useState(false);
+  const [useTimelineSlider, setUseTimelineSlider] = useState(true);
+  const [weeklyPaceKg, setWeeklyPaceKg] = useState<number>(0.5);
 
   const currentTargetDate = profile.targetDate ? parseISO(profile.targetDate) : null;
 
@@ -127,56 +130,126 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
         </motion.div>
 
         {/* Target Date */}
-        {profile.goal !== 'maintain' && (
+        {profile.goal !== 'maintain' && profile.weightKg !== profile.targetWeightKg && (
           <motion.div variants={itemVariants} className="nova-card p-5">
             <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4 flex items-center gap-2">
               <Calendar className="w-3.5 h-3.5 text-primary" /> תאריך יעד
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
-              הגדר דד-ליין להגיע למשקל היעד. יעד הקלוריות היומי יתעדכן אוטומטית.
+              איך תרצה להגדיר את היעד שלך? (תאריך ידני או לפי קצב התקדמות שבועי)
             </p>
-            <div className="flex gap-2">
-              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "flex-1 justify-start text-start font-normal h-11 rounded-xl",
-                      !currentTargetDate && "text-muted-foreground"
-                    )}
-                  >
-                    <Calendar className="me-2 h-4 w-4" />
-                    {currentTargetDate ? format(currentTargetDate, "PPP") : <span>בחר תאריך יעד</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={currentTargetDate ?? undefined}
-                    onSelect={handleDateSelect}
-                    disabled={(date) => date < addDays(new Date(), 7)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              {currentTargetDate && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                >
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleClearTargetDate}
-                    className="h-11 w-11 rounded-xl text-muted-foreground hover:text-destructive hover:border-destructive/30"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </motion.div>
-              )}
+
+            <div className="flex bg-muted/40 p-1 rounded-xl mb-4">
+              <button
+                className={cn('flex-1 text-xs font-medium py-2 rounded-lg transition-all', useTimelineSlider ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground')}
+                onClick={() => setUseTimelineSlider(true)}
+              >
+                לפי קצב
+              </button>
+              <button
+                className={cn('flex-1 text-xs font-medium py-2 rounded-lg transition-all', !useTimelineSlider ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground')}
+                onClick={() => setUseTimelineSlider(false)}
+              >
+                תאריך ספציפי
+              </button>
             </div>
+
+            {useTimelineSlider ? (
+              <div className="space-y-4">
+                <div className="space-y-3 mt-4">
+                  <div className="px-2 space-y-6">
+                    <div className="flex items-end justify-center gap-1 mb-2">
+                      <span className="text-4xl font-extrabold font-display leading-none text-primary">{weeklyPaceKg.toFixed(2)}</span>
+                      <span className="text-sm text-muted-foreground font-medium pb-1">ק"ג בשבוע</span>
+                    </div>
+                    
+                    <Slider 
+                      value={[weeklyPaceKg]} 
+                      min={0.25} 
+                      max={2.5} 
+                      step={0.05} 
+                      onValueChange={(vals) => setWeeklyPaceKg(vals[0])}
+                      className="w-full"
+                    />
+                    
+                    <div className="flex justify-between text-[11px] text-muted-foreground font-medium px-1">
+                      <span>0.25 ק"ג (רגוע)</span>
+                      <span>2.5 ק"ג (קיצוני)</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-muted/40 rounded-xl p-4 mt-6 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">תאריך יעד מחושב אוטומטית</p>
+                    <p className="text-lg font-bold text-foreground">
+                      {format(addDays(new Date(), Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7))), 'd בMMMM, yyyy')}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1">בעוד {Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7))} ימים</p>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={() => {
+                    const calculatedDays = Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7));
+                    const newDate = addDays(new Date(), calculatedDays);
+                    handleDateSelect(newDate);
+                    toast.success('יעד עודכן לפי הקצב החדש');
+                  }} 
+                  className="w-full h-11 rounded-xl text-[13px] font-bold"
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  החל וערוך תוכנית
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "flex-1 justify-start text-start font-normal h-11 rounded-xl",
+                        !currentTargetDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="me-2 h-4 w-4" />
+                      {currentTargetDate ? format(currentTargetDate, "PPP") : <span>בחר תאריך יעד ספציפי</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={currentTargetDate ?? undefined}
+                      onSelect={(date) => {
+                        handleDateSelect(date);
+                        toast.success('תאריך יעד ספציפי נשמר');
+                      }}
+                      disabled={(date) => date < addDays(new Date(), 7)}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {currentTargetDate && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                  >
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        handleClearTargetDate();
+                        toast.success('תאריך יעד נוקה');
+                      }}
+                      className="h-11 w-11 rounded-xl text-muted-foreground hover:text-destructive hover:border-destructive/30"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
 
