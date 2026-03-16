@@ -55,6 +55,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     activityLevel, goal, bmr, tdee,
     dailyCalorieTarget, proteinTarget: macros.protein, carbsTarget: macros.carbs, fatsTarget: macros.fats,
     targetDate: targetDateStr,
+    calorieSpreadDays: 5,
   };
 
   const adaptive = calculateAdaptiveTargets(tempProfile, []);
@@ -71,6 +72,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       dailyCalorieTarget: finalCalories,
       proteinTarget: finalMacros.protein, carbsTarget: finalMacros.carbs, fatsTarget: finalMacros.fats,
       targetDate: targetDateStr,
+      calorieSpreadDays: 5,
       favoriteFood, dietaryWeakness, dailyHabits, medicalConditions,
     });
   };

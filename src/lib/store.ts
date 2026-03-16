@@ -51,7 +51,7 @@ export function useProfile() {
       if (data) {
         // Read local storage fallback for calorieSpreadDays
         const storedSpread = localStorage.getItem(`nova_spread_days_${user.id}`);
-        const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 1;
+        const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 5;
 
         setProfileState({
           name: data.name,
@@ -86,6 +86,7 @@ export function useProfile() {
     if (!user) return;
     if (!p) {
       await supabase.from('profiles').delete().eq('id', user.id);
+      localStorage.removeItem(`nova_spread_days_${user.id}`);
       setProfileState(null);
       return;
     }

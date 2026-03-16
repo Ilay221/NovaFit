@@ -41,7 +41,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
     heightCm: profile.heightCm,
     activityLevel: profile.activityLevel,
     goal: profile.goal,
-    calorieSpreadDays: profile.calorieSpreadDays || 1,
+    calorieSpreadDays: profile.calorieSpreadDays || 5,
   });
   const [weightForm, setWeightForm] = useState({
     weightKg: profile.weightKg,
@@ -57,7 +57,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
       heightCm: profile.heightCm,
       activityLevel: profile.activityLevel,
       goal: profile.goal,
-      calorieSpreadDays: profile.calorieSpreadDays || 1,
+      calorieSpreadDays: profile.calorieSpreadDays || 5,
     });
     setEditing(true);
   };
