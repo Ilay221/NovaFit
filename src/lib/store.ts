@@ -69,7 +69,7 @@ export function useProfile() {
           carbsTarget: data.carbs_target,
           fatsTarget: data.fats_target,
           isPremium: (data as any).is_premium ?? false,
-          calorieSpreadDays: parsedSpread,
+          calorieSpreadDays: (data as any).calorie_spread_days ?? parsedSpread,
           targetDate: (data as any).target_date ?? null,
           favoriteFood: (data as any).favorite_food ?? '',
           dietaryWeakness: (data as any).dietary_weakness ?? '',
@@ -112,13 +112,21 @@ export function useProfile() {
       dietary_weakness: p.dietaryWeakness || '',
       daily_habits: p.dailyHabits || '',
       medical_conditions: p.medicalConditions || '',
+      calorie_spread_days: p.calorieSpreadDays || 5,
       updated_at: new Date().toISOString(),
     };
     
     const { error } = await supabase.from('profiles').upsert(row);
-    if (error) console.error("Error saving profile to Supabase:", error);
+    if (error) {
+      console.error("Error saving profile to Supabase:", error);
+      // If the column doesn't exist yet, we'll still save to localStorage as a safety measure
+      if ((error as any).code === '42703') { // Undefined column
+        console.warn("DB column calorie_spread_days missing. Falling back to local storage.");
+      }
+    }
     
-    // Save calorieSpreadDays locally since DB column is missing
+    // Always persist to localStorage for now as a double backup and local speed, 
+    // but the primary is now DB.
     if (p.calorieSpreadDays !== undefined) {
       localStorage.setItem(`nova_spread_days_${user.id}`, p.calorieSpreadDays.toString());
     }
