@@ -79,14 +79,17 @@ const FRIENDLY_ERRORS: Record<string, string> = {
 
 function getFriendlyError(code?: string): string {
   if (code && FRIENDLY_ERRORS[code]) return FRIENDLY_ERRORS[code];
-  return "🤔 מאמן ה-AI שלך לוקח הפסקה קצרה. נסה שוב בעוד רגע! (שגיאה מהשרת)";
+  return `🤔 מאמן ה-AI שלך לוקח הפסקה קצרה (שגיאה: ${code || 'Unknown'}). נסה שוב בעוד רגע!`;
 }
 
 function classifyError(e: any): string {
+  console.error('Detailed AI Error Trace:', e);
   if (e?.name === 'AbortError' || e?.code === 20) return 'TIMEOUT';
-  if (e?.code === 401 || e?.code === 403) return 'UNAUTHORIZED';
+  if (e?.code === 401 || e?.status === 401 || (e?.message && e.message.includes('401'))) return 'UNAUTHORIZED';
+  if (e?.code === 403 || e?.status === 403) return 'FORBIDDEN';
   if (typeof e?.code === 'string') return e.code;
-  return 'FETCH_FAILED';
+  if (typeof e?.status === 'number') return `HTTP_${e.status}`;
+  return e?.message || 'FETCH_FAILED';
 }
 
 export default function NutritionCoach({ onClose, userName, onAddMeal, bankingContext }: NutritionCoachProps) {
