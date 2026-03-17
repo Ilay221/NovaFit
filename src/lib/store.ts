@@ -118,6 +118,8 @@ export function useProfile() {
       dietary_weakness: p.dietaryWeakness || '',
       daily_habits: p.dailyHabits || '',
       medical_conditions: p.medicalConditions || '',
+      chat_harshness: p.chatHarshness || 'בינוני',
+      coach_name: p.coachName || 'NovaFit AI',
       updated_at: new Date().toISOString(),
     };
     
