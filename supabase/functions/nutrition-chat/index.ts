@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const AI_GATEWAY = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;
 const REQUEST_TIMEOUT_MS = 30000;
@@ -293,7 +293,7 @@ async function generateTitle(messages: Array<{ role: string; content: string }>,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-1.5-flash",
+        model: "gemini-2.5-flash",
         messages: [
           { role: "system", content: "Generate a very short title (max 5 words, in the language of the conversation) for this chat conversation. Return ONLY the title text, nothing else." },
           ...messages.slice(0, 4),
@@ -321,9 +321,9 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "AI service is not configured" }), {
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
+      return new Response(JSON.stringify({ error: "AI service is not configured (Missing GEMINI_API_KEY)" }), {
         status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -334,7 +334,7 @@ serve(async (req) => {
     // === ACTION: generate-title ===
     if (body?.action === "generate-title") {
       const messages = sanitizeMessages(body?.messages);
-      const title = await generateTitle(messages, LOVABLE_API_KEY);
+      const title = await generateTitle(messages, GEMINI_API_KEY);
       return new Response(JSON.stringify({ title }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -355,11 +355,11 @@ serve(async (req) => {
     const response = await fetchWithRetry(AI_GATEWAY, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${GEMINI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-1.5-flash",
+        model: "gemini-2.5-flash",
         messages: [{ role: "system", content: systemPrompt }, ...messages],
         stream: true,
       }),
