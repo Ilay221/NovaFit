@@ -422,6 +422,17 @@ ${bankingNote || ''}`
       } catch (e: any) {
         if (e?.noRetry || attempt >= MAX_CLIENT_RETRIES || controller.signal.aborted) {
           const code = classifyError(e);
+          
+          if (code === 'UNAUTHORIZED') {
+            await supabase.auth.signOut().catch(() => {});
+            for (let k = 0; k < localStorage.length; k++) {
+              const key = localStorage.key(k);
+              if (key?.startsWith('sb-')) localStorage.removeItem(key);
+            }
+            window.location.reload();
+            break;
+          }
+
           setMessages(prev => [...prev, { role: 'assistant', content: getFriendlyError(code), error: true }]);
           setLastFailedInput(text);
           break;

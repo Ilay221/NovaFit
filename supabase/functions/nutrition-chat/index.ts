@@ -3,8 +3,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform",
 };
 
 const AI_GATEWAY = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
@@ -293,7 +293,7 @@ async function generateTitle(messages: Array<{ role: string; content: string }>,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gemini-2.5-flash",
+        model: "gemini-3-flash-preview",
         messages: [
           { role: "system", content: "Generate a very short title (max 5 words, in the language of the conversation) for this chat conversation. Return ONLY the title text, nothing else." },
           ...messages.slice(0, 4),
@@ -359,7 +359,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gemini-2.5-flash",
+        model: "gemini-3-flash-preview",
         messages: [{ role: "system", content: systemPrompt }, ...messages],
         stream: true,
       }),
