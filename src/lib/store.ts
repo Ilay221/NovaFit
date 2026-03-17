@@ -53,6 +53,10 @@ export function useProfile() {
         const storedSpread = localStorage.getItem(`nova_spread_days_${user.id}`);
         const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 5;
 
+        // Read local storage fallback for AI settings
+        const storedChatHarshness = localStorage.getItem(`nova_chat_harshness_${user.id}`);
+        const storedCoachName = localStorage.getItem(`nova_coach_name_${user.id}`);
+
         setProfileState({
           name: data.name,
           age: data.age,
@@ -75,8 +79,8 @@ export function useProfile() {
           dietaryWeakness: (data as any).dietary_weakness ?? '',
           dailyHabits: (data as any).daily_habits ?? '',
           medicalConditions: (data as any).medical_conditions ?? '',
-          chatHarshness: (data as any).chat_harshness ?? 'בינוני',
-          coachName: (data as any).coach_name ?? 'NovaFit AI',
+          chatHarshness: (data as any).chat_harshness ?? storedChatHarshness ?? 'בינוני',
+          coachName: (data as any).coach_name ?? storedCoachName ?? 'NovaFit AI',
         });
       }
       setLoading(false);
@@ -114,8 +118,6 @@ export function useProfile() {
       dietary_weakness: p.dietaryWeakness || '',
       daily_habits: p.dailyHabits || '',
       medical_conditions: p.medicalConditions || '',
-      chat_harshness: p.chatHarshness || 'בינוני',
-      coach_name: p.coachName || 'NovaFit AI',
       updated_at: new Date().toISOString(),
     };
     
@@ -124,6 +126,12 @@ export function useProfile() {
     
     if (p.calorieSpreadDays !== undefined) {
       localStorage.setItem(`nova_spread_days_${user.id}`, p.calorieSpreadDays.toString());
+    }
+    if (p.chatHarshness) {
+      localStorage.setItem(`nova_chat_harshness_${user.id}`, p.chatHarshness);
+    }
+    if (p.coachName) {
+      localStorage.setItem(`nova_coach_name_${user.id}`, p.coachName);
     }
 
     setProfileState(p);
