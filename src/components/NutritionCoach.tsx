@@ -354,6 +354,7 @@ ${bankingNote || ''}`
         if (!resp.ok) {
           let errData: any = {};
           try { errData = await resp.json(); } catch { try { await resp.text(); } catch { } }
+          console.error('AI Edge Function Error:', resp.status, errData);
           if (resp.status === 402 || resp.status === 400) {
             throw { code: errData.code || 'CREDITS_EXHAUSTED', noRetry: true };
           }
@@ -423,16 +424,6 @@ ${bankingNote || ''}`
         if (e?.noRetry || attempt >= MAX_CLIENT_RETRIES || controller.signal.aborted) {
           const code = classifyError(e);
           
-          if (code === 'UNAUTHORIZED') {
-            await supabase.auth.signOut().catch(() => {});
-            for (let k = 0; k < localStorage.length; k++) {
-              const key = localStorage.key(k);
-              if (key?.startsWith('sb-')) localStorage.removeItem(key);
-            }
-            window.location.reload();
-            break;
-          }
-
           setMessages(prev => [...prev, { role: 'assistant', content: getFriendlyError(code), error: true }]);
           setLastFailedInput(text);
           break;
