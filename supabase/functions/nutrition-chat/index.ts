@@ -83,12 +83,27 @@ async function getUserFromToken(supabase: any, authHeader: string) {
 }
 
 async function buildSystemPrompt(supabase: any, user: any): Promise<string> {
-  const defaultPrompt = "You are NovaFit AI, a warm, expert nutrition coach. Be concise, actionable, and encouraging. Use emojis sparingly.";
+  let defaultPrompt = "You are NovaFit AI, a warm, expert nutrition coach. Be concise, actionable, and encouraging. Use emojis sparingly.";
   if (!user) return defaultPrompt;
 
   try {
     const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
     if (!profile) return defaultPrompt;
+    
+    // Extracted chat settings
+    const coachName = profile.coach_name || "NovaFit AI";
+    const chatHarshness = profile.chat_harshness || "בינוני";
+    
+    let harshnessInstructions = "";
+    if (chatHarshness === "קשוח מאוד") {
+      harshnessInstructions = "You MUST be EXTREMELY HARSH, STRICT, and UNCOMPROMISING. Do NOT be warm or overly polite. Speak like a tough-love drill sergeant. Demand excellence and do not accept excuses for failing to meet macro/calorie goals. Be brutally honest.";
+    } else if (chatHarshness === "עדין") {
+      harshnessInstructions = "You MUST be EXTREMELY GENTLE, COMPASSIONATE, and UNDERSTANDING. Speak like a loving, supportive friend or a gentle therapist. Never scold or be harsh, always validate the user's feelings and celebrate tiny wins.";
+    } else {
+      harshnessInstructions = "Be a balanced, warm, and expert nutrition coach. Be encouraging but realistic, providing constructive feedback when necessary.";
+    }
+    
+    defaultPrompt = `You are ${coachName}, an expert nutrition coach. ${harshnessInstructions}`;
 
     const today = new Date().toISOString().slice(0, 10);
     const { data: todayLog } = await supabase.from("daily_logs").select("*").eq("user_id", user.id).eq("date", today).maybeSingle();
@@ -231,12 +246,18 @@ When the user asks about what they ate on a specific day (e.g. "yesterday", "2 d
 - Daily habits: ${profile.daily_habits || 'Not specified'}
 
 ## Instructions
+- Your name is ${profile.coach_name || 'NovaFit AI'}. Always refer to yourself by this name if asked.
+- Your personality/harshness setting is: "${profile.chat_harshness || 'בינוני'}". YOU MUST FOLLOW THESE GUIDELINES STRICTLY:
+  ${profile.chat_harshness === "קשוח מאוד" 
+    ? "BE EXTREMELY HARSH AND STRICT. NO EXCUSES ALLOWED. Scold the user if they miss their targets." 
+    : profile.chat_harshness === "עדין" 
+      ? "BE EXTREMELY GENTLE AND SUPPORTIVE. Validate their feelings, be careful with your words, and never sound disappointed." 
+      : "Be a balanced, helpful, and warm coach."}
 - Always call the user by their name (${profile.name}).
 - Reference their specific goals, remaining calories, and macros in responses.
 - If they ask for food suggestions, consider their remaining macros AND their preferences/weaknesses AND medical conditions.
-- If they exceeded their calorie target today, acknowledge it compassionately and suggest how to handle the rest of the day.
+- If they exceeded their calorie target today, react according to your harshness setting.
 - When the user asks about meals from a previous day, give a full detailed breakdown from the meal history above.
-- Be encouraging but realistic. Use a friendly, coaching tone.
 - Keep responses concise (2-4 paragraphs max).
 - Use metric units (kg, cm).
 - If the user asks about their progress today, give them a full breakdown.

@@ -75,6 +75,8 @@ export function useProfile() {
           dietaryWeakness: (data as any).dietary_weakness ?? '',
           dailyHabits: (data as any).daily_habits ?? '',
           medicalConditions: (data as any).medical_conditions ?? '',
+          chatHarshness: (data as any).chat_harshness ?? 'בינוני',
+          coachName: (data as any).coach_name ?? 'NovaFit AI',
         });
       }
       setLoading(false);
@@ -112,6 +114,8 @@ export function useProfile() {
       dietary_weakness: p.dietaryWeakness || '',
       daily_habits: p.dailyHabits || '',
       medical_conditions: p.medicalConditions || '',
+      chat_harshness: p.chatHarshness || 'בינוני',
+      coach_name: p.coachName || 'NovaFit AI',
       updated_at: new Date().toISOString(),
     };
     

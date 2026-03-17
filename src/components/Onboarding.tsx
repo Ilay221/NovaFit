@@ -33,6 +33,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [dietaryWeakness, setDietaryWeakness] = useState('');
   const [dailyHabits, setDailyHabits] = useState('');
   const [medicalConditions, setMedicalConditions] = useState('');
+  const [chatHarshness, setChatHarshness] = useState('בינוני');
+  const [coachName, setCoachName] = useState('NovaFit AI');
 
   const stepIndex = STEPS.indexOf(step);
   const next = () => setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)]);
@@ -74,6 +76,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       targetDate: targetDateStr,
       calorieSpreadDays: 5,
       favoriteFood, dietaryWeakness, dailyHabits, medicalConditions,
+      chatHarshness, coachName: coachName.trim() || 'NovaFit AI',
     });
   };
 
@@ -317,6 +320,43 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     <textarea value={dailyHabits} onChange={e => setDailyHabits(e.target.value)} placeholder="למשל: מדלג על ארוחת בוקר, נשנש בלילה, אוכל צהריים ב-13:00..." rows={3}
                       className="flex w-full rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md px-3 py-3 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring resize-none" />
                     <p className="text-[11px] text-muted-foreground mt-1.5">מאמן ה-AI ישתמש בזה לייעוץ חכם יותר</p>
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.32 }}>
+                    <div className="pt-2 border-t border-border/50">
+                      <Label className="text-[13px] font-bold text-foreground mb-4 block flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-primary" /> עיצוב אישיות המאמן</Label>
+                      
+                      <div className="space-y-5">
+                        <div>
+                          <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">שם למאמן</Label>
+                          <Input value={coachName} onChange={e => setCoachName(e.target.value)} placeholder="למשל: NovaFit AI, ארנון..." className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md" />
+                          <p className="text-[11px] text-muted-foreground mt-1.5">איך תרצה לקרוא למאמן האישי שלך?</p>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">סגנון אימון (קשיחות)</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { value: 'עדין', label: 'עדין ומכיל' },
+                              { value: 'בינוני', label: 'מאוזן (מומלץ)' },
+                              { value: 'קשוח מאוד', label: 'קשוח בלי רחמים' },
+                            ].map((option) => (
+                              <button
+                                key={option.value}
+                                onClick={() => setChatHarshness(option.value)}
+                                className={`py-2.5 rounded-lg text-[12px] font-bold transition-all duration-300 ${
+                                  chatHarshness === option.value
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'bg-muted/40 text-muted-foreground hover:bg-muted'
+                                }`}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-2">איך תרצה שהמאמן ידבר איתך כשתפספס יעד?</p>
+                        </div>
+                      </div>
+                    </div>
                   </motion.div>
                 </div>
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">

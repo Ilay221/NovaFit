@@ -60,6 +60,8 @@ export interface UserProfile {
   dietaryWeakness?: string;
   dailyHabits?: string;
   medicalConditions?: string;
+  chatHarshness?: string;
+  coachName?: string;
 }
 
 export interface FoodItem {
