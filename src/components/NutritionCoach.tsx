@@ -73,16 +73,19 @@ const FRIENDLY_ERRORS: Record<string, string> = {
   SERVICE_ERROR: "🔧 רגע של תחזוקה. נסה שוב בקרוב!",
   INTERNAL_ERROR: "🤔 קרה משהו לא צפוי. בוא ננסה שוב!",
   FETCH_FAILED: "😅 לא הצלחתי להתחבר לשרת. נסה שוב בעוד רגע.",
+  UNAUTHORIZED: "🔒 נראה שיש בעיית התחברות או חסרות הרשאות. רענן את העמוד נסה שוב.",
+  NOT_FOUND: "🔍 צ'אט ה-AI עדיין לא זמין בשרת. ודא שסיימת את תהליך ההתקנה.",
 };
 
 function getFriendlyError(code?: string): string {
   if (code && FRIENDLY_ERRORS[code]) return FRIENDLY_ERRORS[code];
-  return "🤔 מאמן ה-AI שלך לוקח הפסקה קצרה. נסה שוב בעוד רגע!";
+  return "🤔 מאמן ה-AI שלך לוקח הפסקה קצרה. נסה שוב בעוד רגע! (שגיאה מהשרת)";
 }
 
 function classifyError(e: any): string {
-  if (e?.code) return e.code;
-  if (e?.name === 'AbortError') return 'TIMEOUT';
+  if (e?.name === 'AbortError' || e?.code === 20) return 'TIMEOUT';
+  if (e?.code === 401 || e?.code === 403) return 'UNAUTHORIZED';
+  if (typeof e?.code === 'string') return e.code;
   return 'FETCH_FAILED';
 }
 
@@ -182,7 +185,8 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           action: 'generate-title',
@@ -332,7 +336,8 @@ ${bankingNote || ''}`
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({ 
             messages: messagesWithContext.map(m => ({
