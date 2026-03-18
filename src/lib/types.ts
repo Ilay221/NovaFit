@@ -105,5 +105,5 @@ export interface MealTemplate {
   id: string;
   name: string;
   items: { foodItem: FoodItem; quantity: number }[];
-  mealType: MealType;
+  mealType?: MealType;
 }
