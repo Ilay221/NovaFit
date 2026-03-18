@@ -259,7 +259,7 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string, dailyCa
     } catch (err) {
       console.error("Critical error in fetchLog:", err);
     }
-  }, [user?.id, targetDateKey]);
+  }, [effectiveUserId, targetDateKey]);
 
   const todayLog = useMemo((): DailyLog => {
     const safePending = Array.isArray(pendingMeals) ? pendingMeals : [];
@@ -383,7 +383,7 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string, dailyCa
   const getLog = useCallback((): DailyLog => todayLog, [todayLog]);
 
   const addMeal = useCallback(async (entry: MealEntry) => {
-    if (!user?.id) return;
+    if (!user?.id || viewingUserId) return;
     
     const mealWithId = { 
       ...entry, 

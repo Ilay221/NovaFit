@@ -41,16 +41,15 @@ export default function WeeklyAnalytics({ profile, onClose }: WeeklyAnalyticsPro
   const [weekData, setWeekData] = useState<DayData[]>([]);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
-
   const fetchWeekData = useCallback(async () => {
-    if (!user) return;
+    if (!profile?.id) return;
     setLoading(true);
     const today = new Date();
     const days: DayData[] = [];
     const startDate = format(subDays(today, 6), 'yyyy-MM-dd');
     const endDate = format(today, 'yyyy-MM-dd');
 
-    const { data: logs } = await supabase.from('daily_logs').select('id, date').eq('user_id', user.id).gte('date', startDate).lte('date', endDate);
+    const { data: logs } = await supabase.from('daily_logs').select('id, date').eq('user_id', profile.id).gte('date', startDate).lte('date', endDate);
     const logIds = (logs || []).map(l => l.id);
     let meals: { daily_log_id: string; calories: number; protein: number; carbs: number; fats: number; quantity: number | null }[] = [];
     if (logIds.length > 0) {
@@ -85,7 +84,7 @@ export default function WeeklyAnalytics({ profile, onClose }: WeeklyAnalyticsPro
     }
     setWeekData(days);
 
-    const { data: allLogs } = await supabase.from('daily_logs').select('id, date').eq('user_id', user.id).lte('date', endDate).order('date', { ascending: false }).limit(60);
+    const { data: allLogs } = await supabase.from('daily_logs').select('id, date').eq('user_id', profile.id).lte('date', endDate).order('date', { ascending: false }).limit(60);
     const allLogIds = (allLogs || []).map(l => l.id);
     let allMeals: { daily_log_id: string; calories: number; quantity: number | null }[] = [];
     if (allLogIds.length > 0) {
@@ -118,7 +117,7 @@ export default function WeeklyAnalytics({ profile, onClose }: WeeklyAnalyticsPro
     }
     setStreak(currentStreak);
     setLoading(false);
-  }, [user, profile]);
+  }, [profile]);
 
   useEffect(() => { fetchWeekData(); }, [fetchWeekData]);
 

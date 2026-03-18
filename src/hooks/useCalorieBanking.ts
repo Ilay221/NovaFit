@@ -90,10 +90,11 @@ export function useCalorieBanking(
    * Each step: runningBalance += (dayTarget - dayConsumed)
    */
   const calculateRollover = useCallback(async () => {
-    if (!user || !profile) { setLoading(false); return; }
+    if (!profile?.id) { setLoading(false); return; }
 
     const realToday = format(new Date(), 'yyyy-MM-dd');
     const prefSpreadDays = profile.calorieSpreadDays || 1;
+    const isViewing = profile.id !== user?.id;
 
     // Walk through the last LOOKBACK_DAYS to accumulate the total balance
     let runningBalance = 0;
@@ -101,7 +102,7 @@ export function useCalorieBanking(
 
     for (let i = LOOKBACK_DAYS; i >= 1; i--) {
       const dayDate = format(subDays(new Date(), i), 'yyyy-MM-dd');
-      const dayData = await fetchDayData(user.id, dayDate);
+      const dayData = await fetchDayData(profile.id, dayDate);
 
       if (dayData) {
         anyDayHadData = true;
@@ -109,25 +110,23 @@ export function useCalorieBanking(
         const dayNet = dayTarget - dayData.consumed; // Positive = savings, Negative = overate
         runningBalance += dayNet;
 
-        // Update the day's calorie_balance trace in DB for audit
-        await supabase.from('daily_logs')
-          .update({ calorie_balance: dayNet, base_calorie_target: dayTarget })
-          .eq('id', dayData.log.id);
+        // Update the day's calorie_balance trace in DB for audit - ONLY if not viewing someone else
+        if (!isViewing) {
+          await supabase.from('daily_logs')
+            .update({ calorie_balance: dayNet, base_calorie_target: dayTarget })
+            .eq('id', dayData.log.id);
+        }
       }
-      // If no log exists for that day, treat it as neutral (0 impact)
     }
 
     let todayRollover = 0;
     let todaySpread = 1;
 
     if (anyDayHadData) {
-      // --- THE SMART SPREAD ALGORITHM ---
       if (runningBalance < 0 && prefSpreadDays > 1) {
-        // Spread the debt over the preferred number of days
         todaySpread = prefSpreadDays;
         todayRollover = runningBalance / todaySpread;
       } else {
-        // Savings or single-day mode: apply the full balance
         todayRollover = runningBalance;
         todaySpread = 1;
       }
@@ -135,32 +134,47 @@ export function useCalorieBanking(
 
     todayRollover = Math.round(todayRollover);
 
-    // Persist today's calculated rollover to Supabase
-    const { data: todayData } = await supabase
-      .from('daily_logs')
-      .select('rollover_calories, spread_days')
-      .eq('user_id', user.id)
-      .eq('date', realToday)
-      .maybeSingle();
+    // Persist today's calculated rollover to Supabase - ONLY if not viewing someone else
+    if (!isViewing) {
+      const { data: todayData } = await supabase
+        .from('daily_logs')
+        .select('rollover_calories, spread_days')
+        .eq('user_id', profile.id)
+        .eq('date', realToday)
+        .maybeSingle();
 
-    const savedRollover = todayData ? (todayData as any).rollover_calories : undefined;
-    const savedSpread = todayData ? (todayData as any).spread_days : undefined;
+      const savedRollover = todayData ? (todayData as any).rollover_calories : undefined;
+      const savedSpread = todayData ? (todayData as any).spread_days : undefined;
 
-    if (savedRollover !== todayRollover || savedSpread !== todaySpread) {
-      await supabase.from('daily_logs')
-        .update({
-          rollover_calories: todayRollover,
-          spread_days: todaySpread,
-          base_calorie_target: baseTarget,
-        })
-        .eq('user_id', user.id)
-        .eq('date', realToday);
+      if (savedRollover !== todayRollover || savedSpread !== todaySpread) {
+        await supabase.from('daily_logs')
+          .update({
+            rollover_calories: todayRollover,
+            spread_days: todaySpread,
+            base_calorie_target: baseTarget,
+          })
+          .eq('user_id', profile.id)
+          .eq('date', realToday);
+      }
+    } else {
+      // In viewing mode, we still want to show the correct today's rollover from DB if it exists
+      const { data: todayData } = await supabase
+        .from('daily_logs')
+        .select('rollover_calories, spread_days')
+        .eq('user_id', profile.id)
+        .eq('date', realToday)
+        .maybeSingle();
+      
+      if (todayData) {
+        todayRollover = (todayData as any).rollover_calories || 0;
+        todaySpread = (todayData as any).spread_days || 1;
+      }
     }
 
     setRollover(todayRollover);
     setSpreadDays(todaySpread);
     setLoading(false);
-  }, [user, profile, baseTarget, mealFingerprint, currentDayLog.date]);
+  }, [user?.id, profile, baseTarget, mealFingerprint, currentDayLog.date]);
 
   useEffect(() => { calculateRollover(); }, [calculateRollover]);
 
