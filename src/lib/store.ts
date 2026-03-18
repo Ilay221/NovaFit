@@ -179,14 +179,22 @@ export function useProfile(viewingUserId?: string) {
     
     try {
       console.log("Upserting profile for user:", user.id);
-      const { error } = await (supabase.from('profiles' as any) as any).upsert(row);
+      const { data: savedProfile, error } = await (supabase.from('profiles' as any) as any).upsert(row).select().single();
       
       if (error) {
         console.error("CRITICAL: Error saving profile to Supabase:", error);
-        // Alert the user with the actual error message to help debugging
         toast.error(`שגיאה בשמירת הפרופיל: ${error.message || 'שגיאת תקשורת'}. קוד: ${error.code || 'unknown'}`);
         return; 
       }
+
+      console.log("Profile saved and synced:", savedProfile);
+      
+      // Map database row back to UserProfile type
+      const updatedProfile: UserProfile = {
+        ...p,
+        uniqueCode: savedProfile.unique_code,
+        lastSeen: savedProfile.last_seen
+      };
       
       if (p.calorieSpreadDays !== undefined) {
         localStorage.setItem(`nova_spread_days_${user.id}`, p.calorieSpreadDays.toString());
@@ -197,7 +205,9 @@ export function useProfile(viewingUserId?: string) {
       if (p.coachName) {
         localStorage.setItem(`nova_coach_name_${user.id}`, p.coachName);
       }
-      setProfileState(p);
+      
+      setProfileState(updatedProfile);
+      
       if (!viewingUserId) {
         toast.success('פרופיל עודכן בהצלחה!');
       }
