@@ -182,9 +182,10 @@ export function useProfile(viewingUserId?: string) {
       const { error } = await (supabase.from('profiles' as any) as any).upsert(row);
       
       if (error) {
-        console.error("Error saving profile to Supabase:", error);
-        toast.error('שגיאה בשמירת הפרופיל במאגר הנתונים. נסה שוב.');
-        return; // Stop here if Supabase fails
+        console.error("CRITICAL: Error saving profile to Supabase:", error);
+        // Alert the user with the actual error message to help debugging
+        toast.error(`שגיאה בשמירת הפרופיל: ${error.message || 'שגיאת תקשורת'}. קוד: ${error.code || 'unknown'}`);
+        return; 
       }
       
       if (p.calorieSpreadDays !== undefined) {
@@ -344,10 +345,9 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string, dailyCa
       
       if (existingLog) return existingLog.id;
 
-      // 2. Not found, create it
-      const { data: newLog, error: insertError } = await supabase
-        .from('daily_logs')
-        .insert({ 
+      // 2. Not found, create it (using upsert with onConflict for race condition safety)
+      const { data: newLog, error: insertError } = await (supabase.from('daily_logs' as any) as any)
+        .upsert({ 
           user_id: effectiveUserId, 
           date: dateStr, 
           water_ml: 0,
@@ -355,13 +355,17 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string, dailyCa
           spread_days: 1,
           rollover_calories: 0,
           calorie_balance: 0
-        })
+        }, { onConflict: 'user_id,date' })
         .select('id')
         .maybeSingle();
       
+      if (insertError) {
+        console.warn("Log creation notice (could be expected race condition):", insertError);
+      }
+
       if (newLog) return newLog.id;
 
-      // 3. If insert failed (likely race condition), try select one last time
+      // 3. Final catch-all select to be 100% sure
       const { data: retryLog } = await supabase
         .from('daily_logs')
         .select('id')
@@ -371,7 +375,7 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string, dailyCa
       
       return retryLog?.id || null;
     } catch (e) { 
-      console.error("getOrCreateLogId failed:", e);
+      console.error("Critical: getOrCreateLogId failed:", e);
       return null; 
     }
   };
