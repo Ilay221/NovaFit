@@ -116,10 +116,33 @@ export function useProfile(viewingUserId?: string) {
 
     if (!p) {
       try {
-        await supabase.from('profiles').delete().eq('id', user.id);
-        localStorage.removeItem(`nova_spread_days_${user.id}`);
+        // Hard Reset: Wipe everything
+        console.log("Performing Hard Reset for user:", user.id);
+        
+        // Delete in order to respect potential FK constraints (though most are CASCADE)
+        await (supabase.from('chat_sessions' as any) as any).delete().eq('user_id', user.id);
+        await (supabase.from('daily_logs' as any) as any).delete().eq('user_id', user.id);
+        await (supabase.from('weight_entries' as any) as any).delete().eq('user_id', user.id);
+        await (supabase.from('meal_templates' as any) as any).delete().eq('user_id', user.id);
+        await (supabase.from('push_subscriptions' as any) as any).delete().eq('user_id', user.id);
+        await (supabase.from('user_connections' as any) as any).delete().or(`coach_id.eq.${user.id},trainee_id.eq.${user.id}`);
+        
+        // Finally delete the profile itself (this should reset unique_code too)
+        await (supabase.from('profiles' as any) as any).delete().eq('id', user.id);
+        
+        // Clear local storage for this user
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes(user.id)) {
+            localStorage.removeItem(key);
+          }
+        });
+        
         setProfileState(null);
-      } catch (e) { console.error(e); }
+        toast.success('החשבון אופס בהצלחה. כל הנתונים נמחקו.');
+      } catch (e) { 
+        console.error("Hard Reset Error:", e);
+        toast.error('שגיאה באיפוס הנתונים. נסה שוב.');
+      }
       return;
     }
     
@@ -153,8 +176,18 @@ export function useProfile(viewingUserId?: string) {
     };
     
     try {
-      const { error } = await supabase.from('profiles').upsert(row);
-      if (error) console.error("Error saving profile to Supabase:", error);
+      console.log("Upserting profile for user:", user.id, row);
+      const { error, data } = await (supabase.from('profiles' as any) as any).upsert(row).select().single();
+      
+      if (error) {
+        console.error("Error saving profile to Supabase:", error);
+        toast.error('שגיאה בשמירת הפרופיל. הנתונים נשמרו מקומית בלבד.');
+      } else {
+        console.log("Profile saved successfully:", data);
+        if (!viewingUserId) {
+          toast.success('הפרופיל עודכן בהצלחה!');
+        }
+      }
       
       if (p.calorieSpreadDays !== undefined) {
         localStorage.setItem(`nova_spread_days_${user.id}`, p.calorieSpreadDays.toString());
@@ -166,7 +199,10 @@ export function useProfile(viewingUserId?: string) {
         localStorage.setItem(`nova_coach_name_${user.id}`, p.coachName);
       }
       setProfileState(p);
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error("Profile Upsert Exception:", e);
+      setProfileState(p); // Still set local state even on catch to keep app working
+    }
   }, [user?.id, viewingUserId]);
 
   return { profile, setProfile, loading };
