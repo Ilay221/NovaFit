@@ -187,12 +187,21 @@ export type Database = {
           is_premium: boolean
           medical_conditions: string
           name: string
+          other_dietary: string | null
           protein_target: number
           target_date: string | null
           target_weight_kg: number
           tdee: number
+          theme_color: string | null
+          unique_code: string | null
           updated_at: string
+          weekly_pace_kg: number | null
           weight_kg: number
+          calorie_spread_days: number | null
+          chat_harshness: string | null
+          coach_name: string | null
+          dietary_preferences: string[] | null
+          last_seen: string | null
         }
         Insert: {
           activity_level?: string

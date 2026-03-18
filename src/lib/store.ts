@@ -149,6 +149,14 @@ export function useProfile(viewingUserId?: string) {
       return;
     }
     
+    // SAFETY CHECK: Ensure we are NOT saving someone else's data into OUR profile
+    // This handles the race condition where the UI still has the trainee's profile state
+    // but the 'viewingUserId' has already been cleared back to null (switching home).
+    if (p.id && p.id !== user.id) {
+      console.warn("DANGER: Preventing accidental profile overwrite. Stale ID detected:", p.id, "instead of", user.id);
+      return;
+    }
+
     const row = {
       id: user.id,
       name: p.name,
