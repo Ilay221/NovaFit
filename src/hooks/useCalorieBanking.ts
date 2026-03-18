@@ -27,7 +27,7 @@ export interface CalorieBankingResult {
   isViewingToday: boolean;
 }
 
-const LOOKBACK_DAYS = 3; // Match the DateStrip range
+const LOOKBACK_DAYS = 7; // Expanded from 3 to 7 days for more persistent balance tracking
 
 /**
  * Fetches a day's log + meals from Supabase and returns its consumed total.
@@ -107,7 +107,10 @@ export function useCalorieBanking(
       if (dayData) {
         anyDayHadData = true;
         const dayTarget = (dayData.log as any).base_calorie_target || baseTarget;
-        const dayNet = dayTarget - dayData.consumed; // Positive = savings, Negative = overate
+        const dayConsumed = dayData.consumed || 0;
+        
+        const dayNet = dayTarget - dayConsumed;
+        console.log(`[Banking] ${dayDate}: Target ${dayTarget}, Consumed ${dayConsumed}, Net ${dayNet}`);
         runningBalance += dayNet;
 
         // Update the day's calorie_balance trace in DB for audit - ONLY if not viewing someone else
@@ -118,6 +121,8 @@ export function useCalorieBanking(
         }
       }
     }
+    
+    console.log(`[Banking] Total Running Balance: ${runningBalance}`);
 
     let todayRollover = 0;
     let todaySpread = 1;
