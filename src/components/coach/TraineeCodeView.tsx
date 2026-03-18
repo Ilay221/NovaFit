@@ -9,8 +9,9 @@ import { toast } from 'sonner';
 
 export default function TraineeCodeView() {
   const { profile } = useAppState();
-  const { requests, respondToRequest } = useConnections();
+  const { requests, coaches, respondToRequest, removeConnection } = useConnections();
   const [copied, setCopied] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
 
   const copyToClipboard = () => {
     if (profile?.uniqueCode) {
@@ -21,8 +22,18 @@ export default function TraineeCodeView() {
     }
   };
 
+  const handleRemoveCoach = async (connId: string, coachName: string) => {
+    if (confirm(`האם אתה בטוח שברצונך להפסיק את הקשר עם המאמן ${coachName}?`)) {
+      setIsDeleting(connId);
+      const res = await removeConnection(connId);
+      setIsDeleting(null);
+      if (res.error) toast.error(res.error);
+      else toast.success("המאמן הוסר בהצלחה");
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -53,45 +64,83 @@ export default function TraineeCodeView() {
         </div>
       </motion.div>
 
-      {requests.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">בקשות ממתינות</h4>
-          {requests.map((req) => (
-            <motion.div
-              key={req.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="nova-card p-4 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                  {req.coach.name?.[0] || '?'}
+      {coaches.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">המאמנים שלי</h4>
+          <div className="space-y-2">
+            {coaches.map((c) => (
+              <motion.div
+                key={c.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="nova-card p-4 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
+                    {c.profile.name?.[0] || '?'}
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm">{c.profile.name}</div>
+                    <div className="text-[11px] text-muted-foreground">מאמן פעיל</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-bold text-sm">{req.coach.name}</div>
-                  <div className="text-[11px] text-muted-foreground">רוצה להיות המאמן שלך</div>
-                </div>
-              </div>
-              <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => respondToRequest(req.id, false)}
-                  className="rounded-lg h-9 w-9 p-0 text-destructive hover:bg-destructive/10"
+                  disabled={isDeleting === c.id}
+                  onClick={() => handleRemoveCoach(c.id, c.profile.name)}
+                  className="rounded-xl h-10 px-4 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive group transition-all"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4 mr-2 opacity-60 group-hover:opacity-100" />
+                  הסר מאמן
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => respondToRequest(req.id, true)}
-                  className="rounded-lg h-9 gap-2 px-3"
-                >
-                  <UserCheck className="w-4 h-4" />
-                  אישור
-                </Button>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {requests.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1 bg-primary/10 py-1 inline-block rounded-md text-primary">בקשות ממתינות</h4>
+          <div className="space-y-2">
+            {requests.map((req) => (
+              <motion.div
+                key={req.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="nova-card p-4 flex items-center justify-between border-dashed border-primary/30"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    {req.coach.name?.[0] || '?'}
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm">{req.coach.name}</div>
+                    <div className="text-[11px] text-muted-foreground">רוצה להיות המאמן שלך</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => respondToRequest(req.id, false)}
+                    className="rounded-lg h-9 w-9 p-0 text-destructive hover:bg-destructive/10"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => respondToRequest(req.id, true)}
+                    className="rounded-lg h-9 gap-2 px-3"
+                  >
+                    <UserCheck className="w-4 h-4" />
+                    אישור
+                  </Button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       )}
     </div>

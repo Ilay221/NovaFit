@@ -527,6 +527,7 @@ export function useWeightHistory(viewingUserId?: string) {
 export function useConnections() {
   const { user } = useAuth();
   const [trainees, setTrainees] = useState<UserProfile[]>([]);
+  const [coaches, setCoaches] = useState<{ id: string; profile: UserProfile }[]>([]);
   const [requests, setRequests] = useState<{ id: string; coach: UserProfile }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -568,6 +569,27 @@ export function useConnections() {
               id: r.profiles.id,
               name: r.profiles.name || 'מאמן',
               uniqueCode: r.profiles.unique_code,
+            } as UserProfile
+          })));
+      }
+
+      // Fetch accepted coaches (where current user is trainee)
+      const { data: coachConns } = await (supabase
+        .from('user_connections' as any) as any)
+        .select('id, coach_id, status, profiles:coach_id(*)')
+        .eq('trainee_id', user.id)
+        .eq('status', 'accepted');
+
+      if (coachConns) {
+        setCoaches(coachConns
+          .filter((c: any) => c.profiles)
+          .map((c: any) => ({
+            id: c.id,
+            profile: {
+              id: c.profiles.id,
+              name: c.profiles.name || 'מאמן',
+              uniqueCode: c.profiles.unique_code,
+              lastSeen: c.profiles.last_seen,
             } as UserProfile
           })));
       }
@@ -633,5 +655,20 @@ export function useConnections() {
     }
   };
 
-  return { trainees, requests, loading, addTraineeByCode, respondToRequest, refresh: fetchConnections };
+  const removeConnection = async (connectionId: string) => {
+    try {
+      await (supabase
+        .from('user_connections' as any) as any)
+        .delete()
+        .eq('id', connectionId);
+      
+      fetchConnections();
+      return { success: true };
+    } catch (e) {
+      console.error(e);
+      return { error: "שגיאה במחיקת החיבור" };
+    }
+  };
+
+  return { trainees, coaches, requests, loading, addTraineeByCode, respondToRequest, removeConnection, refresh: fetchConnections };
 }
