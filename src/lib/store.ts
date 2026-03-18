@@ -89,6 +89,7 @@ export function useProfile(viewingUserId?: string) {
             medicalConditions: (data as any).medical_conditions ?? '',
             chatHarshness: (data as any).chat_harshness ?? storedChatHarshness ?? 'בינוני',
             coachName: (data as any).coach_name ?? storedCoachName ?? 'NovaFit AI',
+            weeklyPaceKg: (data as any).weekly_pace_kg ?? 0.5,
             uniqueCode: (data as any).unique_code,
             lastSeen: (data as any).last_seen,
           });
@@ -136,6 +137,7 @@ export function useProfile(viewingUserId?: string) {
       medical_conditions: p.medicalConditions || '',
       chat_harshness: p.chatHarshness || 'בינוני',
       coach_name: p.coachName || 'NovaFit AI',
+      weekly_pace_kg: p.weeklyPaceKg,
       updated_at: new Date().toISOString(),
     };
     

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { ArrowRight, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X, Bell } from 'lucide-react';
@@ -8,7 +8,8 @@ import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AccentColor, ThemeMode, UserProfile, WeightEntry } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { format, parseISO, addDays } from 'date-fns';
+import { format, parseISO, addDays, differenceInDays } from 'date-fns';
+import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import ProfileEditor from '@/components/ProfileEditor';
@@ -64,7 +65,13 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [testPending, setTestPending] = useState(false);
   const [useTimelineSlider, setUseTimelineSlider] = useState(true);
-  const [weeklyPaceKg, setWeeklyPaceKg] = useState<number>(0.5);
+  const [weeklyPaceKg, setWeeklyPaceKg] = useState<number>(profile.weeklyPaceKg || 0.5);
+
+  useEffect(() => {
+    if (profile.weeklyPaceKg) {
+      setWeeklyPaceKg(profile.weeklyPaceKg);
+    }
+  }, [profile.weeklyPaceKg]);
 
   const currentTargetDate = profile.targetDate ? parseISO(profile.targetDate) : null;
 
@@ -142,115 +149,141 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
               איך תרצה להגדיר את היעד שלך? (תאריך ידני או לפי קצב התקדמות שבועי)
             </p>
 
-            <div className="flex bg-muted/40 p-1 rounded-xl mb-4">
-              <button
-                className={cn('flex-1 text-xs font-medium py-2 rounded-lg transition-all', useTimelineSlider ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground')}
-                onClick={() => setUseTimelineSlider(true)}
-              >
-                לפי קצב
-              </button>
-              <button
-                className={cn('flex-1 text-xs font-medium py-2 rounded-lg transition-all', !useTimelineSlider ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground')}
-                onClick={() => setUseTimelineSlider(false)}
-              >
-                תאריך ספציפי
-              </button>
-            </div>
-
-            {useTimelineSlider ? (
-              <div className="space-y-4">
-                <div className="space-y-3 mt-4">
-                  <div className="px-2 space-y-6">
-                    <div className="flex items-end justify-center gap-1 mb-2">
-                      <span className="text-4xl font-extrabold font-display leading-none text-primary">{weeklyPaceKg.toFixed(2)}</span>
-                      <span className="text-sm text-muted-foreground font-medium pb-1">ק"ג בשבוע</span>
-                    </div>
-                    
-                    <Slider 
-                      value={[weeklyPaceKg]} 
-                      min={0.25} 
-                      max={2.5} 
-                      step={0.05} 
-                      onValueChange={(vals) => setWeeklyPaceKg(vals[0])}
-                      className="w-full"
-                    />
-                    
-                    <div className="flex justify-between text-[11px] text-muted-foreground font-medium px-1">
-                      <span>0.25 ק"ג (רגוע)</span>
-                      <span>2.5 ק"ג (קיצוני)</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/40 rounded-xl p-4 mt-6 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">תאריך יעד מחושב אוטומטית</p>
-                    <p className="text-lg font-bold text-foreground">
-                      {format(addDays(new Date(), Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7))), 'd בMMMM, yyyy')}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-1">בעוד {Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7))} ימים</p>
-                  </div>
+            {!isViewing ? (
+              <>
+                <div className="flex bg-muted/40 p-1 rounded-xl mb-4">
+                  <button
+                    className={cn('flex-1 text-xs font-medium py-2 rounded-lg transition-all', useTimelineSlider ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground')}
+                    onClick={() => setUseTimelineSlider(true)}
+                  >
+                    לפי קצב
+                  </button>
+                  <button
+                    className={cn('flex-1 text-xs font-medium py-2 rounded-lg transition-all', !useTimelineSlider ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground')}
+                    onClick={() => setUseTimelineSlider(false)}
+                  >
+                    תאריך ספציפי
+                  </button>
                 </div>
 
-                <Button 
-                  onClick={() => {
-                    const calculatedDays = Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7));
-                    const newDate = addDays(new Date(), calculatedDays);
-                    handleDateSelect(newDate);
-                    toast.success('יעד עודכן לפי הקצב החדש');
-                  }} 
-                  className="w-full h-11 rounded-xl text-[13px] font-bold"
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  החל וערוך תוכנית
-                </Button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "flex-1 justify-start text-start font-normal h-11 rounded-xl",
-                        !currentTargetDate && "text-muted-foreground"
-                      )}
-                    >
-                      <Calendar className="me-2 h-4 w-4" />
-                      {currentTargetDate ? format(currentTargetDate, "PPP") : <span>בחר תאריך יעד ספציפי</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={currentTargetDate ?? undefined}
-                      onSelect={(date) => {
-                        handleDateSelect(date);
-                        toast.success('תאריך יעד ספציפי נשמר');
-                      }}
-                      disabled={(date) => date < addDays(new Date(), 7)}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {currentTargetDate && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                  >
-                    <Button
-                      variant="outline"
-                      size="icon"
+                {useTimelineSlider ? (
+                  <div className="space-y-4">
+                    <div className="space-y-3 mt-4">
+                      <div className="px-2 space-y-6">
+                        <div className="flex items-end justify-center gap-1 mb-2">
+                          <span className="text-4xl font-extrabold font-display leading-none text-primary">{weeklyPaceKg.toFixed(2)}</span>
+                          <span className="text-sm text-muted-foreground font-medium pb-1">ק"ג בשבוע</span>
+                        </div>
+                        
+                        <Slider 
+                          value={[weeklyPaceKg]} 
+                          min={0.25} 
+                          max={2.5} 
+                          step={0.05} 
+                          onValueChange={(vals) => setWeeklyPaceKg(vals[0])}
+                          className="w-full"
+                        />
+                        
+                        <div className="flex justify-between text-[11px] text-muted-foreground font-medium px-1">
+                          <span>0.25 ק"ג (רגוע)</span>
+                          <span>2.5 ק"ג (קיצוני)</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-muted/40 rounded-xl p-4 mt-6 text-center">
+                        <p className="text-xs text-muted-foreground mb-1">תאריך יעד מחושב אוטומטית</p>
+                        <p className="text-lg font-bold text-foreground">
+                          {format(addDays(new Date(), Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7))), 'd בMMMM, yyyy', { locale: (require('date-fns/locale')).he })}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-1">בעוד {Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7))} ימים</p>
+                      </div>
+                    </div>
+
+                    <Button 
                       onClick={() => {
-                        handleClearTargetDate();
-                        toast.success('תאריך יעד נוקה');
-                      }}
-                      className="h-11 w-11 rounded-xl text-muted-foreground hover:text-destructive hover:border-destructive/30"
+                        const calculatedDays = Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7));
+                        const newDate = addDays(new Date(), calculatedDays);
+                        const updatedProfile = { ...profile, weeklyPaceKg };
+                        handleDateSelect(newDate); // handleDateSelect uses updatedProfile internally or needs it
+                        onUpdateProfile({ ...updatedProfile, targetDate: newDate.toISOString().slice(0, 10) });
+                        toast.success('יעד עודכן לפי הקצב החדש');
+                      }} 
+                      className="w-full h-11 rounded-xl text-[13px] font-bold"
                     >
-                      <X className="h-4 w-4" />
+                      <Check className="w-4 h-4 mr-2" />
+                      החל וערוך תוכנית
                     </Button>
-                  </motion.div>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "flex-1 justify-start text-start font-normal h-11 rounded-xl",
+                            !currentTargetDate && "text-muted-foreground"
+                          )}
+                        >
+                          <Calendar className="me-2 h-4 w-4" />
+                          {currentTargetDate ? format(currentTargetDate, "PPP", { locale: (require('date-fns/locale')).he }) : <span>בחר תאריך יעד ספציפי</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={currentTargetDate ?? undefined}
+                          onSelect={(date) => {
+                            handleDateSelect(date);
+                            toast.success('תאריך יעד ספציפי נשמר');
+                          }}
+                          disabled={(date) => date < addDays(new Date(), 7)}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {currentTargetDate && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                      >
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            handleClearTargetDate();
+                            toast.success('תאריך יעד נוקה');
+                          }}
+                          className="h-11 w-11 rounded-xl text-muted-foreground hover:text-destructive hover:border-destructive/30"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </motion.div>
+                    )}
+                  </div>
                 )}
+              </>
+            ) : (
+              /* Read-only view for coaches */
+              <div className="space-y-4">
+                <div className="bg-muted/40 rounded-xl p-5 text-center space-y-2">
+                  <div className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">קצב התקדמות</div>
+                  <div className="text-2xl font-black text-primary">{profile.weeklyPaceKg.toFixed(2)} ק"ג בשבוע</div>
+                </div>
+                
+                <div className="bg-muted/40 rounded-xl p-5 text-center space-y-2 border border-primary/10">
+                  <div className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">תאריך יעד משוער</div>
+                  <div className="text-xl font-bold text-foreground">
+                    {profile.targetDate ? format(parseISO(profile.targetDate), 'd בMMMM, yyyy', { locale: (require('date-fns/locale')).he }) : 'לא הוגדר'}
+                  </div>
+                  {profile.targetDate && (
+                    <div className="text-xs text-primary font-medium">
+                      בעוד {Math.max(0, differenceInDays(parseISO(profile.targetDate), new Date()))} ימים
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </motion.div>
