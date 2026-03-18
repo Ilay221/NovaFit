@@ -259,6 +259,8 @@ When the user asks about what they ate on a specific day (e.g. "yesterday", "2 d
 - Favorite food: ${profile.favorite_food || 'Not specified'}
 - Dietary weakness/craving: ${profile.dietary_weakness || 'Not specified'}
 - Daily habits: ${profile.daily_habits || 'Not specified'}
+- Dietary preferences: ${profile.dietary_preferences?.join(', ') || 'None specified'}
+- Additional dietary info: ${profile.other_dietary || 'None'}
 
 ## Instructions
 - Your name is ${profile.coach_name || 'NovaFit AI'}. Always refer to yourself by this name if asked.

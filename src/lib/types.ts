@@ -66,6 +66,8 @@ export interface UserProfile {
   coachName?: string;
   uniqueCode?: string;
   lastSeen?: string;
+  dietaryPreferences?: string[];
+  otherDietary?: string;
 }
 
 export interface FoodItem {

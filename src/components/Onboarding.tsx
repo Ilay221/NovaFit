@@ -10,7 +10,7 @@ import { calculateBMR, calculateTDEE, calculateCalorieTarget, calculateMacros } 
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import { format, addDays, differenceInDays, parseISO } from 'date-fns';
 
-const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'preferences', 'health', 'timeline', 'results'] as const;
+const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'preferences', 'health', 'dietary', 'timeline', 'results'] as const;
 type Step = typeof STEPS[number];
 
 interface OnboardingProps {
@@ -35,6 +35,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [medicalConditions, setMedicalConditions] = useState('');
   const [chatHarshness, setChatHarshness] = useState('בינוני');
   const [coachName, setCoachName] = useState('NovaFit AI');
+  const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
+  const [otherDietary, setOtherDietary] = useState('');
 
   const stepIndex = STEPS.indexOf(step);
   const next = () => setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)]);
@@ -53,11 +55,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const targetDateStr = useTimeline ? format(addDays(new Date(), calculatedDays), 'yyyy-MM-dd') : null;
 
   const tempProfile: UserProfile = {
+    id: '', // Will be assigned by Supabase
     name, age, gender, heightCm, weightKg, targetWeightKg,
     activityLevel, goal, bmr, tdee,
     dailyCalorieTarget, proteinTarget: macros.protein, carbsTarget: macros.carbs, fatsTarget: macros.fats,
     targetDate: targetDateStr,
     calorieSpreadDays: 5,
+    weeklyPaceKg,
   };
 
   const adaptive = calculateAdaptiveTargets(tempProfile, []);
@@ -69,14 +73,17 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
   const finish = () => {
     onComplete({
+      id: '', // Will be assigned by Supabase
       name, age, gender, heightCm, weightKg, targetWeightKg,
       activityLevel, goal, bmr, tdee,
       dailyCalorieTarget: finalCalories,
       proteinTarget: finalMacros.protein, carbsTarget: finalMacros.carbs, fatsTarget: finalMacros.fats,
       targetDate: targetDateStr,
       calorieSpreadDays: 5,
+      weeklyPaceKg,
       favoriteFood, dietaryWeakness, dailyHabits, medicalConditions,
       chatHarshness, coachName: coachName.trim() || 'NovaFit AI',
+      dietaryPreferences, otherDietary,
     });
   };
 
@@ -288,7 +295,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 </div>
                  <div className="flex gap-3 pt-2">
                   <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
-                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]">ראה את התוכנית <ArrowLeft className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]">המשך <ArrowLeft className="w-5 h-5" /></Button>
                 </div>
               </div>
             )}
@@ -404,6 +411,66 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               </div>
             )}
 
+            {step === 'dietary' && (
+              <div className="space-y-8">
+                <div>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <motion.div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center" initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 300 }}>
+                      <Cookie className="w-4 h-4 text-primary" />
+                    </motion.div>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">סוג תזונה</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">איך נראה התפריט שלך? (ניתן לבחור כמה)</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    'שומר כשרות', 'צמחוני', 'טבעוני', 'קיטוגני', 'קרניבור', 'ללא גלוטן', 'דל פחמימה', 'פליאו'
+                  ].map((pref, i) => {
+                    const isSelected = dietaryPreferences.includes(pref);
+                    return (
+                      <motion.button
+                        key={pref}
+                        onClick={() => {
+                          setDietaryPreferences(prev => 
+                            isSelected ? prev.filter(p => p !== pref) : [...prev, pref]
+                          );
+                        }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`p-4 rounded-xl text-[14px] font-bold transition-all duration-300 border flex items-center justify-between ${
+                          isSelected 
+                            ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20' 
+                            : 'bg-muted/40 text-muted-foreground border-transparent hover:border-border'
+                        }`}
+                      >
+                        {pref}
+                        {isSelected && <Check className="w-4 h-4" />}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">אחר</Label>
+                  <Input 
+                    value={otherDietary} 
+                    onChange={e => setOtherDietary(e.target.value)} 
+                    placeholder="למשל: ללא מוצרי חלב, דלת סוכר..."
+                    className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]">המשך <ArrowLeft className="w-5 h-5" /></Button>
+                </div>
+              </div>
+            )}
+            
             {step === 'timeline' && (
               <div className="space-y-8">
                 <div>
@@ -490,7 +557,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 )}
                  <div className="flex gap-3 pt-2">
                   <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
-                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]" disabled={useTimeline && !adaptive.isSafe}>ראה את התוכנית <ArrowLeft className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]" disabled={useTimeline && !adaptive.isSafe}>המשך <ArrowLeft className="w-5 h-5" /></Button>
                 </div>
               </div>
             )}

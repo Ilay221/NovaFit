@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { ArrowRight, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X, Bell } from 'lucide-react';
+import { ArrowRight, Moon, Sun, Monitor, RotateCcw, Check, LogOut, Sparkles, Calendar, X, Bell, Cookie } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { AccentColor, ThemeMode, UserProfile, WeightEntry } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO, addDays, differenceInDays } from 'date-fns';
@@ -286,6 +288,54 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
             )}
           </motion.div>
         )}
+
+        {/* Dietary Preferences */}
+        <motion.div variants={itemVariants} className="nova-card p-5">
+          <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4 flex items-center gap-2">
+            <Cookie className="w-3.5 h-3.5 text-primary" /> העדפות תזונה
+          </h3>
+          
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {[
+              'שומר כשרות', 'צמחוני', 'טבעוני', 'קיטוגני', 'קרניבור', 'ללא גלוטן', 'דל פחמימה', 'פליאו'
+            ].map((pref) => {
+              const dietaryPreferences = profile.dietaryPreferences || [];
+              const isSelected = dietaryPreferences.includes(pref);
+              return (
+                <button
+                  key={pref}
+                  disabled={isViewing}
+                  onClick={() => {
+                    const nextPrefs = isSelected 
+                      ? dietaryPreferences.filter(p => p !== pref) 
+                      : [...dietaryPreferences, pref];
+                    onUpdateProfile({ ...profile, dietaryPreferences: nextPrefs });
+                  }}
+                  className={cn(
+                    "py-2 px-3 rounded-xl text-[12px] font-bold transition-all duration-300 border flex items-center justify-between",
+                    isSelected 
+                      ? "bg-primary/10 text-primary border-primary/20" 
+                      : "bg-muted/40 text-muted-foreground border-transparent hover:border-border"
+                  )}
+                >
+                  {pref}
+                  {isSelected && <Check className="w-3.5 h-3.5" />}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">אחר / הערות נוספות</Label>
+            <Input 
+              value={profile.otherDietary || ''} 
+              disabled={isViewing}
+              onChange={e => onUpdateProfile({ ...profile, otherDietary: e.target.value })} 
+              placeholder="למשל: רגישות ללקטוז..."
+              className="h-10 rounded-xl bg-muted/40 border-0 focus-visible:ring-1 text-[13px]"
+            />
+          </div>
+        </motion.div>
 
         {/* Theme Mode */}
         <motion.div variants={itemVariants} className="nova-card p-5">

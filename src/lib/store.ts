@@ -92,6 +92,8 @@ export function useProfile(viewingUserId?: string) {
             weeklyPaceKg: (data as any).weekly_pace_kg ?? 0.5,
             uniqueCode: (data as any).unique_code,
             lastSeen: (data as any).last_seen,
+            dietaryPreferences: (data as any).dietary_preferences || [],
+            otherDietary: (data as any).other_dietary || '',
           });
         }
       } catch (e) {
@@ -145,6 +147,8 @@ export function useProfile(viewingUserId?: string) {
       chat_harshness: p.chatHarshness || 'בינוני',
       coach_name: p.coachName || 'NovaFit AI',
       weekly_pace_kg: p.weeklyPaceKg,
+      dietary_preferences: p.dietaryPreferences || [],
+      other_dietary: p.otherDietary || '',
       updated_at: new Date().toISOString(),
     };
     
