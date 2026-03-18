@@ -164,7 +164,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 </motion.p>
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
                   <Button shimmer onClick={next} className="w-full gap-3 h-[56px] text-[16px] rounded-2xl font-bold shadow-xl">
-                    بואו נתחיל <ArrowLeft className="w-5 h-5" />
+                    בואו נתחיל <ArrowLeft className="w-5 h-5" />
                   </Button>
                 </motion.div>
               </div>
