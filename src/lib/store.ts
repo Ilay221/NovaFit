@@ -197,15 +197,31 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
         .maybeSingle();
       
       if (!log && !viewingUserId) {
-        const { data: newLog } = await supabase
+        const { data: newLog, error: insertError } = await supabase
           .from('daily_logs')
           .insert({ user_id: effectiveUserId, date: targetDateKey, water_ml: 0 })
           .select()
           .maybeSingle();
-        log = newLog;
+        
+        if (insertError) {
+          console.error("Failed to create log, searching again:", insertError);
+          // Try to select again in case of race condition
+          const { data: retryLog } = await supabase
+            .from('daily_logs')
+            .select('*')
+            .eq('user_id', effectiveUserId)
+            .eq('date', targetDateKey)
+            .maybeSingle();
+          log = retryLog;
+        } else {
+          log = newLog;
+        }
       }
       
-      if (!log) return;
+      if (!log) {
+        console.warn("fetchLog: No log found or created for", targetDateKey);
+        return;
+      }
       setTodayLogId(log.id);
       setWaterMl(log.water_ml || 0);
 
@@ -277,16 +293,26 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
         .eq('date', dateStr)
         .maybeSingle();
       
-      if (log) return log.id;
-
       const { data: newLog } = await supabase
         .from('daily_logs')
         .insert({ user_id: effectiveUserId, date: dateStr, water_ml: 0 })
         .select('id')
         .maybeSingle();
       
-      return newLog?.id || null;
-    } catch { return null; }
+      if (newLog) return newLog.id;
+
+      const { data: retryLog } = await supabase
+        .from('daily_logs')
+        .select('id')
+        .eq('user_id', effectiveUserId)
+        .eq('date', dateStr)
+        .maybeSingle();
+      
+      return retryLog?.id || null;
+    } catch (e) { 
+      console.error("getOrCreateLogId failed:", e);
+      return null; 
+    }
   };
 
   useEffect(() => {
@@ -345,10 +371,16 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
     };
     
     try {
-      if (todayLogId) {
+      let logId = todayLogId;
+      if (!logId) {
+        console.log("No todayLogId, attempting to create one...");
+        logId = await getOrCreateLogId(format(new Date(), 'yyyy-MM-dd'));
+      }
+
+      if (logId) {
         const { error } = await supabase.from('meal_entries').insert({
           user_id: user.id,
-          daily_log_id: todayLogId,
+          daily_log_id: logId,
           food_name: mealWithId.foodItem.name,
           calories: mealWithId.foodItem.calories,
           protein: mealWithId.foodItem.protein,
@@ -358,20 +390,24 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
           category: mealWithId.foodItem.category,
           quantity: mealWithId.quantity,
           meal_type: mealWithId.mealType,
+          logged_at: mealWithId.timestamp
         });
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase insert error:", error);
+          throw error;
+        }
         await fetchLog();
       } else {
-        throw new Error("No daily log ID available");
+        throw new Error("Could not find or create daily log ID");
       }
     } catch (err) {
       console.error("Failed to add meal, saving locally:", err);
       setPendingMeals(prev => {
-        const updated = [...prev, mealWithId];
+        const updated = [...(prev || []), mealWithId];
         localStorage.setItem(`nova_pending_meals_${user.id}`, JSON.stringify(updated));
         return updated;
       });
-      toast.info("נשמר מקומית.");
+      toast.info("נשמר מקומית (סנכרון יתבצע אוטומטית).");
     }
   }, [user?.id, todayLogId, fetchLog]);
 
