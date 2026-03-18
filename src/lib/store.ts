@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AccentColor, ThemeMode, UserProfile, DailyLog, MealEntry, WeightEntry } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +13,11 @@ function loadJSON<T>(key: string, fallback: T): T {
 }
 
 function saveJSON(key: string, value: unknown) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.error("LocalStorage save failed", e);
+  }
 }
 
 export function useTheme() {
@@ -21,80 +25,91 @@ export function useTheme() {
   const [accent, setAccent] = useState<AccentColor>(() => loadJSON('nova-accent', 'green'));
 
   useEffect(() => {
-    const root = document.documentElement;
-    const isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    root.classList.toggle('dark', isDark);
-    root.className = root.className.replace(/accent-\w+/g, '');
-    root.classList.add(`accent-${accent}`);
-    saveJSON('nova-theme', mode);
-    saveJSON('nova-accent', accent);
+    try {
+      const root = document.documentElement;
+      const isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      root.classList.toggle('dark', isDark);
+      root.className = root.className.replace(/accent-\w+/g, '');
+      root.classList.add(`accent-${accent}`);
+      saveJSON('nova-theme', mode);
+      saveJSON('nova-accent', accent);
+    } catch (e) {
+      console.error("Theme effect failed", e);
+    }
   }, [mode, accent]);
 
   return { mode, setMode, accent, setAccent };
 }
 
-export function useProfile() {
+export function useProfile(viewingUserId?: string) {
   const { user } = useAuth();
+  const effectiveUserId = viewingUserId || user?.id;
   const [profile, setProfileState] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) { setProfileState(null); setLoading(false); return; }
+    if (!effectiveUserId) { setProfileState(null); setLoading(false); return; }
     
     const fetchProfile = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      if (data) {
-        // Read local storage fallback for calorieSpreadDays
-        const storedSpread = localStorage.getItem(`nova_spread_days_${user.id}`);
-        const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 5;
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', effectiveUserId)
+          .maybeSingle();
+        
+        if (data) {
+          const storedSpread = localStorage.getItem(`nova_spread_days_${effectiveUserId}`);
+          const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 5;
+          const storedChatHarshness = localStorage.getItem(`nova_chat_harshness_${effectiveUserId}`);
+          const storedCoachName = localStorage.getItem(`nova_coach_name_${effectiveUserId}`);
 
-        // Read local storage fallback for AI settings
-        const storedChatHarshness = localStorage.getItem(`nova_chat_harshness_${user.id}`);
-        const storedCoachName = localStorage.getItem(`nova_coach_name_${user.id}`);
-
-        setProfileState({
-          id: data.id,
-          name: data.name,
-          age: data.age,
-          gender: data.gender as any,
-          heightCm: data.height_cm,
-          weightKg: data.weight_kg,
-          targetWeightKg: data.target_weight_kg,
-          activityLevel: data.activity_level as any,
-          goal: data.goal as any,
-          bmr: data.bmr,
-          tdee: data.tdee,
-          dailyCalorieTarget: data.daily_calorie_target,
-          proteinTarget: data.protein_target,
-          carbsTarget: data.carbs_target,
-          fatsTarget: data.fats_target,
-          isPremium: (data as any).is_premium ?? false,
-          calorieSpreadDays: parsedSpread,
-          targetDate: (data as any).target_date ?? null,
-          favoriteFood: (data as any).favorite_food ?? '',
-          dietaryWeakness: (data as any).dietary_weakness ?? '',
-          dailyHabits: (data as any).daily_habits ?? '',
-          medicalConditions: (data as any).medical_conditions ?? '',
-          chatHarshness: (data as any).chat_harshness ?? storedChatHarshness ?? 'בינוני',
-          coachName: (data as any).coach_name ?? storedCoachName ?? 'NovaFit AI',
-        });
+          setProfileState({
+            id: data.id,
+            name: data.name || '',
+            age: data.age || 30,
+            gender: (data.gender || 'male') as any,
+            heightCm: data.height_cm || 170,
+            weightKg: data.weight_kg || 70,
+            targetWeightKg: data.target_weight_kg || 65,
+            activityLevel: (data.activity_level || 'sedentary') as any,
+            goal: (data.goal || 'lose') as any,
+            bmr: data.bmr || 1600,
+            tdee: data.tdee || 2000,
+            dailyCalorieTarget: data.daily_calorie_target || 2000,
+            proteinTarget: data.protein_target || 150,
+            carbsTarget: data.carbs_target || 200,
+            fatsTarget: data.fats_target || 70,
+            isPremium: (data as any).is_premium ?? false,
+            calorieSpreadDays: parsedSpread,
+            targetDate: (data as any).target_date ?? null,
+            favoriteFood: (data as any).favorite_food ?? '',
+            dietaryWeakness: (data as any).dietary_weakness ?? '',
+            dailyHabits: (data as any).daily_habits ?? '',
+            medicalConditions: (data as any).medical_conditions ?? '',
+            chatHarshness: (data as any).chat_harshness ?? storedChatHarshness ?? 'בינוני',
+            coachName: (data as any).coach_name ?? storedCoachName ?? 'NovaFit AI',
+            uniqueCode: (data as any).unique_code,
+            lastSeen: (data as any).last_seen,
+          });
+        }
+      } catch (e) {
+        console.error("Error fetching profile:", e);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchProfile();
-  }, [user]);
+  }, [effectiveUserId]);
 
   const setProfile = useCallback(async (p: UserProfile | null) => {
-    if (!user) return;
+    if (!user?.id) return;
     if (!p) {
-      await supabase.from('profiles').delete().eq('id', user.id);
-      localStorage.removeItem(`nova_spread_days_${user.id}`);
-      setProfileState(null);
+      try {
+        await supabase.from('profiles').delete().eq('id', user.id);
+        localStorage.removeItem(`nova_spread_days_${user.id}`);
+        setProfileState(null);
+      } catch (e) { console.error(e); }
       return;
     }
     
@@ -124,142 +139,168 @@ export function useProfile() {
       updated_at: new Date().toISOString(),
     };
     
-    const { error } = await supabase.from('profiles').upsert(row);
-    if (error) console.error("Error saving profile to Supabase:", error);
-    
-    if (p.calorieSpreadDays !== undefined) {
-      localStorage.setItem(`nova_spread_days_${user.id}`, p.calorieSpreadDays.toString());
-    }
-    if (p.chatHarshness) {
-      localStorage.setItem(`nova_chat_harshness_${user.id}`, p.chatHarshness);
-    }
-    if (p.coachName) {
-      localStorage.setItem(`nova_coach_name_${user.id}`, p.coachName);
-    }
-
-    setProfileState(p);
-  }, [user]);
+    try {
+      const { error } = await supabase.from('profiles').upsert(row);
+      if (error) console.error("Error saving profile to Supabase:", error);
+      
+      if (p.calorieSpreadDays !== undefined) {
+        localStorage.setItem(`nova_spread_days_${user.id}`, p.calorieSpreadDays.toString());
+      }
+      if (p.chatHarshness) {
+        localStorage.setItem(`nova_chat_harshness_${user.id}`, p.chatHarshness);
+      }
+      if (p.coachName) {
+        localStorage.setItem(`nova_coach_name_${user.id}`, p.coachName);
+      }
+      setProfileState(p);
+    } catch (e) { console.error(e); }
+  }, [user?.id]);
 
   return { profile, setProfile, loading };
 }
 
-const todayKey = () => format(new Date(), 'yyyy-MM-dd');
-
-export function useDailyLog(selectedDate?: Date) {
+export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
   const { user } = useAuth();
-  
-  // Compute the string key for the currently requested date
+  const effectiveUserId = viewingUserId || user?.id;
   const targetDateKey = format(selectedDate || new Date(), 'yyyy-MM-dd');
   
-  const [pendingMeals, setPendingMeals] = useState<MealEntry[]>(() => {
-    const saved = localStorage.getItem(`nova_pending_meals_${user?.id}`);
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  const [todayLog, setTodayLog] = useState<DailyLog>({ date: targetDateKey, meals: [], waterMl: 0 });
+  const [pendingMeals, setPendingMeals] = useState<MealEntry[]>([]);
+  const [dbMeals, setDbMeals] = useState<MealEntry[]>([]);
+  const [waterMl, setWaterMl] = useState(0);
   const [todayLogId, setTodayLogId] = useState<string | null>(null);
 
-  // RESET state when date changes to avoid showing stale data from previous dates
   useEffect(() => {
-    setTodayLog({ date: targetDateKey, meals: [], waterMl: 0 });
-    setTodayLogId(null);
-  }, [targetDateKey]);
-
-  const fetchLog = useCallback(async () => {
-    if (!user) return;
-    
-    // Get or create daily log for the target date
-    let { data: log } = await supabase
-      .from('daily_logs')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('date', targetDateKey)
-      .maybeSingle();
-    
-    if (!log) {
-      const { data: newLog, error } = await supabase
-        .from('daily_logs')
-        .insert({ user_id: user.id, date: targetDateKey, water_ml: 0 })
-        .select()
-        .maybeSingle();
-      
-      log = newLog;
-      
-      if (error || !log) {
-        const { data: fallbackLog } = await supabase
-          .from('daily_logs')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('date', targetDateKey)
-          .maybeSingle();
-        log = fallbackLog;
+    if (effectiveUserId) {
+      try {
+        const saved = localStorage.getItem(`nova_pending_meals_${effectiveUserId}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) setPendingMeals(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to load pending meals:", e);
       }
     }
-    
-    if (!log) return;
-    setTodayLogId(log.id);
+  }, [effectiveUserId]);
 
-    // Fetch meals from Supabase
-    const { data: meals } = await supabase
-      .from('meal_entries')
-      .select('*')
-      .eq('daily_log_id', log.id)
-      .order('logged_at', { ascending: true });
+  const fetchLog = useCallback(async () => {
+    if (!effectiveUserId) return;
     
-    const dbMeals: MealEntry[] = (meals || []).map(m => ({
-      id: m.id,
-      foodItem: {
+    try {
+      let { data: log } = await supabase
+        .from('daily_logs')
+        .select('*')
+        .eq('user_id', effectiveUserId)
+        .eq('date', targetDateKey)
+        .maybeSingle();
+      
+      if (!log && !viewingUserId) {
+        const { data: newLog } = await supabase
+          .from('daily_logs')
+          .insert({ user_id: effectiveUserId, date: targetDateKey, water_ml: 0 })
+          .select()
+          .maybeSingle();
+        log = newLog;
+      }
+      
+      if (!log) return;
+      setTodayLogId(log.id);
+      setWaterMl(log.water_ml || 0);
+
+      const { data: meals } = await supabase
+        .from('meal_entries')
+        .select('*')
+        .eq('daily_log_id', log.id)
+        .order('logged_at', { ascending: true });
+      
+      const mapped: MealEntry[] = (meals || []).map(m => ({
         id: m.id,
-        name: m.food_name,
-        calories: m.calories,
-        protein: m.protein,
-        carbs: m.carbs,
-        fats: m.fats,
-        servingSize: m.serving_size,
-        category: m.category,
-      },
-      quantity: m.quantity,
-      mealType: m.meal_type as any,
-      timestamp: m.logged_at,
-    }));
+        foodItem: {
+          id: m.id,
+          name: m.food_name || 'Unknown',
+          calories: m.calories || 0,
+          protein: m.protein || 0,
+          carbs: m.carbs || 0,
+          fats: m.fats || 0,
+          servingSize: m.serving_size || '',
+          category: m.category || '',
+        },
+        quantity: m.quantity || 1,
+        mealType: (m.meal_type || 'snack') as any,
+        timestamp: m.logged_at || new Date().toISOString(),
+      }));
 
-    // Filter pending meals for THIS specific date
-    const relevantPending = pendingMeals.filter(pm => {
-      try {
-        return format(new Date(pm.timestamp), 'yyyy-MM-dd') === targetDateKey;
-      } catch { return false; }
-    });
+      setDbMeals(mapped);
+    } catch (err) {
+      console.error("Critical error in fetchLog:", err);
+    }
+  }, [user?.id, targetDateKey]);
 
-    // Final check: only update if the date hasn't changed since we started fetching
-    setTodayLog({ 
-      date: targetDateKey, 
-      meals: [...dbMeals, ...relevantPending], 
-      waterMl: log.water_ml 
-    });
-  }, [user, targetDateKey, pendingMeals]);
+  const todayLog = useMemo((): DailyLog => {
+    const safePending = Array.isArray(pendingMeals) ? pendingMeals : [];
+    const safeDb = Array.isArray(dbMeals) ? dbMeals : [];
+    
+    let relevantPending: MealEntry[] = [];
+    try {
+      relevantPending = safePending.filter(pm => {
+        if (!pm || !pm.timestamp) return false;
+        const d = new Date(pm.timestamp);
+        return !isNaN(d.getTime()) && format(d, 'yyyy-MM-dd') === targetDateKey;
+      });
+    } catch (e) {
+      console.error("Error filtering pending meals:", e);
+    }
 
-  // Auto-sync effect: Only sync meals that match the CURRENTLY VIEWED date's log ID
+    return {
+      date: targetDateKey,
+      meals: [...safeDb, ...relevantPending],
+      waterMl: waterMl || 0
+    };
+  }, [targetDateKey, dbMeals, pendingMeals, waterMl]);
+
   useEffect(() => {
-    if (!user || pendingMeals.length === 0 || !todayLogId) return;
+    setDbMeals([]);
+    setWaterMl(0);
+    setTodayLogId(null);
+    if (effectiveUserId) fetchLog();
+  }, [targetDateKey, fetchLog, effectiveUserId]);
+
+  const getOrCreateLogId = async (dateStr: string) => {
+    if (!effectiveUserId || viewingUserId) return null;
+    try {
+      const { data: log } = await supabase
+        .from('daily_logs')
+        .select('id')
+        .eq('user_id', effectiveUserId)
+        .eq('date', dateStr)
+        .maybeSingle();
+      
+      if (log) return log.id;
+
+      const { data: newLog } = await supabase
+        .from('daily_logs')
+        .insert({ user_id: effectiveUserId, date: dateStr, water_ml: 0 })
+        .select('id')
+        .maybeSingle();
+      
+      return newLog?.id || null;
+    } catch { return null; }
+  };
+
+  useEffect(() => {
+    if (!user?.id || !Array.isArray(pendingMeals) || pendingMeals.length === 0) return;
 
     const syncPending = async () => {
-      const remaining = [...pendingMeals];
-      const syncedIds: string[] = [];
+      try {
+        const syncedIds: string[] = [];
+        for (const meal of pendingMeals) {
+          const mealDate = format(new Date(meal.timestamp || new Date()), 'yyyy-MM-dd');
+          const correctLogId = await getOrCreateLogId(mealDate);
+          if (!correctLogId) continue;
 
-      // Only attempt to sync meals belonging to the currently active log ID date
-      const mealsForCurrentDate = pendingMeals.filter(m => {
-        try {
-          return format(new Date(m.timestamp), 'yyyy-MM-dd') === targetDateKey;
-        } catch { return false; }
-      });
-
-      if (mealsForCurrentDate.length === 0) return;
-
-      for (const meal of mealsForCurrentDate) {
-        try {
           const { error } = await supabase.from('meal_entries').insert({
             user_id: user.id,
-            daily_log_id: todayLogId, 
+            daily_log_id: correctLogId,
             food_name: meal.foodItem.name,
             calories: meal.foodItem.calories,
             protein: meal.foodItem.protein,
@@ -271,34 +312,35 @@ export function useDailyLog(selectedDate?: Date) {
             meal_type: meal.mealType,
             logged_at: meal.timestamp
           });
-
           if (!error) syncedIds.push(meal.id);
-        } catch (e) {
-          console.error("Sync failed for meal", meal.id, e);
         }
-      }
 
-      if (syncedIds.length > 0) {
-        const newPending = remaining.filter(m => !syncedIds.includes(m.id));
-        setPendingMeals(newPending);
-        localStorage.setItem(`nova_pending_meals_${user.id}`, JSON.stringify(newPending));
-        // No need to call fetchLog here, it will re-run due to pendingMeals dependency if needed
+        if (syncedIds.length > 0) {
+          setPendingMeals(prev => {
+            const newPending = prev.filter(m => !syncedIds.includes(m.id));
+            localStorage.setItem(`nova_pending_meals_${user.id}`, JSON.stringify(newPending));
+            return newPending;
+          });
+          fetchLog();
+        }
+      } catch (e) {
+        console.error("Sync failed", e);
       }
     };
 
-    const timer = setTimeout(syncPending, 3000);
+    const timer = setTimeout(syncPending, 5000);
     return () => clearTimeout(timer);
-  }, [user, pendingMeals, todayLogId, targetDateKey]);
-
-  useEffect(() => { fetchLog(); }, [fetchLog]);
+  }, [user?.id, pendingMeals, fetchLog]);
 
   const getLog = useCallback((): DailyLog => todayLog, [todayLog]);
 
   const addMeal = useCallback(async (entry: MealEntry) => {
-    if (!user) return;
-    
-    // Optimistic / Local Fallback
-    const mealWithId = { ...entry, id: entry.id || crypto.randomUUID(), timestamp: entry.timestamp || new Date().toISOString() };
+    if (!user?.id) return;
+    const mealWithId = { 
+      ...entry, 
+      id: entry.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(7)), 
+      timestamp: entry.timestamp || new Date().toISOString() 
+    };
     
     try {
       if (todayLogId) {
@@ -315,106 +357,211 @@ export function useDailyLog(selectedDate?: Date) {
           quantity: mealWithId.quantity,
           meal_type: mealWithId.mealType,
         });
-
         if (error) throw error;
         await fetchLog();
       } else {
         throw new Error("No daily log ID available");
       }
     } catch (err) {
-      console.error("Failed to add meal to Supabase, saving locally:", err);
+      console.error("Failed to add meal, saving locally:", err);
       setPendingMeals(prev => {
         const updated = [...prev, mealWithId];
         localStorage.setItem(`nova_pending_meals_${user.id}`, JSON.stringify(updated));
         return updated;
       });
-      toast.info("הארוחה נשמרה מקומית ותסונכרן כשהחיבור יתחדש.");
+      toast.info("נשמר מקומית.");
     }
-  }, [user, todayLogId, fetchLog]);
+  }, [user?.id, todayLogId, fetchLog]);
 
   const removeMeal = useCallback(async (mealId: string) => {
-    if (!user) return;
-    
-    // Optimistic delete
-    const previousMeals = todayLog.meals;
-    setTodayLog(prev => ({
-      ...prev,
-      meals: prev.meals.filter(m => m.id !== mealId)
-    }));
-
+    if (!user?.id) return;
+    const previousDbMeals = dbMeals;
+    setDbMeals(prev => prev.filter(m => m.id !== mealId));
     try {
       const { error } = await supabase.from('meal_entries').delete().eq('id', mealId);
       if (error) throw error;
+      setPendingMeals(prev => {
+        const updated = (prev || []).filter(m => m.id !== mealId);
+        localStorage.setItem(`nova_pending_meals_${user.id}`, JSON.stringify(updated));
+        return updated;
+      });
     } catch (err) {
       console.error("Failed to remove meal:", err);
-      // Rollback on error
-      setTodayLog(prev => ({ ...prev, meals: previousMeals }));
-      toast.error("שגיאה במחיקת הארוחה.");
+      setDbMeals(previousDbMeals);
+      toast.error("שגיאה במחיקה.");
     }
-  }, [user, todayLog.meals]);
+  }, [user?.id, dbMeals]);
 
   const moveMeal = useCallback(async (mealId: string, newMealType: MealEntry['mealType']) => {
-    if (!user) return;
-
-    // Optimistic update
-    const previousMeals = todayLog.meals;
-    setTodayLog(prev => ({
-      ...prev,
-      meals: prev.meals.map(m => m.id === mealId ? { ...m, mealType: newMealType } : m),
-    }));
-
+    if (!user?.id) return;
+    setDbMeals(prev => prev.map(m => (m.id === mealId ? { ...m, mealType: newMealType } : m)));
     try {
       const { error } = await supabase.from('meal_entries').update({ meal_type: newMealType }).eq('id', mealId);
       if (error) throw error;
     } catch (err) {
       console.error("Failed to move meal:", err);
-      // Rollback on error
-      setTodayLog(prev => ({ ...prev, meals: previousMeals }));
-      toast.error("שגיאה בהעברת הארוחה.");
+      fetchLog(); 
+      toast.error("שגיאה בהעברה.");
     }
-  }, [user, todayLog.meals]);
+  }, [user?.id, fetchLog]);
 
   const addWater = useCallback(async (ml: number) => {
-    if (!user || !todayLogId) return;
-    const newWater = todayLog.waterMl + ml;
-    await supabase.from('daily_logs').update({ water_ml: newWater }).eq('id', todayLogId);
-    setTodayLog(prev => ({ ...prev, waterMl: newWater }));
-  }, [user, todayLogId, todayLog.waterMl]);
+    if (!user?.id || !todayLogId) return;
+    const newWater = (waterMl || 0) + ml;
+    setWaterMl(newWater);
+    try {
+      const { error } = await supabase.from('daily_logs').update({ water_ml: newWater }).eq('id', todayLogId);
+      if (error) throw error;
+    } catch (e) {
+      console.error("Failed to add water:", e);
+      fetchLog();
+    }
+  }, [user?.id, todayLogId, waterMl, fetchLog]);
 
   return { logs: {}, getLog, addMeal, removeMeal, moveMeal, addWater };
 }
 
-export function useWeightHistory() {
+export function useWeightHistory(viewingUserId?: string) {
   const { user } = useAuth();
+  const effectiveUserId = viewingUserId || user?.id;
   const [entries, setEntries] = useState<WeightEntry[]>([]);
-
   useEffect(() => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     const fetch = async () => {
-      const { data } = await supabase
-        .from('weight_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: true });
-      
-      setEntries((data || []).map(e => ({ date: e.date, weightKg: e.weight_kg })));
+      try {
+        const { data } = await supabase
+          .from('weight_entries')
+          .select('*')
+          .eq('user_id', effectiveUserId)
+          .order('date', { ascending: true });
+        setEntries((data || []).map(e => ({ date: e.date, weightKg: e.weight_kg })));
+      } catch (e) { console.error(e); }
     };
     fetch();
-  }, [user]);
+  }, [effectiveUserId]);
 
   const addEntry = useCallback(async (entry: WeightEntry) => {
-    if (!user) return;
-    await supabase.from('weight_entries').upsert({
-      user_id: user.id,
-      date: entry.date,
-      weight_kg: entry.weightKg,
-    }, { onConflict: 'user_id,date' });
-    
-    setEntries(prev => {
-      const updated = [...prev.filter(e => e.date !== entry.date), entry].sort((a, b) => a.date.localeCompare(b.date));
-      return updated;
-    });
-  }, [user]);
+    if (!effectiveUserId || viewingUserId) return;
+    try {
+      await supabase.from('weight_entries').upsert({
+        user_id: effectiveUserId,
+        date: entry.date,
+        weight_kg: entry.weightKg,
+      }, { onConflict: 'user_id,date' });
+      setEntries(prev => [...prev.filter(e => e.date !== entry.date), entry].sort((a, b) => a.date.localeCompare(b.date)));
+    } catch (e) { console.error(e); }
+  }, [effectiveUserId, viewingUserId]);
 
   return { entries, addEntry };
+}
+
+export function useConnections() {
+  const { user } = useAuth();
+  const [trainees, setTrainees] = useState<UserProfile[]>([]);
+  const [requests, setRequests] = useState<{ id: string; coach: UserProfile }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchConnections = useCallback(async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    try {
+      // Fetch trainees (where current user is coach)
+      const { data: traineeConns } = await (supabase
+        .from('user_connections' as any) as any)
+        .select('trainee_id, status, profiles:trainee_id(*)')
+        .eq('coach_id', user.id);
+
+      if (traineeConns) {
+        const acceptedTrainees = traineeConns
+          .filter(c => c.status === 'accepted')
+          .map((c: any) => ({
+            id: c.profiles.id,
+            name: c.profiles.name,
+            uniqueCode: c.profiles.unique_code,
+            lastSeen: c.profiles.last_seen,
+            // Add other fields if needed, but these are essential for the list
+          } as UserProfile));
+        setTrainees(acceptedTrainees);
+      }
+
+      // Fetch pending requests (where current user is trainee)
+      const { data: incomingRequests } = await (supabase
+        .from('user_connections' as any) as any)
+        .select('id, coach_id, status, profiles:coach_id(*)')
+        .eq('trainee_id', user.id)
+        .eq('status', 'pending');
+
+      if (incomingRequests) {
+        setRequests(incomingRequests.map((r: any) => ({
+          id: r.id,
+          coach: {
+            id: r.profiles.id,
+            name: r.profiles.name,
+            uniqueCode: r.profiles.unique_code,
+          } as UserProfile
+        })));
+      }
+    } catch (e) {
+      console.error("Error fetching connections:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchConnections();
+  }, [fetchConnections]);
+
+  const addTraineeByCode = async (code: string) => {
+    if (!user?.id) return { error: "Not authenticated" };
+    try {
+      // First find the user with this code
+      const { data: trainee } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('unique_code', code)
+        .maybeSingle();
+
+      if (!trainee) return { error: "משתמש לא נמצא" };
+      if (trainee.id === user.id) return { error: "אי אפשר להוסיף את עצמך" };
+
+      const { error } = await (supabase
+        .from('user_connections' as any) as any)
+        .insert({
+          coach_id: user.id,
+          trainee_id: trainee.id,
+          status: 'pending'
+        });
+
+      if (error) {
+        if (error.code === '23505') return { error: "כבר קיימת בקשה למשתמש זה" };
+        throw error;
+      }
+      return { success: true };
+    } catch (e) {
+      console.error(e);
+      return { error: "שגיאה בחיבור" };
+    }
+  };
+
+  const respondToRequest = async (requestId: string, accept: boolean) => {
+    try {
+      if (accept) {
+        await (supabase
+          .from('user_connections' as any) as any)
+          .update({ status: 'accepted' })
+          .eq('id', requestId);
+      } else {
+        await (supabase
+          .from('user_connections' as any) as any)
+          .delete()
+          .eq('id', requestId);
+      }
+      fetchConnections();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return { trainees, requests, loading, addTraineeByCode, respondToRequest, refresh: fetchConnections };
 }

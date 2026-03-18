@@ -16,6 +16,7 @@ interface ProfileEditorProps {
   profile: UserProfile;
   weightHistory: WeightEntry[];
   onUpdateProfile: (p: UserProfile) => void;
+  disabled?: boolean;
 }
 
 const ACTIVITIES: { value: ActivityLevel; label: string }[] = [
@@ -32,7 +33,7 @@ const GOALS: { value: Goal; label: string }[] = [
   { value: 'gain', label: 'עלייה במשקל' },
 ];
 
-export default function ProfileEditor({ profile, weightHistory, onUpdateProfile }: ProfileEditorProps) {
+export default function ProfileEditor({ profile, weightHistory, onUpdateProfile, disabled = false }: ProfileEditorProps) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     name: profile.name,
@@ -133,7 +134,7 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
           <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] flex items-center gap-2">
             <Scale className="w-3.5 h-3.5 text-primary" /> משקל ויעד
           </h3>
-          {!editingWeight && (
+          {!editingWeight && !disabled && (
             <motion.button
               onClick={handleEditWeight}
               whileHover={{ scale: 1.05 }}
@@ -235,14 +236,16 @@ export default function ProfileEditor({ profile, weightHistory, onUpdateProfile 
         <div className="nova-card p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em]">פרטים אישיים</h3>
-            <motion.button
-              onClick={handleEdit}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.92 }}
-              className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-            </motion.button>
+            {!disabled && (
+              <motion.button
+                onClick={handleEdit}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.92 }}
+                className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </motion.button>
+            )}
           </div>
           <div className="space-y-3">
             {[

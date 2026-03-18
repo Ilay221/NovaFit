@@ -27,6 +27,7 @@ interface SettingsPanelProps {
   weightHistory: WeightEntry[];
   onUpdateProfile: (p: UserProfile | null) => void;
   onClose: () => void;
+  isViewing?: boolean;
 }
 
 const ACCENTS: { value: AccentColor; label: string; color: string }[] = [
@@ -57,7 +58,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.32, 0.72, 0, 1] as const } },
 };
 
-export default function SettingsPanel({ theme, profile, weightHistory, onUpdateProfile, onClose }: SettingsPanelProps) {
+export default function SettingsPanel({ theme, profile, weightHistory, onUpdateProfile, onClose, isViewing = false }: SettingsPanelProps) {
   const { signOut, user } = useAuth();
   const { requestPermission, subscribeToPush, sendLocalNotification } = useNotifications();
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -122,11 +123,11 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <ProfileEditor profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} />
+          <ProfileEditor profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} disabled={isViewing} />
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <NFPEditor profile={profile} onUpdateProfile={onUpdateProfile} />
+          <NFPEditor profile={profile} onUpdateProfile={onUpdateProfile} disabled={isViewing} />
         </motion.div>
 
         {/* Target Date */}
@@ -359,15 +360,17 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
         </motion.div>
 
 
-        <motion.div variants={itemVariants}>
-          <Button
-            variant="outline"
-            onClick={() => onUpdateProfile(null)}
-            className="w-full gap-2 h-[48px] rounded-xl font-medium active:scale-[0.98] transition-transform text-[13px]"
-          >
-            <RotateCcw className="w-4 h-4" /> איפוס פרופיל
-          </Button>
-        </motion.div>
+        {!isViewing && (
+          <motion.div variants={itemVariants}>
+            <Button
+              variant="outline"
+              onClick={() => onUpdateProfile(null)}
+              className="w-full gap-2 h-[48px] rounded-xl font-medium active:scale-[0.98] transition-transform text-[13px]"
+            >
+              <RotateCcw className="w-4 h-4" /> איפוס פרופיל
+            </Button>
+          </motion.div>
+        )}
 
         <motion.div variants={itemVariants}>
           <Button

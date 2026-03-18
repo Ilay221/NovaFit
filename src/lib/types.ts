@@ -63,6 +63,8 @@ export interface UserProfile {
   medicalConditions?: string;
   chatHarshness?: string;
   coachName?: string;
+  uniqueCode?: string;
+  lastSeen?: string;
 }
 
 export interface FoodItem {

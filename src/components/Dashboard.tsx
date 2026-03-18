@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, Zap, TrendingUp, Info, BookmarkPlus } from 'lucide-react';
+import { Plus, Droplets, TrendingDown, Scale, Utensils, Settings, ChevronLeft, Camera, MessageSquare, X, BarChart3, Crown, Sparkles, Calendar, AlertTriangle, Zap, TrendingUp, Info, BookmarkPlus, Users, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, MealEntry, WeightEntry, DailyLog, MealType, MEAL_LABELS } from '@/lib/types';
@@ -24,10 +24,11 @@ import DateStrip from './DateStrip';
 import ConfirmDialog from './ConfirmDialog';
 import { useMealTemplates } from '@/hooks/useMealTemplates';
 import { toast } from 'sonner';
+const InteractionHub = lazy(() => import('./coach/InteractionHub'));
 
 import { useAppState } from '@/contexts/AppStateContext';
 
-type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach';
+type View = 'dashboard' | 'food' | 'weight' | 'settings' | 'ai-scanner' | 'nlp-input' | 'analytics' | 'ai-coach' | 'interaction';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -56,7 +57,9 @@ export default function Dashboard() {
     onAddWeight, 
     onUpdateProfile, 
     selectedDate, 
-    onDateChange 
+    onDateChange,
+    isViewing,
+    setViewingUserId,
   } = useAppState();
   
   if (!profile) return null;
@@ -235,6 +238,15 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <motion.button
+                  onClick={() => setView('interaction')}
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors relative"
+                >
+                  <Users className="w-[18px] h-[18px] text-muted-foreground" />
+                  {/* Notification badge could go here if there are pending requests */}
+                </motion.button>
+                <motion.button
                   onClick={() => setView('analytics')}
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   whileTap={{ scale: 0.9 }}
@@ -252,6 +264,32 @@ export default function Dashboard() {
                 </motion.button>
               </div>
             </motion.div>
+
+            {isViewing && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-primary/10 border border-primary/20 rounded-2xl p-4 mb-6 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Eye className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold">מצב צפייה</div>
+                    <div className="text-[10px] text-muted-foreground">הנתונים מוצגים לקריאה בלבד</div>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setViewingUserId(null)}
+                  className="rounded-xl text-[11px] h-8"
+                >
+                  חזרה לשלי
+                </Button>
+              </motion.div>
+            )}
 
             <motion.div variants={itemVariants} className="-mx-5 mb-6">
               <DateStrip selectedDate={selectedDate} onChangeDate={onDateChange} />
@@ -463,9 +501,9 @@ export default function Dashboard() {
                 )}
               </div>
               <div className="flex gap-2">
-                <Input type="number" placeholder='משקל (ק"ג)' value={weightInput} onChange={e => setWeightInput(e.target.value)} className="h-10 rounded-xl text-[14px]" />
+                <Input type="number" placeholder='משקל (ק"ג)' value={weightInput} onChange={e => setWeightInput(e.target.value)} disabled={isViewing} className="h-10 rounded-xl text-[14px]" />
                 <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }}>
-                  <Button size="sm" onClick={handleLogWeight} className="h-10 px-5 rounded-xl font-medium transition-transform text-[13px]">שמור</Button>
+                  <Button size="sm" onClick={handleLogWeight} disabled={isViewing} className="h-10 px-5 rounded-xl font-medium transition-transform text-[13px]">שמור</Button>
                 </motion.div>
               </div>
               {profile.goal !== 'maintain' && (
@@ -556,7 +594,7 @@ export default function Dashboard() {
 
                                 <div className="flex items-center gap-1.5 shrink-0">
                                   {/* Quick Meal Switch Buttons */}
-                                  <div className="flex items-center bg-background/40 backdrop-blur-sm rounded-lg p-0.5 border border-border/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                  <div className={`flex items-center bg-background/40 backdrop-blur-sm rounded-lg p-0.5 border border-border/20 ${isViewing ? 'hidden' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'} transition-opacity`}>
                                     {(['breakfast', 'lunch', 'dinner', 'snack', 'late_night'] as const).map((t) => {
                                       const isActive = t === type;
                                       return (
@@ -580,14 +618,16 @@ export default function Dashboard() {
                                     })}
                                   </div>
 
-                                  <motion.button
-                                    onClick={() => handleRemoveMeal(meal.id)}
-                                    whileHover={{ scale: 1.15 }}
-                                    whileTap={{ scale: 0.85 }}
-                                    className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </motion.button>
+                                  {!isViewing && (
+                                    <motion.button
+                                      onClick={() => handleRemoveMeal(meal.id)}
+                                      whileHover={{ scale: 1.15 }}
+                                      whileTap={{ scale: 0.85 }}
+                                      className="opacity-40 sm:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg hover:bg-destructive/10"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </motion.button>
+                                  )}
                                 </div>
                               </motion.div>
                             </div>
@@ -625,7 +665,7 @@ export default function Dashboard() {
           <FoodLogger key="food" onAddMeal={(entry) => { onAddMeal(entry); }} onClose={() => setView('dashboard')} />
         )}
         {view === 'settings' && (
-          <SettingsPanel key="settings" theme={theme} profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} onClose={() => setView('dashboard')} />
+          <SettingsPanel key="settings" theme={theme} profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} onClose={() => setView('dashboard')} isViewing={isViewing} />
         )}
         {view === 'ai-scanner' && (
           <AIFoodScanner key="scanner" onAddMeal={(entry) => { onAddMeal(entry); }} onClose={() => setView('dashboard')} />
@@ -642,6 +682,7 @@ export default function Dashboard() {
             onClose={() => setView('dashboard')} 
             profile={profile} 
             onAddMeal={onAddMeal}
+            isViewing={isViewing}
             bankingContext={!banking.loading ? {
               dynamicTarget: banking.dynamicTarget,
               baseTarget: banking.baseTarget,
@@ -656,7 +697,7 @@ export default function Dashboard() {
 
 
       {/* FAB Group */}
-      {view === 'dashboard' && (
+      {view === 'dashboard' && !isViewing && (
         <div className="fixed bottom-6 start-5 z-40 flex flex-col gap-2.5 items-start">
           <motion.div
             initial={{ scale: 0, opacity: 0, rotate: -90 }}

@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 interface NFPEditorProps {
   profile: UserProfile;
   onUpdateProfile: (p: UserProfile) => void;
+  disabled?: boolean;
 }
 
 const itemVariants = {
@@ -15,7 +16,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.32, 0.72, 0, 1] as const } },
 };
 
-export default function NFPEditor({ profile, onUpdateProfile }: NFPEditorProps) {
+export default function NFPEditor({ profile, onUpdateProfile, disabled = false }: NFPEditorProps) {
   const [favoriteFood, setFavoriteFood] = useState(profile.favoriteFood || '');
   const [dietaryWeakness, setDietaryWeakness] = useState(profile.dietaryWeakness || '');
   const [dailyHabits, setDailyHabits] = useState(profile.dailyHabits || '');
@@ -113,6 +114,7 @@ export default function NFPEditor({ profile, onUpdateProfile }: NFPEditorProps) 
                 rows={3}
                 maxLength={500}
                 className="w-full rounded-xl bg-muted/40 border border-border/50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all resize-none"
+                disabled={disabled}
               />
             ) : (
               <input
@@ -122,6 +124,7 @@ export default function NFPEditor({ profile, onUpdateProfile }: NFPEditorProps) 
                 placeholder={field.placeholder}
                 maxLength={200}
                 className="w-full h-10 rounded-xl bg-muted/40 border border-border/50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                disabled={disabled}
               />
             )}
           </div>
@@ -142,6 +145,7 @@ export default function NFPEditor({ profile, onUpdateProfile }: NFPEditorProps) 
                 placeholder="למשל: NovaFit AI, דויד, אנה..."
                 maxLength={50}
                 className="w-full h-10 rounded-xl bg-muted/40 border border-border/50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                disabled={disabled}
               />
             </div>
             
@@ -157,7 +161,8 @@ export default function NFPEditor({ profile, onUpdateProfile }: NFPEditorProps) 
                 ].map((option) => (
                   <button
                     key={option.value}
-                    onClick={() => setChatHarshness(option.value)}
+                    onClick={() => !disabled && setChatHarshness(option.value)}
+                    disabled={disabled}
                     className={`py-2 rounded-lg text-[11px] font-medium transition-all ${
                       chatHarshness === option.value
                         ? 'bg-primary text-primary-foreground shadow-sm'
@@ -173,7 +178,7 @@ export default function NFPEditor({ profile, onUpdateProfile }: NFPEditorProps) 
         </div>
       </div>
 
-      {hasChanges && (
+      {hasChanges && !disabled && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

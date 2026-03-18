@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu, Check, X, UtensilsCrossed, Camera, Image as ImageIcon } from 'lucide-react';
+import { ArrowRight, Send, Sparkles, Bot, User, Loader2, RefreshCw, AlertCircle, Menu, Check, X, UtensilsCrossed, Camera, Image as ImageIcon, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
@@ -46,6 +46,7 @@ interface NutritionCoachProps {
   profile: import('@/lib/types').UserProfile;
   onAddMeal?: (entry: MealEntry) => void;
   bankingContext?: BankingContext;
+  isViewing?: boolean;
 }
 
 const FOOD_TAG_REGEX = /<!--FOOD_ADD:([\s\S]*?)-->/;
@@ -91,7 +92,7 @@ function classifyError(e: any): string {
   return e?.message || 'FETCH_FAILED';
 }
 
-export default function NutritionCoach({ onClose, profile, onAddMeal, bankingContext }: NutritionCoachProps) {
+export default function NutritionCoach({ onClose, profile, onAddMeal, bankingContext, isViewing = false }: NutritionCoachProps) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -707,63 +708,72 @@ export default function NutritionCoach({ onClose, profile, onAddMeal, bankingCon
       </div>
 
       {/* Input */}
-      <div className="border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 pb-safe">
-        <div className="max-w-lg mx-auto flex flex-col gap-2">
-          {selectedImage && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="relative self-start"
-            >
-              <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-primary shadow-lg">
-                <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
-              </div>
-              <button 
-                onClick={() => setSelectedImage(null)}
-                className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-md scale-90 hover:scale-110 transition-transform"
+      {!isViewing ? (
+        <div className="border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 pb-safe">
+          <div className="max-w-lg mx-auto flex flex-col gap-2">
+            {selectedImage && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="relative self-start"
               >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </motion.div>
-          )}
+                <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-primary shadow-lg">
+                  <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+                <button 
+                  onClick={() => setSelectedImage(null)}
+                  className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-md scale-90 hover:scale-110 transition-transform"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </motion.div>
+            )}
 
-          <div className="flex gap-2 items-end">
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={handleImageSelect}
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              className="h-[42px] w-[42px] rounded-xl shrink-0 bg-muted/50 border-border/50"
-            >
-              <Camera className="w-4 h-4 text-muted-foreground" />
-            </Button>
-            
-            <textarea
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="שאל אותי או צרף תמונה..."
-              rows={1}
-              className="flex-1 resize-none rounded-xl bg-muted/50 border border-border/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all min-h-[42px] max-h-[120px]"
-              style={{ height: 'auto', overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}
-            />
-            <Button
-              shimmer
-              onClick={() => send()}
-              disabled={(!input.trim() && !selectedImage) || isLoading}
-              className="h-[42px] w-[42px] rounded-xl p-0 shadow-md shrink-0"
-            >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            </Button>
+            <div className="flex gap-2 items-end">
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                ref={fileInputRef} 
+                onChange={handleImageSelect}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-[42px] w-[42px] rounded-xl shrink-0 bg-muted/50 border-border/50"
+              >
+                <Camera className="w-4 h-4 text-muted-foreground" />
+              </Button>
+              
+              <textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                placeholder="שאל אותי או צרף תמונה..."
+                rows={1}
+                className="flex-1 resize-none rounded-xl bg-muted/50 border border-border/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all min-h-[42px] max-h-[120px]"
+                style={{ height: 'auto', overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}
+              />
+              <Button
+                shimmer
+                onClick={() => send()}
+                disabled={(!input.trim() && !selectedImage) || isLoading}
+                className="h-[42px] w-[42px] rounded-xl p-0 shadow-md shrink-0"
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="border-t border-border/50 bg-background/80 backdrop-blur-xl px-5 py-6 pb-safe text-center">
+          <p className="text-xs text-muted-foreground font-medium flex items-center justify-center gap-2">
+            <ShieldAlert className="w-3.5 h-3.5" />
+            לא ניתן להתכתב עם המאמן במצב צפייה
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }

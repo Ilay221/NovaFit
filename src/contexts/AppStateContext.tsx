@@ -15,18 +15,44 @@ interface AppStateContextType {
   onAddWeight: (entry: WeightEntry) => void;
   onUpdateProfile: (profile: UserProfile | null) => void;
   isReady: boolean;
+  viewingUserId: string | null;
+  setViewingUserId: (id: string | null) => void;
+  isViewing: boolean;
 }
 
 const AppStateContext = createContext<AppStateContextType | undefined>(undefined);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const { profile, setProfile, loading: profileLoading } = useProfile();
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const { profile, setProfile, loading: profileLoading } = useProfile(viewingUserId || undefined);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   
-  const { getLog, addMeal, removeMeal, moveMeal, addWater } = useDailyLog(selectedDate);
-  const { entries: weightHistory, addEntry: addWeight } = useWeightHistory();
+  const { getLog, addMeal, removeMeal, moveMeal, addWater } = useDailyLog(selectedDate, viewingUserId || undefined);
+  const { entries: weightHistory, addEntry: addWeight } = useWeightHistory(viewingUserId || undefined);
 
   const isReady = !profileLoading;
+  const isViewing = !!viewingUserId;
+
+  // Update last_seen
+  useEffect(() => {
+    if (!profile?.id || isViewing) return;
+
+    const updateLastSeen = async () => {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        await (supabase
+          .from('profiles' as any) as any)
+          .update({ last_seen: new Date().toISOString() })
+          .eq('id', profile.id);
+      } catch (e) {
+        console.error("Failed to update last_seen:", e);
+      }
+    };
+
+    updateLastSeen();
+    const interval = setInterval(updateLastSeen, 5 * 60 * 1000); // Every 5 minutes
+    return () => clearInterval(interval);
+  }, [profile?.id, isViewing]);
 
   return (
     <AppStateContext.Provider
@@ -43,6 +69,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         onAddWeight: addWeight,
         onUpdateProfile: setProfile as any,
         isReady,
+        viewingUserId,
+        setViewingUserId,
+        isViewing,
       }}
     >
       {children}
