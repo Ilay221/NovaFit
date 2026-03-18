@@ -116,19 +116,21 @@ export function useProfile(viewingUserId?: string) {
 
     if (!p) {
       try {
-        // Hard Reset: Wipe everything
-        console.log("Performing Hard Reset for user:", user.id);
+        // Hard Reset: Use the database function for atomic wipe
+        console.log("Performing Atomic Hard Reset for user:", user.id);
+        const { error: rpcError } = await (supabase as any).rpc('hard_reset_user');
         
-        // Delete in order to respect potential FK constraints (though most are CASCADE)
-        await (supabase.from('chat_sessions' as any) as any).delete().eq('user_id', user.id);
-        await (supabase.from('daily_logs' as any) as any).delete().eq('user_id', user.id);
-        await (supabase.from('weight_entries' as any) as any).delete().eq('user_id', user.id);
-        await (supabase.from('meal_templates' as any) as any).delete().eq('user_id', user.id);
-        await (supabase.from('push_subscriptions' as any) as any).delete().eq('user_id', user.id);
-        await (supabase.from('user_connections' as any) as any).delete().or(`coach_id.eq.${user.id},trainee_id.eq.${user.id}`);
-        
-        // Finally delete the profile itself (this should reset unique_code too)
-        await (supabase.from('profiles' as any) as any).delete().eq('id', user.id);
+        if (rpcError) {
+          console.error("Hard Reset RPC Error:", rpcError);
+          // Fallback to manual delete if RPC fails (e.g. if migration not applied yet)
+          await (supabase.from('chat_sessions' as any) as any).delete().eq('user_id', user.id);
+          await (supabase.from('daily_logs' as any) as any).delete().eq('user_id', user.id);
+          await (supabase.from('weight_entries' as any) as any).delete().eq('user_id', user.id);
+          await (supabase.from('meal_templates' as any) as any).delete().eq('user_id', user.id);
+          await (supabase.from('push_subscriptions' as any) as any).delete().eq('user_id', user.id);
+          await (supabase.from('user_connections' as any) as any).delete().or(`coach_id.eq.${user.id},trainee_id.eq.${user.id}`);
+          await (supabase.from('profiles' as any) as any).delete().eq('id', user.id);
+        }
         
         // Clear local storage for this user
         Object.keys(localStorage).forEach(key => {
@@ -176,17 +178,13 @@ export function useProfile(viewingUserId?: string) {
     };
     
     try {
-      console.log("Upserting profile for user:", user.id, row);
-      const { error, data } = await (supabase.from('profiles' as any) as any).upsert(row).select().single();
+      console.log("Upserting profile for user:", user.id);
+      const { error } = await (supabase.from('profiles' as any) as any).upsert(row);
       
       if (error) {
         console.error("Error saving profile to Supabase:", error);
-        toast.error('שגיאה בשמירת הפרופיל. הנתונים נשמרו מקומית בלבד.');
-      } else {
-        console.log("Profile saved successfully:", data);
-        if (!viewingUserId) {
-          toast.success('הפרופיל עודכן בהצלחה!');
-        }
+        toast.error('שגיאה בשמירת הפרופיל במאגר הנתונים. נסה שוב.');
+        return; // Stop here if Supabase fails
       }
       
       if (p.calorieSpreadDays !== undefined) {
@@ -199,9 +197,12 @@ export function useProfile(viewingUserId?: string) {
         localStorage.setItem(`nova_coach_name_${user.id}`, p.coachName);
       }
       setProfileState(p);
+      if (!viewingUserId) {
+        toast.success('פרופיל עודכן בהצלחה!');
+      }
     } catch (e) { 
       console.error("Profile Upsert Exception:", e);
-      setProfileState(p); // Still set local state even on catch to keep app working
+      toast.error('שגיאה לא צפויה בשמירה.');
     }
   }, [user?.id, viewingUserId]);
 
