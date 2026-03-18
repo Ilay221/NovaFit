@@ -193,7 +193,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
                       <div className="bg-muted/40 rounded-xl p-4 mt-6 text-center">
                         <p className="text-xs text-muted-foreground mb-1">תאריך יעד מחושב אוטומטית</p>
                         <p className="text-lg font-bold text-foreground">
-                          {format(addDays(new Date(), Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7))), 'd בMMMM, yyyy', { locale: (require('date-fns/locale')).he })}
+                          {format(addDays(new Date(), Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7))), 'd בMMMM, yyyy', { locale: he })}
                         </p>
                         <p className="text-[11px] text-muted-foreground mt-1">בעוד {Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7))} ימים</p>
                       </div>
@@ -226,7 +226,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
                           )}
                         >
                           <Calendar className="me-2 h-4 w-4" />
-                          {currentTargetDate ? format(currentTargetDate, "PPP", { locale: (require('date-fns/locale')).he }) : <span>בחר תאריך יעד ספציפי</span>}
+                          {currentTargetDate ? format(currentTargetDate, "PPP", { locale: he }) : <span>בחר תאריך יעד ספציפי</span>}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -276,7 +276,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
                 <div className="bg-muted/40 rounded-xl p-5 text-center space-y-2 border border-primary/10">
                   <div className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">תאריך יעד משוער</div>
                   <div className="text-xl font-bold text-foreground">
-                    {profile.targetDate ? format(parseISO(profile.targetDate), 'd בMMMM, yyyy', { locale: (require('date-fns/locale')).he }) : 'לא הוגדר'}
+                    {profile.targetDate ? format(parseISO(profile.targetDate), 'd בMMMM, yyyy', { locale: he }) : 'לא הוגדר'}
                   </div>
                   {profile.targetDate && (
                     <div className="text-xs text-primary font-medium">
