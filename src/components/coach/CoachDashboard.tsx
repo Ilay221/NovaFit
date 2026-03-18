@@ -10,11 +10,17 @@ import { toast } from 'sonner';
 import { formatDistanceToNow, differenceInHours, parseISO } from 'date-fns';
 import { he } from 'date-fns/locale';
 
-export default function CoachDashboard() {
+export default function CoachDashboard({ onClose }: { onClose?: () => void }) {
   const [code, setCode] = React.useState('');
   const [isAdding, setIsAdding] = React.useState(false);
   const { trainees, addTraineeByCode, loading } = useConnections();
   const { setViewingUserId } = useAppState();
+
+  const handleStartViewing = (traineeId: string, traineeName: string) => {
+    setViewingUserId(traineeId);
+    toast.info(`צופה בנתונים של ${traineeName}`);
+    if (onClose) onClose();
+  };
 
   const handleAddTrainee = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +141,7 @@ export default function CoachDashboard() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => { setViewingUserId(trainee.id); toast.info(`צופה בנתונים של ${trainee.name}`); }}
+                  onClick={() => handleStartViewing(trainee.id, trainee.name)}
                   className="rounded-xl h-10 gap-2 px-4 border-primary/20 hover:bg-primary/10 hover:text-primary transition-all"
                 >
                   <Eye className="w-4 h-4" />

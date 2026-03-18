@@ -13,21 +13,6 @@ export default function InteractionHub({ onClose }: { onClose: () => void }) {
   const [view, setView] = React.useState<HubView>('selection');
   const { isViewing, setViewingUserId } = useAppState();
 
-  if (isViewing) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-primary/5 rounded-3xl border border-primary/10">
-        <ShieldAlert className="w-16 h-16 text-primary mb-4 opacity-50" />
-        <h3 className="text-xl font-bold mb-2">מצב צפייה פעיל</h3>
-        <p className="text-sm text-muted-foreground mb-8">כעת אתה צופה בנתונים של מתאמן. נתונים אלו הם לקריאה בלבד.</p>
-        <Button 
-          onClick={() => { setViewingUserId(null); onClose(); }}
-          className="rounded-xl h-12 px-8 font-bold"
-        >
-          חזרה ליומן שלי
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-lg mx-auto px-5 pt-8">
@@ -93,7 +78,7 @@ export default function InteractionHub({ onClose }: { onClose: () => void }) {
               <ArrowLeft className="w-4 h-4" /> חזרה לבחירה
             </Button>
             
-            {view === 'coach' ? <CoachDashboard /> : <TraineeCodeView />}
+            {view === 'coach' ? <CoachDashboard onClose={onClose} /> : <TraineeCodeView />}
           </motion.div>
         )}
       </AnimatePresence>
