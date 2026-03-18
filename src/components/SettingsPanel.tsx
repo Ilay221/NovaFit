@@ -75,10 +75,10 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
 
   const currentTargetDate = profile.targetDate ? parseISO(profile.targetDate) : null;
 
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateSelect = (date: Date | undefined, overrides?: Partial<UserProfile>) => {
     if (date) {
       const newTargetDate = date.toISOString().slice(0, 10);
-      const updatedProfile = { ...profile, targetDate: newTargetDate };
+      const updatedProfile = { ...profile, ...overrides, targetDate: newTargetDate };
       const adaptive = calculateAdaptiveTargets(updatedProfile, weightHistory);
       onUpdateProfile({
         ...updatedProfile,
@@ -203,9 +203,7 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
                       onClick={() => {
                         const calculatedDays = Math.max(1, Math.round((Math.abs(profile.weightKg - profile.targetWeightKg) / weeklyPaceKg) * 7));
                         const newDate = addDays(new Date(), calculatedDays);
-                        const updatedProfile = { ...profile, weeklyPaceKg };
-                        handleDateSelect(newDate); // handleDateSelect uses updatedProfile internally or needs it
-                        onUpdateProfile({ ...updatedProfile, targetDate: newDate.toISOString().slice(0, 10) });
+                        handleDateSelect(newDate, { weeklyPaceKg });
                         toast.success('יעד עודכן לפי הקצב החדש');
                       }} 
                       className="w-full h-11 rounded-xl text-[13px] font-bold"
