@@ -126,9 +126,11 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
           <ProfileEditor profile={profile} weightHistory={weightHistory} onUpdateProfile={onUpdateProfile} disabled={isViewing} />
         </motion.div>
 
-        <motion.div variants={itemVariants}>
-          <NFPEditor profile={profile} onUpdateProfile={onUpdateProfile} disabled={isViewing} />
-        </motion.div>
+        {!isViewing && (
+          <motion.div variants={itemVariants}>
+            <NFPEditor profile={profile} onUpdateProfile={onUpdateProfile} disabled={isViewing} />
+          </motion.div>
+        )}
 
         {/* Target Date */}
         {profile.goal !== 'maintain' && profile.weightKg !== profile.targetWeightKg && (
@@ -279,85 +281,87 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
           </div>
         </motion.div>
         
-        {/* Push Notifications */}
-        <motion.div variants={itemVariants} className="nova-card p-5">
-          <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4 flex items-center gap-2">
-            <Bell className="w-3.5 h-3.5 text-primary" /> התראות
-          </h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[13px] font-medium font-display">התראות דחיפה</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">תזכורות לשתיית מים, ארוחות וסיכום יומי</p>
-            </div>
-            <button
-              onClick={async () => {
-                const granted = await requestPermission();
-                if (granted) {
-                  await subscribeToPush();
-                }
-              }}
-              className={cn(
-                "px-4 py-2 rounded-xl text-[12px] font-bold transition-all btn-premium",
-                Notification.permission === 'granted'
-                  ? "bg-primary/10 text-primary border border-primary/20 pointer-events-none"
-                  : "bg-primary text-primary-foreground shadow-[0_0_15px_hsla(var(--primary)/0.3)]"
-              )}
-            >
-              {Notification.permission === 'granted' ? 'מופעל ✓' : 'הפעל'}
-            </button>
-          </div>
-
-          {Notification.permission === 'granted' && (
-            <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
+        {/* Push Notifications - Only for the user themselves */}
+        {!isViewing && (
+          <motion.div variants={itemVariants} className="nova-card p-5">
+            <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] mb-4 flex items-center gap-2">
+              <Bell className="w-3.5 h-3.5 text-primary" /> התראות
+            </h3>
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-medium font-display">בדיקת התראה</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">שלח הודעה בעוד 15 שניות</p>
+                <p className="text-[13px] font-medium font-display">התראות דחיפה</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">תזכורות לשתיית מים, ארוחות וסיכום יומי</p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={testPending}
+              <button
                 onClick={async () => {
-                  setTestPending(true);
-                  if (!user) return;
-                  
-                  toast.info('שולח בקשה לשרת... ההתראה תישלח בעוד 15 שניות');
-                  
-                  // Call the Edge Function
-                  const { data, error } = await supabase.functions.invoke('send-push', {
-                    body: {
-                      user_id: user.id,
-                      title: 'בדיקת NovaFit מהשרת! 🚀',
-                      body: 'זהו מבחן מוצלח - ההתראה נשלחה מהשרת ועובדת גם כשהאפליקציה סגורה!',
-                      delay_ms: 15000
-                    }
-                  });
-
-                  if (error) {
-                    console.error('Edge Function error:', error);
-                    // Fallback to local if server fails (e.g. no keys)
-                    setTimeout(() => {
-                      sendLocalNotification('בדיקת NovaFit (מקומי)! 🚀', {
-                        body: 'השרת לא הגיב, אבל ההתראות המקומיות עובדות.',
-                      });
-                      setTestPending(false);
-                    }, 15000);
-                  } else {
-                    setTestPending(false);
+                  const granted = await requestPermission();
+                  if (granted) {
+                    await subscribeToPush();
                   }
                 }}
-                className="rounded-xl px-4 h-9 text-[11px]"
+                className={cn(
+                  "px-4 py-2 rounded-xl text-[12px] font-bold transition-all btn-premium",
+                  Notification.permission === 'granted'
+                    ? "bg-primary/10 text-primary border border-primary/20 pointer-events-none"
+                    : "bg-primary text-primary-foreground shadow-[0_0_15px_hsla(var(--primary)/0.3)]"
+                )}
               >
-                {testPending ? 'ממתין...' : 'בדוק עכשיו'}
-              </Button>
+                {Notification.permission === 'granted' ? 'מופעל ✓' : 'הפעל'}
+              </button>
             </div>
-          )}
-          {Notification.permission === 'denied' && (
-            <p className="text-[10px] text-destructive mt-3 bg-destructive/10 p-2 rounded-lg border border-destructive/20">
-              ההתראות חסומות בדפדפן. כדי להפעיל אותן, עליך לשנות את ההגדרות בדפדפן שלך.
-            </p>
-          )}
-        </motion.div>
+
+            {Notification.permission === 'granted' && (
+              <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
+                <div>
+                  <p className="text-[12px] font-medium font-display">בדיקת התראה</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">שלח הודעה בעוד 15 שניות</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={testPending}
+                  onClick={async () => {
+                    setTestPending(true);
+                    if (!user) return;
+                    
+                    toast.info('שולח בקשה לשרת... ההתראה תישלח בעוד 15 שניות');
+                    
+                    // Call the Edge Function
+                    const { data, error } = await supabase.functions.invoke('send-push', {
+                      body: {
+                        user_id: user.id,
+                        title: 'בדיקת NovaFit מהשרת! 🚀',
+                        body: 'זהו מבחן מוצלח - ההתראה נשלחה מהשרת ועובדת גם כשהאפליקציה סגורה!',
+                        delay_ms: 15000
+                      }
+                    });
+
+                    if (error) {
+                      console.error('Edge Function error:', error);
+                      // Fallback to local if server fails (e.g. no keys)
+                      setTimeout(() => {
+                        sendLocalNotification('בדיקת NovaFit (מקומי)! 🚀', {
+                          body: 'השרת לא הגיב, אבל ההתראות המקומיות עובדות.',
+                        });
+                        setTestPending(false);
+                      }, 15000);
+                    } else {
+                      setTestPending(false);
+                    }
+                  }}
+                  className="rounded-xl px-4 h-9 text-[11px]"
+                >
+                  {testPending ? 'ממתין...' : 'בדוק עכשיו'}
+                </Button>
+              </div>
+            )}
+            {Notification.permission === 'denied' && (
+              <p className="text-[10px] text-destructive mt-3 bg-destructive/10 p-2 rounded-lg border border-destructive/20">
+                ההתראות חסומות בדפדפן. כדי להפעיל אותן, עליך לשנות את ההגדרות בדפדפן שלך.
+              </p>
+            )}
+          </motion.div>
+        )}
 
 
         {!isViewing && (

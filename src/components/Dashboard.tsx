@@ -247,16 +247,18 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <motion.button
-                  onClick={() => setView('interaction')}
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors relative"
-                >
-                  <Users className="w-[18px] h-[18px] text-muted-foreground" />
-                  {/* Notification badge for pending requests */}
-                  <PendingRequestsBadge />
-                </motion.button>
+                {!isViewing && (
+                  <motion.button
+                    onClick={() => setView('interaction')}
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors relative"
+                  >
+                    <Users className="w-[18px] h-[18px] text-muted-foreground" />
+                    {/* Notification badge for pending requests */}
+                    <PendingRequestsBadge />
+                  </motion.button>
+                )}
                 <motion.button
                   onClick={() => setView('analytics')}
                   whileHover={{ scale: 1.1, rotate: 5 }}
