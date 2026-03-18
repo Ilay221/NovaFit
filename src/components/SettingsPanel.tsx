@@ -361,6 +361,44 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
             ))}
           </div>
         </motion.div>
+
+        {/* Custom Theme Color */}
+        <motion.div variants={itemVariants} className="nova-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold font-display text-[13px] text-muted-foreground uppercase tracking-[0.08em] flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-primary" /> צבע מותאם אישית
+            </h3>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onUpdateProfile({ ...profile, themeColor: undefined })}
+              className="h-8 px-3 text-[11px] font-bold rounded-lg"
+            >
+              Default
+            </Button>
+          </div>
+          
+          <div className="flex items-center gap-4 bg-muted/30 p-3 rounded-2xl border border-border/50">
+            <div 
+              className="w-14 h-14 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] border-2 border-white dark:border-white/10 relative overflow-hidden transition-transform active:scale-95"
+              style={{ backgroundColor: profile.themeColor || '#10b981' }}
+            >
+              <input 
+                type="color" 
+                value={profile.themeColor || '#10b981'}
+                onChange={(e) => onUpdateProfile({ ...profile, themeColor: e.target.value })}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-[2]"
+              />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                 <div className="w-2 h-0.5 bg-white/40 rounded-full rotate-45" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="text-[14px] font-bold font-display">בחר צבע ייחודי</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">שנה את כל סגנון האפליקציה לצבע המועדף עליך ברגע</p>
+            </div>
+          </div>
+        </motion.div>
         
         {/* Push Notifications - Only for the user themselves */}
         {!isViewing && (

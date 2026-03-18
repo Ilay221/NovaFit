@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { AccentColor, ThemeMode, UserProfile, DailyLog, MealEntry, WeightEntry } from './types';
+import { AccentColor, ThemeMode, UserProfile, DailyLog, MealEntry, WeightEntry, MealTemplate, MealType } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { format } from 'date-fns';
+import { addDays, format, isSameDay, startOfDay } from 'date-fns';
 import { toast } from 'sonner';
+import { applyThemeColor } from './theme-utils';
 
 function loadJSON<T>(key: string, fallback: T): T {
   try {
@@ -59,11 +60,6 @@ export function useProfile(viewingUserId?: string) {
           .maybeSingle();
         
         if (data) {
-          const storedSpread = localStorage.getItem(`nova_spread_days_${effectiveUserId}`);
-          const parsedSpread = storedSpread ? parseInt(storedSpread, 10) : 5;
-          const storedChatHarshness = localStorage.getItem(`nova_chat_harshness_${effectiveUserId}`);
-          const storedCoachName = localStorage.getItem(`nova_coach_name_${effectiveUserId}`);
-
           setProfileState({
             id: data.id,
             name: data.name || '',
@@ -81,20 +77,22 @@ export function useProfile(viewingUserId?: string) {
             carbsTarget: data.carbs_target || 200,
             fatsTarget: data.fats_target || 70,
             isPremium: (data as any).is_premium ?? false,
-            calorieSpreadDays: parsedSpread,
+            calorieSpreadDays: (data as any).calorie_spread_days ?? 5,
             targetDate: (data as any).target_date ?? null,
             favoriteFood: (data as any).favorite_food ?? '',
             dietaryWeakness: (data as any).dietary_weakness ?? '',
             dailyHabits: (data as any).daily_habits ?? '',
             medicalConditions: (data as any).medical_conditions ?? '',
-            chatHarshness: (data as any).chat_harshness ?? storedChatHarshness ?? 'בינוני',
-            coachName: (data as any).coach_name ?? storedCoachName ?? 'NovaFit AI',
+            chatHarshness: (data as any).chat_harshness ?? 'בינוני',
+            coachName: (data as any).coach_name ?? 'NovaFit AI',
             weeklyPaceKg: (data as any).weekly_pace_kg ?? 0.5,
             uniqueCode: (data as any).unique_code,
             lastSeen: (data as any).last_seen,
             dietaryPreferences: (data as any).dietary_preferences || [],
             otherDietary: (data as any).other_dietary || '',
+            themeColor: (data as any).theme_color || null,
           });
+          applyThemeColor((data as any).theme_color);
         }
       } catch (e) {
         console.error("Error fetching profile:", e);
@@ -177,6 +175,7 @@ export function useProfile(viewingUserId?: string) {
       weekly_pace_kg: p.weeklyPaceKg,
       dietary_preferences: p.dietaryPreferences || [],
       other_dietary: p.otherDietary || '',
+      theme_color: p.themeColor || null,
       updated_at: new Date().toISOString(),
     };
     
@@ -196,8 +195,11 @@ export function useProfile(viewingUserId?: string) {
       const updatedProfile: UserProfile = {
         ...p,
         uniqueCode: savedProfile.unique_code,
-        lastSeen: savedProfile.last_seen
+        lastSeen: savedProfile.last_seen,
+        themeColor: savedProfile.theme_color
       };
+      
+      applyThemeColor(savedProfile.theme_color);
       
       if (p.calorieSpreadDays !== undefined) {
         localStorage.setItem(`nova_spread_days_${user.id}`, p.calorieSpreadDays.toString());

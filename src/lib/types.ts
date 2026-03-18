@@ -68,6 +68,7 @@ export interface UserProfile {
   lastSeen?: string;
   dietaryPreferences?: string[];
   otherDietary?: string;
+  themeColor?: string;
 }
 
 export interface FoodItem {

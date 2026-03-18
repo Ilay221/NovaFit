@@ -10,7 +10,10 @@ import { calculateBMR, calculateTDEE, calculateCalorieTarget, calculateMacros } 
 import { calculateAdaptiveTargets } from '@/lib/adaptive-engine';
 import { format, addDays, differenceInDays, parseISO } from 'date-fns';
 
-const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'preferences', 'health', 'dietary', 'timeline', 'results'] as const;
+import { applyThemeColor } from '@/lib/theme-utils';
+import { Plus } from 'lucide-react';
+
+const STEPS = ['welcome', 'basics', 'body', 'activity', 'goal', 'preferences', 'health', 'dietary', 'theme', 'timeline', 'results'] as const;
 type Step = typeof STEPS[number];
 
 interface OnboardingProps {
@@ -37,6 +40,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [coachName, setCoachName] = useState('NovaFit AI');
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>([]);
   const [otherDietary, setOtherDietary] = useState('');
+  const [themeColor, setThemeColor] = useState('#10b981');
 
   const stepIndex = STEPS.indexOf(step);
   const next = () => setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)]);
@@ -62,6 +66,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     targetDate: targetDateStr,
     calorieSpreadDays: 5,
     weeklyPaceKg,
+    themeColor,
   };
 
   const adaptive = calculateAdaptiveTargets(tempProfile, []);
@@ -84,6 +89,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       favoriteFood, dietaryWeakness, dailyHabits, medicalConditions,
       chatHarshness, coachName: coachName.trim() || 'NovaFit AI',
       dietaryPreferences, otherDietary,
+      themeColor,
     });
   };
 
@@ -462,6 +468,66 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     placeholder="למשל: ללא מוצרי חלב, דלת סוכר..."
                     className="h-[48px] rounded-xl bg-muted/50 border-0 focus-visible:ring-1 text-[15px] transition-all focus:shadow-md"
                   />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" onClick={prev} className="h-[52px] w-[52px] rounded-xl p-0"><ArrowRight className="w-5 h-5" /></Button>
+                  <Button shimmer onClick={next} className="flex-1 h-[52px] gap-2 rounded-xl font-bold text-[15px]">המשך <ArrowLeft className="w-5 h-5" /></Button>
+                </div>
+              </div>
+            )}
+
+            {step === 'theme' && (
+              <div className="space-y-8">
+                <div>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <motion.div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center" initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 300 }}>
+                      <Sparkles className="w-4 h-4 text-primary" />
+                    </motion.div>
+                    <h2 className="text-[28px] font-extrabold font-display leading-tight">עיצוב אישי</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">בחר את הצבע שילווה אותך בדרך ליעד</p>
+                </div>
+
+                <div className="nova-card p-6 flex flex-col items-center gap-6">
+                  <div 
+                    className="w-24 h-24 rounded-3xl shadow-2xl border-4 border-white dark:border-white/10 relative overflow-hidden transition-transform duration-500 hover:scale-105 active:scale-95"
+                    style={{ backgroundColor: themeColor }}
+                  >
+                    <input 
+                      type="color" 
+                      value={themeColor}
+                      onChange={(e) => {
+                        setThemeColor(e.target.value);
+                        applyThemeColor(e.target.value);
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-[3.5]"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                       <Plus className="w-6 h-6 text-white/50" />
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <p className="text-[15px] font-bold font-display">בחר צבע ייחודי משלך</p>
+                    <p className="text-[12px] text-muted-foreground mt-1">לחץ על הריבוע או בחר מהדוגמאות</p>
+                  </div>
+
+                  <div className="grid grid-cols-5 gap-2.5 w-full">
+                    {['#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#06b6d4', '#6366f1', '#14b8a6', '#f97316'].map(c => (
+                      <motion.button 
+                        key={c}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => {
+                          setThemeColor(c);
+                          applyThemeColor(c);
+                        }}
+                        className={`h-9 rounded-xl border-2 transition-all ${themeColor === c ? 'border-primary scale-110 shadow-lg' : 'border-transparent'}`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-2">
