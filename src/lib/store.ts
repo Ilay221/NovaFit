@@ -520,7 +520,7 @@ export function useConnections() {
       const { data: trainee } = await (supabase
         .from('profiles')
         .select('id')
-        .eq('unique_code', code) as any)
+        .ilike('unique_code', code.trim()) as any)
         .maybeSingle();
 
       if (!trainee) return { error: "משתמש לא נמצא" };
