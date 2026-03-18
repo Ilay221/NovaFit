@@ -16,7 +16,7 @@ import AIFoodScanner from './AIFoodScanner';
 import NLPFoodInput from './NLPFoodInput';
 import WeeklyAnalytics from './WeeklyAnalytics';
 import NutritionCoach from './NutritionCoach';
-import { useTheme } from '@/lib/store';
+import { useTheme, useConnections } from '@/lib/store';
 import { useCalorieBanking } from '@/hooks/useCalorieBanking';
 import { format, parseISO, differenceInDays, isSameDay } from 'date-fns';
 import { haptics } from '@/lib/haptics';
@@ -44,6 +44,16 @@ const itemVariants = {
 };
 
 
+
+function PendingRequestsBadge() {
+  const { requests } = useConnections();
+  if (requests.length === 0) return null;
+  return (
+    <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background">
+      {requests.length}
+    </span>
+  );
+}
 
 export default function Dashboard() {
   const { 
@@ -244,7 +254,8 @@ export default function Dashboard() {
                   className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors relative"
                 >
                   <Users className="w-[18px] h-[18px] text-muted-foreground" />
-                  {/* Notification badge could go here if there are pending requests */}
+                  {/* Notification badge for pending requests */}
+                  <PendingRequestsBadge />
                 </motion.button>
                 <motion.button
                   onClick={() => setView('analytics')}
@@ -692,6 +703,16 @@ export default function Dashboard() {
               explanation: banking.explanation,
             } : undefined}
           />
+        )}
+        {view === 'interaction' && (
+          <Suspense fallback={
+            <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
+              <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+              <p className="text-sm text-muted-foreground animate-pulse">טוען ממשק אינטרקציה...</p>
+            </div>
+          }>
+            <InteractionHub key="interaction" onClose={() => setView('dashboard')} />
+          </Suspense>
         )}
       </AnimatePresence>
 

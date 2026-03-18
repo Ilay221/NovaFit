@@ -114,7 +114,7 @@ export default function CoachDashboard() {
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold text-xl font-display">
-                    {trainee.name[0]}
+                    {trainee.name?.[0] || '?'}
                   </div>
                   {/* Status Indicator */}
                   <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card ${getStatusColor(trainee.lastSeen)} shadow-sm`} />

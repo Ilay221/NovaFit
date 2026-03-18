@@ -472,14 +472,13 @@ export function useConnections() {
         .eq('coach_id', user.id);
 
       if (traineeConns) {
-        const acceptedTrainees = traineeConns
-          .filter(c => c.status === 'accepted')
+        const acceptedTrainees = (traineeConns || [])
+          .filter(c => c.status === 'accepted' && c.profiles)
           .map((c: any) => ({
             id: c.profiles.id,
-            name: c.profiles.name,
+            name: c.profiles.name || 'משתמש ללא שם',
             uniqueCode: c.profiles.unique_code,
             lastSeen: c.profiles.last_seen,
-            // Add other fields if needed, but these are essential for the list
           } as UserProfile));
         setTrainees(acceptedTrainees);
       }
@@ -492,14 +491,16 @@ export function useConnections() {
         .eq('status', 'pending');
 
       if (incomingRequests) {
-        setRequests(incomingRequests.map((r: any) => ({
-          id: r.id,
-          coach: {
-            id: r.profiles.id,
-            name: r.profiles.name,
-            uniqueCode: r.profiles.unique_code,
-          } as UserProfile
-        })));
+        setRequests(incomingRequests
+          .filter((r: any) => r.profiles)
+          .map((r: any) => ({
+            id: r.id,
+            coach: {
+              id: r.profiles.id,
+              name: r.profiles.name || 'מאמן',
+              uniqueCode: r.profiles.unique_code,
+            } as UserProfile
+          })));
       }
     } catch (e) {
       console.error("Error fetching connections:", e);
@@ -516,10 +517,10 @@ export function useConnections() {
     if (!user?.id) return { error: "Not authenticated" };
     try {
       // First find the user with this code
-      const { data: trainee } = await supabase
+      const { data: trainee } = await (supabase
         .from('profiles')
         .select('id')
-        .eq('unique_code', code)
+        .eq('unique_code', code) as any)
         .maybeSingle();
 
       if (!trainee) return { error: "משתמש לא נמצא" };
