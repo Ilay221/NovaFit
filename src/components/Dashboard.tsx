@@ -123,7 +123,7 @@ export default function Dashboard() {
 
   const lastSyncKeyRef = useRef<string>('');
   useEffect(() => {
-    if (!hasTimeline || !adaptive) return;
+    if (!hasTimeline || !adaptive || isViewing) return;
     // VERY IMPORTANT: Use adaptive target, NOT ring target (which includes rollover) to prevent compounding loops.
     const computed = sanitizeKcalTarget(adaptive.dailyCalorieTarget, adaptive.dailyCalorieTarget);
     if (computed > 5000) {
@@ -141,7 +141,7 @@ export default function Dashboard() {
       carbsTarget: adaptive.carbsTarget,
       fatsTarget: adaptive.fatsTarget,
     });
-  }, [adaptive, hasTimeline, onUpdateProfile, profile]);
+  }, [adaptive, hasTimeline, onUpdateProfile, profile, isViewing]);
 
   const goalDate = hasTimeline && profile.targetDate
     ? parseISO(profile.targetDate)

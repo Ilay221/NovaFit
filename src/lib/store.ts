@@ -105,6 +105,13 @@ export function useProfile(viewingUserId?: string) {
 
   const setProfile = useCallback(async (p: UserProfile | null) => {
     if (!user?.id) return;
+
+    // If viewing another user, we don't allow permanent updates to their profile (or accidental overwrites of our own)
+    if (viewingUserId) {
+      if (p) setProfileState(p);
+      return;
+    }
+
     if (!p) {
       try {
         await supabase.from('profiles').delete().eq('id', user.id);
@@ -156,7 +163,7 @@ export function useProfile(viewingUserId?: string) {
       }
       setProfileState(p);
     } catch (e) { console.error(e); }
-  }, [user?.id]);
+  }, [user?.id, viewingUserId]);
 
   return { profile, setProfile, loading };
 }
@@ -436,7 +443,7 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string, dailyCa
   }, [user?.id, todayLogId, targetDateKey, fetchLog, getOrCreateLogId]);
 
   const removeMeal = useCallback(async (mealId: string) => {
-    if (!user?.id) return;
+    if (!user?.id || viewingUserId) return;
     const previousDbMeals = dbMeals;
     setDbMeals(prev => prev.filter(m => m.id !== mealId));
     try {
@@ -455,7 +462,7 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string, dailyCa
   }, [user?.id, dbMeals]);
 
   const moveMeal = useCallback(async (mealId: string, newMealType: MealEntry['mealType']) => {
-    if (!user?.id) return;
+    if (!user?.id || viewingUserId) return;
     setDbMeals(prev => prev.map(m => (m.id === mealId ? { ...m, mealType: newMealType } : m)));
     try {
       const { error } = await supabase.from('meal_entries').update({ meal_type: newMealType }).eq('id', mealId);
@@ -468,7 +475,7 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string, dailyCa
   }, [user?.id, fetchLog]);
 
   const addWater = useCallback(async (ml: number) => {
-    if (!user?.id || !todayLogId) return;
+    if (!user?.id || !todayLogId || viewingUserId) return;
     const newWater = (waterMl || 0) + ml;
     setWaterMl(newWater);
     try {
