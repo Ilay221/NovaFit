@@ -640,7 +640,7 @@ export default function Dashboard() {
           <NutritionCoach 
             key="coach"
             onClose={() => setView('dashboard')} 
-            userName={profile.name} 
+            profile={profile} 
             onAddMeal={onAddMeal}
             bankingContext={!banking.loading ? {
               dynamicTarget: banking.dynamicTarget,

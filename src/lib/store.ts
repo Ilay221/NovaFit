@@ -58,6 +58,7 @@ export function useProfile() {
         const storedCoachName = localStorage.getItem(`nova_coach_name_${user.id}`);
 
         setProfileState({
+          id: data.id,
           name: data.name,
           age: data.age,
           gender: data.gender as any,
@@ -150,8 +151,19 @@ export function useDailyLog(selectedDate?: Date) {
   // Compute the string key for the currently requested date
   const targetDateKey = format(selectedDate || new Date(), 'yyyy-MM-dd');
   
+  const [pendingMeals, setPendingMeals] = useState<MealEntry[]>(() => {
+    const saved = localStorage.getItem(`nova_pending_meals_${user?.id}`);
+    return saved ? JSON.parse(saved) : [];
+  });
+  
   const [todayLog, setTodayLog] = useState<DailyLog>({ date: targetDateKey, meals: [], waterMl: 0 });
   const [todayLogId, setTodayLogId] = useState<string | null>(null);
+
+  // RESET state when date changes to avoid showing stale data from previous dates
+  useEffect(() => {
+    setTodayLog({ date: targetDateKey, meals: [], waterMl: 0 });
+    setTodayLogId(null);
+  }, [targetDateKey]);
 
   const fetchLog = useCallback(async () => {
     if (!user) return;
@@ -173,14 +185,13 @@ export function useDailyLog(selectedDate?: Date) {
       
       log = newLog;
       
-      // Handle potential race condition (Unique Constraint Violation)
       if (error || !log) {
         const { data: fallbackLog } = await supabase
           .from('daily_logs')
           .select('*')
           .eq('user_id', user.id)
           .eq('date', targetDateKey)
-          .single();
+          .maybeSingle();
         log = fallbackLog;
       }
     }
@@ -188,14 +199,14 @@ export function useDailyLog(selectedDate?: Date) {
     if (!log) return;
     setTodayLogId(log.id);
 
-    // Fetch meals
+    // Fetch meals from Supabase
     const { data: meals } = await supabase
       .from('meal_entries')
       .select('*')
       .eq('daily_log_id', log.id)
       .order('logged_at', { ascending: true });
     
-    const mealEntries: MealEntry[] = (meals || []).map(m => ({
+    const dbMeals: MealEntry[] = (meals || []).map(m => ({
       id: m.id,
       foodItem: {
         id: m.id,
@@ -212,42 +223,112 @@ export function useDailyLog(selectedDate?: Date) {
       timestamp: m.logged_at,
     }));
 
-    setTodayLog({ date: targetDateKey, meals: mealEntries, waterMl: log.water_ml });
-  }, [user, targetDateKey]);
+    // Filter pending meals for THIS specific date
+    const relevantPending = pendingMeals.filter(pm => {
+      try {
+        return format(new Date(pm.timestamp), 'yyyy-MM-dd') === targetDateKey;
+      } catch { return false; }
+    });
+
+    // Final check: only update if the date hasn't changed since we started fetching
+    setTodayLog({ 
+      date: targetDateKey, 
+      meals: [...dbMeals, ...relevantPending], 
+      waterMl: log.water_ml 
+    });
+  }, [user, targetDateKey, pendingMeals]);
+
+  // Auto-sync effect: Only sync meals that match the CURRENTLY VIEWED date's log ID
+  useEffect(() => {
+    if (!user || pendingMeals.length === 0 || !todayLogId) return;
+
+    const syncPending = async () => {
+      const remaining = [...pendingMeals];
+      const syncedIds: string[] = [];
+
+      // Only attempt to sync meals belonging to the currently active log ID date
+      const mealsForCurrentDate = pendingMeals.filter(m => {
+        try {
+          return format(new Date(m.timestamp), 'yyyy-MM-dd') === targetDateKey;
+        } catch { return false; }
+      });
+
+      if (mealsForCurrentDate.length === 0) return;
+
+      for (const meal of mealsForCurrentDate) {
+        try {
+          const { error } = await supabase.from('meal_entries').insert({
+            user_id: user.id,
+            daily_log_id: todayLogId, 
+            food_name: meal.foodItem.name,
+            calories: meal.foodItem.calories,
+            protein: meal.foodItem.protein,
+            carbs: meal.foodItem.carbs,
+            fats: meal.foodItem.fats,
+            serving_size: meal.foodItem.servingSize,
+            category: meal.foodItem.category,
+            quantity: meal.quantity,
+            meal_type: meal.mealType,
+            logged_at: meal.timestamp
+          });
+
+          if (!error) syncedIds.push(meal.id);
+        } catch (e) {
+          console.error("Sync failed for meal", meal.id, e);
+        }
+      }
+
+      if (syncedIds.length > 0) {
+        const newPending = remaining.filter(m => !syncedIds.includes(m.id));
+        setPendingMeals(newPending);
+        localStorage.setItem(`nova_pending_meals_${user.id}`, JSON.stringify(newPending));
+        // No need to call fetchLog here, it will re-run due to pendingMeals dependency if needed
+      }
+    };
+
+    const timer = setTimeout(syncPending, 3000);
+    return () => clearTimeout(timer);
+  }, [user, pendingMeals, todayLogId, targetDateKey]);
 
   useEffect(() => { fetchLog(); }, [fetchLog]);
 
   const getLog = useCallback((): DailyLog => todayLog, [todayLog]);
 
   const addMeal = useCallback(async (entry: MealEntry) => {
-    if (!user || !todayLogId) {
-      console.warn("Attempted to add meal without user or log ID");
-      return;
-    }
+    if (!user) return;
     
-    // Add logic to avoid double-adding if called rapidly
+    // Optimistic / Local Fallback
+    const mealWithId = { ...entry, id: entry.id || crypto.randomUUID(), timestamp: entry.timestamp || new Date().toISOString() };
+    
     try {
-      const { error } = await supabase.from('meal_entries').insert({
-        user_id: user.id,
-        daily_log_id: todayLogId,
-        food_name: entry.foodItem.name,
-        calories: entry.foodItem.calories,
-        protein: entry.foodItem.protein,
-        carbs: entry.foodItem.carbs,
-        fats: entry.foodItem.fats,
-        serving_size: entry.foodItem.servingSize,
-        category: entry.foodItem.category,
-        quantity: entry.quantity,
-        meal_type: entry.mealType,
-      });
+      if (todayLogId) {
+        const { error } = await supabase.from('meal_entries').insert({
+          user_id: user.id,
+          daily_log_id: todayLogId,
+          food_name: mealWithId.foodItem.name,
+          calories: mealWithId.foodItem.calories,
+          protein: mealWithId.foodItem.protein,
+          carbs: mealWithId.foodItem.carbs,
+          fats: mealWithId.foodItem.fats,
+          serving_size: mealWithId.foodItem.servingSize,
+          category: mealWithId.foodItem.category,
+          quantity: mealWithId.quantity,
+          meal_type: mealWithId.mealType,
+        });
 
-      if (error) throw error;
-      
-      // Refresh to get the actual database ID for the new meal
-      await fetchLog();
+        if (error) throw error;
+        await fetchLog();
+      } else {
+        throw new Error("No daily log ID available");
+      }
     } catch (err) {
-      console.error("Failed to add meal:", err);
-      toast.error("שגיאה ברישום הארוחה. נסה שנית.");
+      console.error("Failed to add meal to Supabase, saving locally:", err);
+      setPendingMeals(prev => {
+        const updated = [...prev, mealWithId];
+        localStorage.setItem(`nova_pending_meals_${user.id}`, JSON.stringify(updated));
+        return updated;
+      });
+      toast.info("הארוחה נשמרה מקומית ותסונכרן כשהחיבור יתחדש.");
     }
   }, [user, todayLogId, fetchLog]);
 

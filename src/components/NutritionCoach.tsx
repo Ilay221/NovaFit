@@ -43,7 +43,7 @@ interface BankingContext {
 
 interface NutritionCoachProps {
   onClose: () => void;
-  userName: string;
+  profile: import('@/lib/types').UserProfile;
   onAddMeal?: (entry: MealEntry) => void;
   bankingContext?: BankingContext;
 }
@@ -73,7 +73,6 @@ const FRIENDLY_ERRORS: Record<string, string> = {
   SERVICE_ERROR: "🔧 רגע של תחזוקה. נסה שוב בקרוב!",
   INTERNAL_ERROR: "🤔 קרה משהו לא צפוי. בוא ננסה שוב!",
   FETCH_FAILED: "😅 לא הצלחתי להתחבר לשרת. נסה שוב בעוד רגע.",
-  UNAUTHORIZED: "🔒 נראה שיש בעיית התחברות או חסרות הרשאות. רענן את העמוד נסה שוב.",
   NOT_FOUND: "🔍 צ'אט ה-AI עדיין לא זמין בשרת. ודא שסיימת את תהליך ההתקנה.",
 };
 
@@ -92,7 +91,7 @@ function classifyError(e: any): string {
   return e?.message || 'FETCH_FAILED';
 }
 
-export default function NutritionCoach({ onClose, userName, onAddMeal, bankingContext }: NutritionCoachProps) {
+export default function NutritionCoach({ onClose, profile, onAddMeal, bankingContext }: NutritionCoachProps) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -266,10 +265,63 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
     reader.readAsDataURL(file);
   };
 
-  const send = useCallback(async (overrideInput?: string, overrideImage?: string) => {
-    const text = (overrideInput ?? input).trim();
-    const image = overrideImage ?? selectedImage;
-    if ((!text && !image) || isLoading) return;
+  const processStream = async (reader: ReadableStreamDefaultReader<Uint8Array>, sessionId: string) => {
+    const decoder = new TextDecoder();
+    let textBuffer = '';
+    let streamDone = false;
+    let assistantSoFar = '';
+
+    while (!streamDone) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      textBuffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+        if (line.endsWith('\r')) line = line.slice(0, -1);
+        if (line.startsWith(':') || line.trim() === '') continue;
+        if (!line.startsWith('data: ')) continue;
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === '[DONE]') { streamDone = true; break; }
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const delta = parsed.choices?.[0]?.delta?.content;
+          if (delta) {
+            assistantSoFar += delta;
+            setMessages(prev => {
+              const last = prev[prev.length - 1];
+              if (last?.role === 'assistant' && !last.error) {
+                return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantSoFar } : m);
+              }
+              return [...prev, { role: 'assistant', content: assistantSoFar }];
+            });
+          }
+        } catch {
+          textBuffer = line + '\n' + textBuffer;
+          break;
+        }
+      }
+    }
+
+    if (assistantSoFar) {
+      const { cleanContent, foodAction } = parseFoodAction(assistantSoFar);
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'assistant' && !last.error) {
+          return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: cleanContent, foodAction } : m);
+        }
+        return prev;
+      });
+      await saveMessage(sessionId, 'assistant', cleanContent);
+      autoGenerateTitle(sessionId, [...messages, { role: 'assistant' as const, content: cleanContent }]);
+    }
+  };
+
+  const send = useCallback(async (text?: string) => {
+    const messageText = (text || input).trim();
+    if (!messageText && !selectedImage) return;
 
     let sessionId = activeSessionId;
     if (!sessionId) {
@@ -278,60 +330,49 @@ export default function NutritionCoach({ onClose, userName, onAddMeal, bankingCo
       setActiveSessionId(sessionId);
     }
 
-    const userMsg: Msg = { role: 'user', content: text, imageUrl: image || undefined };
-    const prevMessages = overrideInput ? messages : [...messages, userMsg];
-    if (!overrideInput) setMessages(prev => [...prev, userMsg]);
-    
+    const newMessage: Msg = { role: 'user', content: messageText, imageUrl: selectedImage || undefined };
+    const prevMessages = [...messages];
+    setMessages(prev => [...prev, newMessage]);
     setInput('');
     setSelectedImage(null);
     setIsLoading(true);
     setLastFailedInput(null);
 
-    await saveMessage(sessionId, 'user', text + (image ? ' [תמונה מצורפת]' : ''));
+    await saveMessage(sessionId, 'user', messageText);
 
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    let assistantSoFar = '';
     let succeeded = false;
-
-    for (let attempt = 0; attempt <= MAX_CLIENT_RETRIES && !succeeded; attempt++) {
-      if (controller.signal.aborted) break;
+    for (let attempt = 0; attempt <= MAX_CLIENT_RETRIES; attempt++) {
+      const controller = new AbortController();
+      abortRef.current = controller;
+      
       try {
         const session = await supabase.auth.getSession();
         const token = session.data.session?.access_token;
-        const cleanMessages = prevMessages.filter(m => !m.error).map(m => ({ role: m.role, content: m.content }));
-
-        // Inject banking context as first message so AI knows the real daily target
+        
         const bankingNote = bankingContext
-          ? `[CONTEXT UPDATE - IMPORTANT]: The user's calorie target for TODAY has been dynamically adjusted by the Smart Balance (Calorie Banking) system. 
-- Base target (from profile): ${bankingContext.baseTarget} kcal
-- TODAY's ACTUAL target: ${bankingContext.dynamicTarget} kcal
-- Rollover adjustment: ${bankingContext.rollover > 0 ? '+' : ''}${Math.round(bankingContext.rollover)} kcal (${bankingContext.status === 'saved' ? 'bonus from savings yesterday' : bankingContext.status === 'overage' ? `debt from overage${bankingContext.spreadDays > 0 ? ` spread over ${bankingContext.spreadDays} days` : ' yesterday'}` : 'neutral'})
-- Summary: ${bankingContext.explanation}
-Always use ${bankingContext.dynamicTarget} kcal as the calorie target when answering questions about today. NEVER use ${bankingContext.baseTarget} as today's target.`
-          : null;
+          ? `[CONTEXT]: Calorie target ${bankingContext.dynamicTarget} kcal. ${bankingContext.explanation}`
+          : '';
 
-        const currentHour = new Date().getHours();
-        const currentMinutes = new Date().getMinutes();
-        const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
+        const currentTimeStr = new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
         const suggestedMeal = getCurrentMealType();
 
-        const messagesWithContext = [
-          { 
-            role: 'user' as const, 
-            content: `[SYSTEM CONTEXT - IMPORTANT]: 
-Current time is ${currentTimeStr}.
-Based on the time, the default meal category should be: '${suggestedMeal}'.
-You are aware of the 'late_night' (לילה מאוחרת) category for foods eaten late at night.
-The user wants you to monitor this specifically to identify "difficult times" or triggers for late-night eating.
-When analyzing or suggesting, be supportive about late-night habit changes.
-${bankingNote || ''}` 
-          },
-          { role: 'assistant' as const, content: 'מובן, אני מודע לשעה (' + currentTimeStr + ') ולעדכונים לגבי סוגי הארוחות.' },
-          ...cleanMessages
-        ];
+        const payload = { 
+          messages: [
+            { role: 'user', content: `[SYSTEM]: Time: ${currentTimeStr}, Meal: ${suggestedMeal}. ${bankingNote}` },
+            ...prevMessages.filter(m => !m.error).map(m => ({ role: m.role, content: m.content })),
+            newMessage
+          ].map(m => ({
+            role: m.role,
+            content: m.content,
+            ...(m.role === 'user' && (m as any).imageUrl ? { image_url: (m as any).imageUrl } : {})
+          })),
+          userId: profile.id,
+          settings: {
+            coachName: profile.coachName,
+            chatHarshness: profile.chatHarshness,
+            userName: profile.name
+          }
+        };
 
         const timeoutId = setTimeout(() => { if (!succeeded) controller.abort(); }, CLIENT_TIMEOUT_MS);
 
@@ -342,101 +383,53 @@ ${bankingNote || ''}`
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             'Authorization': `Bearer ${token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ 
-            messages: messagesWithContext.map(m => ({
-              role: m.role,
-              content: m.content,
-              ...(m.role === 'user' && (m as any).imageUrl ? { image_url: (m as any).imageUrl } : {})
-            }))
-          }),
+          body: JSON.stringify(payload),
           signal: controller.signal,
         });
 
         clearTimeout(timeoutId);
 
         if (!resp.ok) {
-          let errData: any = {};
-          try { errData = await resp.json(); } catch { try { await resp.text(); } catch { } }
-          console.error('AI Edge Function Error:', resp.status, errData);
-          if (resp.status === 402 || resp.status === 400) {
-            throw { code: errData.code || 'CREDITS_EXHAUSTED', noRetry: true };
-          }
-          if (attempt < MAX_CLIENT_RETRIES) {
-            await new Promise(r => setTimeout(r, 1500 * Math.pow(2, attempt) + Math.random() * 500));
-            continue;
-          }
-          throw { code: errData.code || 'SERVICE_ERROR' };
-        }
+          if (resp.status === 401 && token) {
+            console.warn('NovaFit: 401, retrying with Anon Key');
+            const fallbackResp = await fetch(CHAT_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: JSON.stringify(payload),
+              signal: controller.signal,
+            });
 
-        if (!resp.body) throw { code: 'SERVICE_ERROR' };
-        const reader = resp.body.getReader();
-        const decoder = new TextDecoder();
-        let textBuffer = '';
-        let streamDone = false;
-
-        while (!streamDone) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          textBuffer += decoder.decode(value, { stream: true });
-
-          let newlineIndex: number;
-          while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-            let line = textBuffer.slice(0, newlineIndex);
-            textBuffer = textBuffer.slice(newlineIndex + 1);
-            if (line.endsWith('\r')) line = line.slice(0, -1);
-            if (line.startsWith(':') || line.trim() === '') continue;
-            if (!line.startsWith('data: ')) continue;
-            const jsonStr = line.slice(6).trim();
-            if (jsonStr === '[DONE]') { streamDone = true; break; }
-            try {
-              const parsed = JSON.parse(jsonStr);
-              const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-              if (content) {
-                assistantSoFar += content;
-                const current = assistantSoFar;
-                setMessages(prev => {
-                  const last = prev[prev.length - 1];
-                  if (last?.role === 'assistant' && !last.error) {
-                    return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: current } : m);
-                  }
-                  return [...prev, { role: 'assistant', content: current }];
-                });
-              }
-            } catch {
-              textBuffer = line + '\n' + textBuffer;
+            if (fallbackResp.ok && fallbackResp.body) {
+              await processStream(fallbackResp.body.getReader(), sessionId);
+              succeeded = true;
               break;
             }
           }
+          throw { status: resp.status };
         }
 
-        succeeded = true;
-        if (assistantSoFar) {
-          const { cleanContent, foodAction } = parseFoodAction(assistantSoFar);
-          // Update the message with clean content and food action
-          setMessages(prev => {
-            const last = prev[prev.length - 1];
-            if (last?.role === 'assistant' && !last.error) {
-              return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: cleanContent, foodAction } : m);
-            }
-            return prev;
-          });
-          await saveMessage(sessionId!, 'assistant', cleanContent);
-          autoGenerateTitle(sessionId!, [...prevMessages, { role: 'assistant' as const, content: cleanContent }]);
-        }
-      } catch (e: any) {
-        if (e?.noRetry || attempt >= MAX_CLIENT_RETRIES || controller.signal.aborted) {
-          const code = classifyError(e);
-          
-          setMessages(prev => [...prev, { role: 'assistant', content: getFriendlyError(code), error: true }]);
-          setLastFailedInput(text);
+        if (resp.body) {
+          await processStream(resp.body.getReader(), sessionId);
+          succeeded = true;
           break;
         }
-        await new Promise(r => setTimeout(r, 1500 * Math.pow(2, attempt) + Math.random() * 500));
+      } catch (e: any) {
+        console.error('AI Request error:', e);
+        if (attempt === MAX_CLIENT_RETRIES || controller.signal.aborted) {
+          const code = classifyError(e);
+          setMessages(prev => [...prev, { role: 'assistant', content: getFriendlyError(code), error: true }]);
+          setLastFailedInput(messageText);
+        } else {
+          await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+        }
       }
     }
-
     setIsLoading(false);
-  }, [input, isLoading, messages, activeSessionId, titleGenerated, bankingContext]);
+  }, [input, selectedImage, messages, activeSessionId, profile, bankingContext]);
 
   const retry = useCallback(() => {
     if (lastFailedInput) {
@@ -568,7 +561,7 @@ ${bankingNote || ''}`
             >
               <Sparkles className="w-8 h-8 text-primary-foreground" />
             </motion.div>
-            <h3 className="font-bold font-display text-lg">היי {userName}! 👋</h3>
+            <h3 className="font-bold font-display text-lg">היי {profile.name}! 👋</h3>
             <p className="text-sm text-muted-foreground mt-2 max-w-[260px]">
               אני מאמן התזונה שלך. שאל אותי כל דבר!
             </p>

@@ -26,3 +26,4 @@ dist-ssr
 # NPM Cache
 .npm-cache/
 
+.vercel

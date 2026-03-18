@@ -77,22 +77,35 @@ function getSupabaseClient() {
 
 async function getUserFromToken(supabase: any, authHeader: string) {
   const token = authHeader.replace("Bearer ", "");
-  if (!token || token === "null" || token.length < 10) return null;
-  const { data: { user } } = await supabase.auth.getUser(token);
-  return user;
+  if (!token || token === "null" || token.length < 10) {
+    console.warn("Invalid or missing auth token in header");
+    return null;
+  }
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error) {
+      console.error("Supabase auth.getUser error:", error);
+      return null;
+    }
+    return data?.user || null;
+  } catch (err) {
+    console.error("Critical error in getUserFromToken:", err);
+    return null;
+  }
 }
 
-async function buildSystemPrompt(supabase: any, user: any): Promise<string> {
+async function buildSystemPrompt(supabase: any, user: any, bodySettings?: any, bodyUserId?: string): Promise<string> {
+  const targetUserId = user?.id || bodyUserId;
   let defaultPrompt = "You are NovaFit AI, a warm, expert nutrition coach. Be concise, actionable, and encouraging. Use emojis sparingly.";
-  if (!user) return defaultPrompt;
+  if (!targetUserId) return defaultPrompt;
 
   try {
-    const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
-    if (!profile) return defaultPrompt;
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", targetUserId).maybeSingle();
     
-    // Extracted chat settings
-    const coachName = profile.coach_name || "NovaFit AI";
-    const chatHarshness = profile.chat_harshness || "בינוני";
+    // Prioritize bodySettings from frontend for "bulletproof" sync
+    const coachName = bodySettings?.coachName || profile?.coach_name || "NovaFit AI";
+    const chatHarshness = bodySettings?.chatHarshness || profile?.chat_harshness || "בינוני";
+    const userName = bodySettings?.userName || profile?.name || "User";
     
     let harshnessInstructions = "";
     if (chatHarshness === "קשוח מאוד") {
@@ -104,6 +117,8 @@ async function buildSystemPrompt(supabase: any, user: any): Promise<string> {
     }
     
     defaultPrompt = `You are ${coachName}, an expert nutrition coach. ${harshnessInstructions}`;
+
+    if (!profile) return defaultPrompt;
 
     const today = new Date().toISOString().slice(0, 10);
     const { data: todayLog } = await supabase.from("daily_logs").select("*").eq("user_id", user.id).eq("date", today).maybeSingle();
@@ -253,7 +268,7 @@ When the user asks about what they ate on a specific day (e.g. "yesterday", "2 d
     : profile.chat_harshness === "עדין" 
       ? "BE EXTREMELY GENTLE AND SUPPORTIVE. Validate their feelings, be careful with your words, and never sound disappointed." 
       : "Be a balanced, helpful, and warm coach."}
-- Always call the user by their name (${profile.name}).
+- Always call the user by their name (${userName}).
 - Reference their specific goals, remaining calories, and macros in responses.
 - If they ask for food suggestions, consider their remaining macros AND their preferences/weaknesses AND medical conditions.
 - If they exceeded their calorie target today, react according to your harshness setting.
@@ -311,7 +326,15 @@ async function generateTitle(messages: Array<{ role: string; content: string }>,
 }
 
 serve(async (req) => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  console.log(`[${requestId}] Incoming request: ${req.method} ${new URL(req.url).pathname}`);
+  
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Log important headers (sanitized)
+  const authHeader = req.headers.get("authorization") ?? "";
+  const apikeyHeader = req.headers.get("apikey") ?? "";
+  console.log(`[${requestId}] Headers check - Auth length: ${authHeader.length}, API Key length: ${apikeyHeader.length}`);
 
   try {
     let body: any;
@@ -350,7 +373,7 @@ serve(async (req) => {
 
     let user = null;
     try { user = await getUserFromToken(supabase, authHeader); } catch {}
-    const systemPrompt = await buildSystemPrompt(supabase, user);
+    const systemPrompt = await buildSystemPrompt(supabase, user, body?.settings, body?.userId);
 
     const response = await fetchWithRetry(AI_GATEWAY, {
       method: "POST",

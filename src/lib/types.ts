@@ -39,6 +39,7 @@ export type Goal = 'lose' | 'maintain' | 'gain';
 export type Gender = 'male' | 'female';
 
 export interface UserProfile {
+  id: string;
   name: string;
   age: number;
   gender: Gender;
