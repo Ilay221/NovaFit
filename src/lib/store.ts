@@ -356,7 +356,7 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
       }
     };
 
-    const timer = setTimeout(syncPending, 5000);
+    const timer = setTimeout(syncPending, 800);
     return () => clearTimeout(timer);
   }, [user?.id, pendingMeals, fetchLog]);
 
@@ -364,16 +364,19 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
 
   const addMeal = useCallback(async (entry: MealEntry) => {
     if (!user?.id) return;
+    
     const mealWithId = { 
       ...entry, 
       id: entry.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(7)), 
       timestamp: entry.timestamp || new Date().toISOString() 
     };
-    
+
     try {
+      // Optimistic update
+      setDbMeals(prev => [...(prev || []), mealWithId]);
+
       let logId = todayLogId;
       if (!logId) {
-        console.log("No todayLogId, attempting to create one...");
         logId = await getOrCreateLogId(format(new Date(), 'yyyy-MM-dd'));
       }
 
@@ -392,22 +395,30 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
           meal_type: mealWithId.mealType,
           logged_at: mealWithId.timestamp
         });
+        
         if (error) {
           console.error("Supabase insert error:", error);
           throw error;
         }
+        
+        // Final sync-up to ensure state matches DB
         await fetchLog();
       } else {
         throw new Error("Could not find or create daily log ID");
       }
     } catch (err) {
-      console.error("Failed to add meal, saving locally:", err);
+      console.error("Failed to add meal, ensuring local persistence:", err);
+      // Revert optimistic update only if needed, but since it's now in pendingMeals, it's fine
+      setDbMeals(prev => prev.filter(m => m.id !== mealWithId.id));
+      
       setPendingMeals(prev => {
+        const alreadyPending = (prev || []).some(m => m.id === mealWithId.id);
+        if (alreadyPending) return prev;
         const updated = [...(prev || []), mealWithId];
         localStorage.setItem(`nova_pending_meals_${user.id}`, JSON.stringify(updated));
         return updated;
       });
-      toast.info("נשמר מקומית (סנכרון יתבצע אוטומטית).");
+      toast.info("נשמר בזיכרון המקומי ומסונכרן ברגע זה...");
     }
   }, [user?.id, todayLogId, fetchLog]);
 
