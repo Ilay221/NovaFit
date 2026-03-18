@@ -233,13 +233,24 @@ async function buildSystemPrompt(supabase: any, user: any, bodySettings?: any, b
     const carbsPct = Math.round((totalCarbs / profile.carbs_target) * 100);
     const fatsPct = Math.round((totalFats / profile.fats_target) * 100);
 
-    return `## Visual Analysis Instructions
+    const dietaryLabel = (profile.dietary_preferences && profile.dietary_preferences.length > 0) 
+      ? profile.dietary_preferences.join(', ') 
+      : 'None';
+    const otherDietary = profile.other_dietary || 'None';
+
+    return `## MANDATORY DIETARY CONSTRAINTS
+- User is: ${dietaryLabel}
+- Additional Info: ${otherDietary}
+- RULES: You MUST ALWAYS respect these dietary constraints. If the user is KOSHER, do NOT suggest non-kosher foods (e.g. pork, shellfish, or mixing milk and meat). If the user is VEGETARIAN, do NOT suggest meat. These constraints ARE HIGHER PRIORITY than any macro goals.
+
+## Visual Analysis Instructions
 - When the user provides an image, act as a "Critical Visual Nutritionist".
 - FIRST, identify if the image contains actual food.
 - If the image is a logo, text, a person, or any non-food object, STATE THIS CLEARLY and do NOT provide nutritional data or a FOOD_ADD tag for it.
 - If it is food, identify it with high precision. Look for textures, shapes, and colors.
 - Be honest: if an image is blurry or ambiguous (like the sardines/pizza case), ask for clarification rather than guessing wildly.
 - Do NOT hallucinate popular foods (like pizza) if they aren't clearly visible.
+- CONSIDER the mandatory dietary constraints above when analyzing images.
 
 ## Today's Progress (${today})
 - ${mealsBreakdown}

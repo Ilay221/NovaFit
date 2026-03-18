@@ -123,7 +123,10 @@ export function useProfile(viewingUserId?: string) {
         if (rpcError) {
           console.error("Hard Reset RPC Error:", rpcError);
           // Fallback to manual delete if RPC fails (e.g. if migration not applied yet)
+          // We delete child tables first
+          await (supabase.from('chat_messages' as any) as any).delete().eq('user_id', user.id);
           await (supabase.from('chat_sessions' as any) as any).delete().eq('user_id', user.id);
+          await (supabase.from('meal_entries' as any) as any).delete().eq('user_id', user.id);
           await (supabase.from('daily_logs' as any) as any).delete().eq('user_id', user.id);
           await (supabase.from('weight_entries' as any) as any).delete().eq('user_id', user.id);
           await (supabase.from('meal_templates' as any) as any).delete().eq('user_id', user.id);

@@ -26,30 +26,27 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured");
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
-        model: "google/gemini-1.5-flash",
+        model: "gemini-1.5-flash",
         messages: [
           {
             role: "system",
-            content: `You are a professional nutritionist AI. Parse natural language food descriptions and return accurate nutritional information.
-Users will describe what they ate in casual language. Extract each distinct food item with realistic calorie and macro estimates based on typical serving sizes.
-Be specific with food names. If quantities are mentioned (e.g. "two eggs"), multiply the nutrition accordingly.
-If a food is ambiguous, assume the most common preparation method.`,
+            content: `You are a professional nutritionist AI. Parse natural language food descriptions (primarily in Hebrew) and return accurate nutritional information.
+Users will describe what they ate in casual language. Extract each distinct food item with realistic calorie and macro estimates based on typical serving sizes used in Israel/Middle East.
+Be specific with food names. If quantities are mentioned (e.g. "שתי ביצים", "חצי קילו"), multiply the nutrition accordingly.
+If a food is ambiguous, assume the most common preparation method.
+Translate Hebrew food names to simple, clear Hebrew for the output name.`,
           },
           {
             role: "user",
-            content: `Parse this food description and return nutritional info for each item: "${text}"`,
+            content: `Parse this food description and return nutritional info for each item (User input is in Hebrew): "${text}"`,
           },
         ],
         tools: [
