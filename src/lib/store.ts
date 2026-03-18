@@ -161,7 +161,7 @@ export function useProfile(viewingUserId?: string) {
   return { profile, setProfile, loading };
 }
 
-export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
+export function useDailyLog(selectedDate?: Date, viewingUserId?: string, dailyCalorieTarget?: number) {
   const { user } = useAuth();
   const effectiveUserId = viewingUserId || user?.id;
   const targetDateKey = format(selectedDate || new Date(), 'yyyy-MM-dd');
@@ -286,21 +286,34 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
   const getOrCreateLogId = async (dateStr: string) => {
     if (!effectiveUserId || viewingUserId) return null;
     try {
-      const { data: log } = await supabase
+      // 1. Try to find existing log
+      const { data: existingLog } = await supabase
         .from('daily_logs')
         .select('id')
         .eq('user_id', effectiveUserId)
         .eq('date', dateStr)
         .maybeSingle();
       
-      const { data: newLog } = await supabase
+      if (existingLog) return existingLog.id;
+
+      // 2. Not found, create it
+      const { data: newLog, error: insertError } = await supabase
         .from('daily_logs')
-        .insert({ user_id: effectiveUserId, date: dateStr, water_ml: 0 })
+        .insert({ 
+          user_id: effectiveUserId, 
+          date: dateStr, 
+          water_ml: 0,
+          base_calorie_target: dailyCalorieTarget || 2000,
+          spread_days: 1,
+          rollover_calories: 0,
+          calorie_balance: 0
+        })
         .select('id')
         .maybeSingle();
       
       if (newLog) return newLog.id;
 
+      // 3. If insert failed (likely race condition), try select one last time
       const { data: retryLog } = await supabase
         .from('daily_logs')
         .select('id')
@@ -375,9 +388,12 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
       // Optimistic update
       setDbMeals(prev => [...(prev || []), mealWithId]);
 
+      const mealDate = format(new Date(mealWithId.timestamp), 'yyyy-MM-dd');
       let logId = todayLogId;
-      if (!logId) {
-        logId = await getOrCreateLogId(format(new Date(), 'yyyy-MM-dd'));
+      
+      // If adding to a different date or logId is null, get the correct one
+      if (!logId || mealDate !== targetDateKey) {
+        logId = await getOrCreateLogId(mealDate);
       }
 
       if (logId) {
@@ -396,10 +412,7 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
           logged_at: mealWithId.timestamp
         });
         
-        if (error) {
-          console.error("Supabase insert error:", error);
-          throw error;
-        }
+        if (error) throw error;
         
         // Final sync-up to ensure state matches DB
         await fetchLog();
@@ -408,7 +421,7 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
       }
     } catch (err) {
       console.error("Failed to add meal, ensuring local persistence:", err);
-      // Revert optimistic update only if needed, but since it's now in pendingMeals, it's fine
+      // Revert optimistic update
       setDbMeals(prev => prev.filter(m => m.id !== mealWithId.id));
       
       setPendingMeals(prev => {
@@ -418,9 +431,9 @@ export function useDailyLog(selectedDate?: Date, viewingUserId?: string) {
         localStorage.setItem(`nova_pending_meals_${user.id}`, JSON.stringify(updated));
         return updated;
       });
-      toast.info("נשמר בזיכרון המקומי ומסונכרן ברגע זה...");
+      toast.info("נשמר בזיכרון המקומי ויסונכרן בהמשך...");
     }
-  }, [user?.id, todayLogId, fetchLog]);
+  }, [user?.id, todayLogId, targetDateKey, fetchLog, getOrCreateLogId]);
 
   const removeMeal = useCallback(async (mealId: string) => {
     if (!user?.id) return;

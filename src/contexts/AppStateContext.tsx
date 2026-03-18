@@ -27,7 +27,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const { profile, setProfile, loading: profileLoading } = useProfile(viewingUserId || undefined);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   
-  const { getLog, addMeal, removeMeal, moveMeal, addWater } = useDailyLog(selectedDate, viewingUserId || undefined);
+  const { getLog, addMeal, removeMeal, moveMeal, addWater } = useDailyLog(selectedDate, viewingUserId || undefined, profile?.dailyCalorieTarget);
   const { entries: weightHistory, addEntry: addWeight } = useWeightHistory(viewingUserId || undefined);
 
   const isReady = !profileLoading;
