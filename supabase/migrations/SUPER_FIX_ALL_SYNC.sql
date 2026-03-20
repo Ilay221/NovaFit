@@ -6,10 +6,15 @@ DO $$
 BEGIN
     -- 1. Ensure theme_color column
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'theme_color') THEN
-        ALTER TABLE public.profiles ADD COLUMN theme_color TEXT DEFAULT '#10b981';
+        ALTER TABLE public.profiles ADD COLUMN theme_color TEXT DEFAULT NULL;
     END IF;
 
-    -- 2. Ensure dietary_preferences column
+    -- 2. Ensure calorie_banking_enabled column
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'calorie_banking_enabled') THEN
+        ALTER TABLE public.profiles ADD COLUMN calorie_banking_enabled BOOLEAN DEFAULT TRUE;
+    END IF;
+
+    -- 3. Ensure dietary_preferences column
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'dietary_preferences') THEN
         ALTER TABLE public.profiles ADD COLUMN dietary_preferences TEXT[] DEFAULT '{}';
     END IF;
