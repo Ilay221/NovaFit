@@ -91,10 +91,18 @@ export function useCalorieBanking(
    */
   const calculateRollover = useCallback(async () => {
     if (!profile?.id) { setLoading(false); return; }
-
+    
     const realToday = format(new Date(), 'yyyy-MM-dd');
     const prefSpreadDays = profile.calorieSpreadDays || 1;
     const isViewing = profile.id !== user?.id;
+
+    const isBankingEnabled = profile.calorieBankingEnabled ?? true;
+    if (!isBankingEnabled) {
+      setRollover(0);
+      setSpreadDays(1);
+      setLoading(false);
+      return;
+    }
 
     // Walk through the last LOOKBACK_DAYS to accumulate the total balance
     let runningBalance = 0;

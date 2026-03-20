@@ -141,6 +141,36 @@ export default function SettingsPanel({ theme, profile, weightHistory, onUpdateP
           </motion.div>
         )}
 
+        {/* Smart Balance Toggle */}
+        <motion.div variants={itemVariants} className="nova-card p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <h3 className="font-bold font-display text-[14px]">איזון חכם (Smart Balance)</h3>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                כשזה פועל, חריגות וחסכונות מהימים האחרונים נפרסים אוטומטית ליעד של היום. כשזה כבוי, כל יום מתחיל בדף חלק.
+              </p>
+            </div>
+            <button
+              disabled={isViewing}
+              onClick={() => onUpdateProfile({ ...profile, calorieBankingEnabled: !(profile.calorieBankingEnabled ?? true) })}
+              className={cn(
+                "w-12 h-6 rounded-full transition-all duration-300 relative shrink-0 ml-4",
+                (profile.calorieBankingEnabled ?? true) ? "bg-primary shadow-[0_0_10px_hsla(var(--primary)/0.3)]" : "bg-muted shadow-inner"
+              )}
+            >
+              <motion.div 
+                layout
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                animate={{ x: (profile.calorieBankingEnabled ?? true) ? 26 : 2 }}
+                className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm"
+              />
+            </button>
+          </div>
+        </motion.div>
+
         {/* Target Date */}
         {profile.goal !== 'maintain' && profile.weightKg !== profile.targetWeightKg && (
           <motion.div variants={itemVariants} className="nova-card p-5">

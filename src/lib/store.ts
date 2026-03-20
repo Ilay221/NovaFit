@@ -91,6 +91,7 @@ export function useProfile(viewingUserId?: string) {
             dietaryPreferences: (data as any).dietary_preferences || [],
             otherDietary: (data as any).other_dietary || '',
             themeColor: (data as any).theme_color || null,
+            calorieBankingEnabled: (data as any).calorie_banking_enabled ?? true,
           });
           applyThemeColor((data as any).theme_color);
         }
@@ -184,6 +185,7 @@ export function useProfile(viewingUserId?: string) {
       dietary_preferences: p.dietaryPreferences || [],
       other_dietary: p.otherDietary || '',
       theme_color: p.themeColor || null,
+      calorie_banking_enabled: p.calorieBankingEnabled ?? true,
       updated_at: new Date().toISOString(),
     };
     

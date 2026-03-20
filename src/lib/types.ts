@@ -69,6 +69,7 @@ export interface UserProfile {
   dietaryPreferences?: string[];
   otherDietary?: string;
   themeColor?: string;
+  calorieBankingEnabled?: boolean;
 }
 
 export interface FoodItem {
